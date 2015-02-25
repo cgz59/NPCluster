@@ -1,6 +1,7 @@
 
 #' @import MASS
 #' @import mvtnorm
+#' @export
 simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
 		
 	###################
@@ -22,6 +23,23 @@ simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
 }
 
 
+#' Fit an example DPP model
+#' 
+#' @description \code{fitExample} fits an example DPP model
+#' 
+#' @examples
+#' # Simulate data	
+#' simulation <- simulateExample(n = 25, p = 125)
+#'
+#' # Fit model
+#' posterior <- fitExample(simulation, n.burn = 10, n.reps = 20)
+#'
+#' # Summarize posterior
+#' d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))	
+#' mean.taxicab <- mean(posterior$mean.taxicab.v)
+#' se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))	
+#'	
+#' @export
 fitExample <- function(data, 
 											 n.burn = 10, 
 											 n.reps = 20,
@@ -37,23 +55,9 @@ fitExample <- function(data,
 	# Detect clusters
 	###################
 	
-	All.Stuff <- fn.mcmc(text="CLUST ANALYZE...",							
+	posterior <- fn.mcmc(text="CLUST ANALYZE...",							
 											 data$X$true, data$X$data,
 											 n.burn, n.reps, max.row.nbhd.size, row.frac.probes, col.frac.probes, 
 											 data$parm)
-	
-# 	d_credible.v <- quantile(All.Stuff$d.v, prob=c(.025,.975))
-# 	
-# 	mean.taxicab <- mean(All.Stuff$mean.taxicab.v)
-# 	se_mean.taxicab <- sd(All.Stuff$mean.taxicab.v)/sqrt(n.reps)
-
-	return (All.Stuff)
-}
-
-
-test <- function() {
-	
-	simulation <- simulateExample()
-	posterior <- fitExample(simulation)
-	
+	return (posterior)
 }
