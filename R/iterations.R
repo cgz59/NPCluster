@@ -46,7 +46,7 @@ fn.quality.check <- function(parm)
 		{err <- 4
 		}
 
-	if ((sum(parm$clust$C.m.vec) + parm$clust$C.m0) != p)
+	if ((sum(parm$clust$C.m.vec) + parm$clust$C.m0) != parm$p)
 		{err <- 5
 		}
 
@@ -69,13 +69,16 @@ fn.quality.check <- function(parm)
 
 
 
-fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes)
+fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
 	{
 	parm <- true_parm
+	
+	parm$n2 <- dim(data$X)[1] # TODO Check
+	parm$p <- dim(data$X)[2]  # TODO Check
 
 	parm$clust$C.m0 <- 0
 
-	parm$clust$A.mt <- array(,c(n2,parm$clust$G))
+	parm$clust$A.mt <- array(,c(parm$n2,parm$clust$G))
 
 	for (g in 1:parm$clust$G)
 		{z.v <- parm$clust$s.mt[,g]>0
@@ -83,7 +86,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 		parm$clust$A.mt[-z.v,g] <- 0
 		}
 
-	parm$clust$B.mt <- cbind(rep(1,n2), parm$clust$A.mt)
+	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 
 	parm$shift <- true$shift
 
@@ -114,7 +117,7 @@ fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes)
 
-	parm$clust$B.mt <- cbind(rep(1,n2), parm$clust$A.mt)
+	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
 
 	err <- fn.quality.check(parm)
@@ -133,7 +136,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 	{
 
 	# initialize
-	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes)
+	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
 	init.parm <- parm
 
 	err <- fn.quality.check(parm)
@@ -179,7 +182,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 
 		All.Stuff$gibbs.new_col_clust.v[cc]  <- parm$clust$gibbs.new.flag
 		
-		tmp.mat <- array(0,c(p,p))
+		tmp.mat <- array(0,c(parm$p,parm$p))
 
 		for (jj in 1:parm$clust$G)
 			{indx.jj <- which(parm$clust$c.v==jj)

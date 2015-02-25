@@ -7,6 +7,6 @@ Author: Subharup Guha, Veera Baladandayuthapani, Marc A. Suchard
 Maintainer: Subharup Guha <guhasu@missouri.edu>
 Description: More about what it does (maybe more than one line)
 License: GPL (>= 2)
-Imports: Rcpp (>= 0.11.3)
+Imports: Rcpp (>= 0.11.3), MASS, stats, mvtnorm
 LinkingTo: Rcpp
 Suggests: testthat

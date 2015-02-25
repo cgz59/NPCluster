@@ -151,7 +151,7 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 	Y.v <- parm$Y[parm$row.subset.I]
 	X.sd.v <- parm$X.sd[parm$row.subset.I]
 	## g.v also equals parm$g[parm$row.subset.I]  
-	g.v <- (parm$row.subset.I-1) %/% n2 + 1
+	g.v <- (parm$row.subset.I-1) %/% parm$n2 + 1
 	num.k.v <-  parm$clust$C.m.vec[g.v]
 
 	for (ss in 1:parm$clust$K)
@@ -244,7 +244,7 @@ element_fn.row.gibbs.DP <- function(parm)
 
 	Y.k <- parm$Y[k]
 	X.sd.k <- parm$X.sd[k]
-	g.k <- (k-1) %/% n2 + 1
+	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
 	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k) 
@@ -337,7 +337,7 @@ element_fn.fast.DP.iter <- function(parm)
 
 	Y.k <- parm$Y[k]
 	X.sd.k <- parm$X.sd[k]
-	g.k <- (k-1) %/% n2 + 1
+	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
 	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k) 
@@ -450,7 +450,7 @@ element_fn.fast.DP.iter <- function(parm)
 	Y.k.v <- parm$Y[I.k]
 	X.sd.k.v <- parm$X.sd[I.k]
 	## g.k.v also equals parm$g[I.k]  
-	g.k.v <- (I.k-1) %/% n2 + 1
+	g.k.v <- (I.k-1) %/% parm$n2 + 1
 	num.k.v <-  parm$clust$C.m.vec[g.k.v]
 
 	new.log.lik <- old.log.lik <- 0
@@ -542,7 +542,7 @@ element_fn.drop <- function(parm)
 
 	parm$clust$phi.v <- parm$clust$phi.v[keep]	
 	parm$clust$n.vec <- parm$clust$n.vec[keep]
-	parm$clust$s.mt <- matrix(parm$clust$s.v, nrow=n2)
+	parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
 	
 	parm
 	}

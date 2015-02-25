@@ -2,7 +2,7 @@
 fn1.update.element.objects <- function(parm)
 	{
 	
-	parm$clust$s.mt <- array(parm$clust$s.v, c(n2,parm$clust$G))
+	parm$clust$s.mt <- array(parm$clust$s.v, c(parm$n2, parm$clust$G))
 
 	for (g in 1:parm$clust$G)
 		{s.g.v <- parm$clust$s.mt[,g]
@@ -11,7 +11,7 @@ fn1.update.element.objects <- function(parm)
 		if (sum(s.pos.indx) > 0)
 			{parm$clust$A.mt[s.pos.indx,g] <- parm$clust$phi.v[s.g.v[s.pos.indx]]
 			}
-		if ((n2-sum(s.pos.indx)) > 0)
+		if ((parm$n2-sum(s.pos.indx)) > 0)
 			{parm$clust$A.mt[!s.pos.indx,g] <- 0
 			}
 		parm$clust$B.mt[,(g+1)] <- parm$clust$A.mt[,g]
@@ -34,11 +34,11 @@ fn1.update.element.objects <- function(parm)
 fn2.update.element.objects <- function(parm)
 	{
 	
-	parm$Y <- parm$X.sd <- array(,c(n2,parm$clust$G))
+	parm$Y <- parm$X.sd <- array(,c(parm$n2, parm$clust$G))
 
 	# group covariate tells which parm$clust$rho.g 
 	# to use for likelihood calculation
-	parm$g <- rep(1:parm$clust$G,each=n2)
+	parm$g <- rep(1:parm$clust$G,each = parm$n2)
 		
 	for (g in 1:parm$clust$G)
 		{I.g <- (parm$clust$c.v==g)
@@ -52,14 +52,14 @@ fn2.update.element.objects <- function(parm)
 			}
 		 parm$Y[,g] <- x.g.v
 
-		sd.g.v <- rep(0,n2)
+		sd.g.v <- rep(0, parm$n2)
 		 if (m.g > 1)
 			{sd.g.v <- sqrt((x2.g.v - x.g.v^2)*m.g/(m.g-1))
 			}
 		parm$X.sd[,g] <- sd.g.v
 		}
 
-	parm$N <- n2*parm$clust$G
+	parm$N <- parm$n2 * parm$clust$G
 
 	parm$Y <- as.vector(parm$Y)
 

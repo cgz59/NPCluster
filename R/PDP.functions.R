@@ -24,7 +24,7 @@ PDP_fn.consistency.check <- function(parm)
 	{err <- 0
 	
 	
-	if (sum(parm$clust$C.m.vec) + parm$clust$C.m0 != p)
+	if (sum(parm$clust$C.m.vec) + parm$clust$C.m0 != parm$p)
 		{err <- 4
 		}
 
@@ -126,6 +126,9 @@ PDP_fn.clip.clusters <- function(parm, keep)
 
 PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 	{	
+	
+	n2 <- parm$n2
+	
 	if (gg > 0)
 		{a2.v <- parm$clust$A.mt[,gg]
 		z.g.v <- parm$clust$s.mt[,gg] > 0
@@ -174,6 +177,8 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 
 PDP_fn.gen.new.column <- function(I.k, in.parm)
 	{new.parm <- in.parm
+	 
+	 n2 <- new.parm$n2
 
 	## correctly set these objects:
 	## new.parm$N, new.parm$clust$n.vec, new.parm$clust$n0
@@ -397,14 +402,14 @@ PDP_fn.gibbs <- function(k, parm, data)
 
 		parm$clust$s.v <- c(parm$clust$s.v, parm$new$s.v.k)
 
-		parm$clust$s.mt <- matrix(parm$clust$s.v, nrow=n2)
+		parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
 	
 		parm$clust$n.vec <- parm$clust$n.vec + parm$new$n.vec.k
 		parm$clust$n0 <- parm$clust$n0 + parm$new$n0.k
 	
 		parm$N <- sum(parm$clust$n.vec) + parm$clust$n0
 
-		tmp.a.v <- array(,n2)
+		tmp.a.v <- array(, parm$n2)
 		s.G.v <- parm$new$s.v.k
 		indxx <- s.G.v==0
 		tmp.a.v[indxx] <- 0
@@ -462,7 +467,7 @@ PDP_fn.drop <- function(parm)
 
 	# parm$clust$K does not change (possibly some empty elementwise clusters)
 
-	parm$N <- n2 * parm$clust$G
+	parm$N <- parm$n2 * parm$clust$G
 	parm$clust$s.v <- as.vector(parm$clust$s.mt)
 
 	parm$clust$n0 <- sum(parm$clust$s.v==0)
@@ -481,7 +486,8 @@ PDP_fn.drop <- function(parm)
 
 PDP_fn.main <- function(parm, data, col.frac.probes)
 {		
-
+	p <- parm$p
+	
 	if (col.frac.probes < 1)
 		{parm$col.subset.I <- sort(sample(1:p, round(col.frac.probes*p)))
 		}
