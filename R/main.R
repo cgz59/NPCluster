@@ -28,6 +28,7 @@ simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
 #' @description \code{fitExample} fits an example DPP model
 #' 
 #' @examples
+#' \dontrun{
 #' # Simulate data	
 #' simulation <- simulateExample(n = 25, p = 125)
 #'
@@ -38,6 +39,7 @@ simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
 #' d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))	
 #' mean.taxicab <- mean(posterior$mean.taxicab.v)
 #' se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))	
+#' }
 #'	
 #' @export
 fitExample <- function(data, 

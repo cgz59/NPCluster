@@ -1,7 +1,7 @@
 Package: NPCluster
 Type: Package
 Title: What the package does (short line)
-Version: 1.0
+Version: 0.1
 Date: 2015-02-25
 Author: Subharup Guha, Veera Baladandayuthapani, Marc A. Suchard
 Maintainer: Subharup Guha <guhasu@missouri.edu>

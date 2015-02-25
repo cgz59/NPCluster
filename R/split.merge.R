@@ -51,8 +51,26 @@ DP_fn.smart_split <- function(parm, data)
 ###########################################################
 
 
+fn.funky <- function(...) {
+    stop("Missing function")
+}
+
+DP_fn.log.lik <- function(...) {
+    stop("Missing function")
+}
+
+DP_fn.consistency.check <- function(...) {
+    stop("Missing function")
+}
+
+DP_fn.gibbs <- function(...) {
+    stop("Missing function")
+}
+
+
 DP_fn.smart_merge <- function(parm, data)
 {	
+
 	old.parm <- parm
 
 	# pick two small clusters
@@ -92,8 +110,8 @@ DP_fn.smart_merge <- function(parm, data)
 		old.G <- length(old.indx)
 
 		# copied from clust,functions.R based on Lijoi and Prunster
-		new.log.lik <- sum(log(parm$b1 + (1:(new.G-1))*parm$d)) - fn.funky((parm$b1+1), (p-1)) + sum(fn.funky((1-parm$d), (parm$clust$C.m.vec[new.indx]-1)))
-		old.log.lik <- sum(log(parm$b1 + (1:(old.G-1))*parm$d)) - fn.funky((parm$b1+1), (p-1)) + sum(fn.funky((1-parm$d), (old.parm$clust$C.m.vec[old.indx]-1)))
+		new.log.lik <- sum(log(parm$b1 + (1:(new.G-1))*parm$d)) - fn.funky((parm$b1+1), (parm$p-1)) + sum(fn.funky((1-parm$d), (parm$clust$C.m.vec[new.indx]-1)))
+		old.log.lik <- sum(log(parm$b1 + (1:(old.G-1))*parm$d)) - fn.funky((parm$b1+1), (parm$p-1)) + sum(fn.funky((1-parm$d), (old.parm$clust$C.m.vec[old.indx]-1)))
 
 		log.true <- as.numeric((parm$clust$C.m0>0)-(old.parm$clust$C.m0>0))*log(parm$b0) + new.log.lik - old.log.lik
 		

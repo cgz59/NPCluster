@@ -10,7 +10,7 @@ fn.dmvnorm <- function(x, mean, sigma, inv.sigma, log=TRUE)
 		{inv.sigma <- solve(sigma)
 		}
 
-	logdet <- as.numeric(determinant(inv.sigma, log=TRUE)$mod)
+	logdet <- as.numeric(determinant(inv.sigma, logarithm=TRUE)$mod)
 	r <- length(x)
 	Q <- colSums(inv.sigma * (x-mean))
 	Q <- sum(Q * (x-mean))

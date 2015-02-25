@@ -11,6 +11,7 @@ fitExample(data, n.burn = 10, n.reps = 20, max.row.nbhd.size = 50,
 \code{fitExample} fits an example DPP model
 }
 \examples{
+\dontrun{
 # Simulate data
 simulation <- simulateExample(n = 25, p = 125)
 
@@ -21,5 +22,6 @@ posterior <- fitExample(simulation, n.burn = 10, n.reps = 20)
 d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
 mean.taxicab <- mean(posterior$mean.taxicab.v)
 se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
+}
 }
 
