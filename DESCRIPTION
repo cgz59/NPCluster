@@ -1,0 +1,12 @@
+Package: NPCluster
+Type: Package
+Title: What the package does (short line)
+Version: 1.0
+Date: 2015-02-25
+Author: Subharup Guha, Veera Baladandayuthapani, Marc A. Suchard
+Maintainer: Subharup Guha <guhasu@missouri.edu>
+Description: More about what it does (maybe more than one line)
+License: GPL (>= 2)
+Imports: Rcpp (>= 0.11.3)
+LinkingTo: Rcpp
+Suggests: testthat

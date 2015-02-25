@@ -1,0 +1,3 @@
+useDynLib(NPCluster)
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
