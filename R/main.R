@@ -1,65 +1,59 @@
 
 #' @import MASS
-#' @import stats
 #' @import mvtnorm
-test <- function() {
-	
-# 	rm(list=ls())
-	
-# 	library(MASS)
-# 	library(stats) 
-# 	library(mvtnorm)
-	
-	options(error=recover)
-	options(warn=2)
-	
-	# check before running
-	n <- 50/2
-	p <- 250/2
-	
+simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
+		
 	###################
 	# generate covariates adding random noise of specified level
 	# create objects data and true
 	###################
 	
 	true_parm <- gen.clust(n, p)
-	#source("gen.clust.R")
 	
-	true_parm$tau <- .5
-	true_parm$tau_0 <- 1.25
+	true_parm$tau <- tau
+	true_parm$tau_0 <- tau_0
 	
 	sim.X <- gen.X(n, p, true_parm)
-# 	source("gen.X.R")
+
+	simulation <- list(X = sim.X, parm = true_parm)
+	class(simulation) <- "NPClustSimulation"
 	
+	return(simulation)
+}
+
+
+fitExample <- function(data, 
+											 n.burn = 10, 
+											 n.reps = 20,
+											 max.row.nbhd.size = 50, # should be small compared to n2 * G
+											 row.frac.probes = 0.05,
+											 col.frac.probes = 0.05) {
+	
+	if (!inherits(data, "NPClustSimulation")) {
+		stop("Wrong data structure")
+	}
+
 	###################
 	# Detect clusters
 	###################
 	
-	n.burn <- 2500/250
-	n.reps <- 5000/250
-	
-# 	source("iterations.r")
-# 	source("elementwise_main.R")
-# 	source("elementwise_DP.functions.R")
-# 	source("PDP.functions.R")
- 	
-	max.row.nbhd.size <- 50 # should be small compared to n2*G
-	row.frac.probes <- .05
-	col.frac.probes <- .05
-	
-	All.Stuff <- fn.mcmc(text="CLUST ANALYZE...",
-											 sim.X$true, sim.X$data, 
+	All.Stuff <- fn.mcmc(text="CLUST ANALYZE...",							
+											 data$X$true, data$X$data,
 											 n.burn, n.reps, max.row.nbhd.size, row.frac.probes, col.frac.probes, 
-											 true_parm)
+											 data$parm)
 	
-	d_credible.v <- quantile(All.Stuff$d.v, prob=c(.025,.975))
-	
-	mean.taxicab <- mean(All.Stuff$mean.taxicab.v)
-	se_mean.taxicab <- sd(All.Stuff$mean.taxicab.v)/sqrt(n.reps)
+# 	d_credible.v <- quantile(All.Stuff$d.v, prob=c(.025,.975))
+# 	
+# 	mean.taxicab <- mean(All.Stuff$mean.taxicab.v)
+# 	se_mean.taxicab <- sd(All.Stuff$mean.taxicab.v)/sqrt(n.reps)
 
-	return (list(
-		parm = true_parm,
-		data = sim.X$data,
-		posterior = All.Stuff
-		))
+	return (All.Stuff)
+}
+
+
+test <- function() {
+	
+	simulation <- simulateExample()
+	posterior <- fitExample(simulation)
+	
 }
