@@ -70,7 +70,7 @@ element_fn.swap.clusters <- function(parm, g1, g2)
 
 
 element_fn.log.lik <- function(mean, sd, num, Y, X.sd)
-	{log.lik <- -num/2*log(2*pi*sd^2) - .5*num*(Y-mean)^2/sd^2 - .5*(num-1)*X.sd^2/sd^2 
+	{log.lik <- -num/2*log(2*pi*sd^2) - .5*num*(Y-mean)^2/sd^2 - .5*(num-1)*X.sd^2/sd^2  ## HOT
 
 	log.lik
 	}
@@ -167,7 +167,7 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 
 	dimnames(log.ss.mt) <- list(0:parm$clust$K, 1:parm$N)
 
-	maxx.v <- apply(log.ss.mt, 2, max)
+	maxx.v <- apply(log.ss.mt, 2, max)    # HOT
 	log.ss.mt <- t(t(log.ss.mt) - maxx.v)
 	ss.mt <- exp(log.ss.mt)
 

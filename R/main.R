@@ -63,3 +63,17 @@ fitExample <- function(data,
 											 data$parm)
 	return (posterior)
 }
+
+#' @export
+profileExample <- function(n = 25,
+													 p = 250,
+													 n.burn = 10, 
+													 n.reps = 20) {
+	simulation <- simulateExample(n, p)
+	
+	Rprof(line.profiling = TRUE, interval = 0.001)
+	out <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps)
+	Rprof(NULL)	
+	
+	summaryRprof(lines = "show")$by.self
+}
