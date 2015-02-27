@@ -240,7 +240,7 @@ PDP_fn.gen.new.column <- function(I.k, in.parm)
 
 	##############################
 
-	cum.ss.mt <- apply(ss.mt, 2, cumsum)
+	cum.ss.mt <- apply(ss.mt, 2, cumsum) ## HOT
 	dimnames(cum.ss.mt) <- NULL
 
 	u.v <- runif(n=n2)

@@ -109,7 +109,7 @@ element_fn.nbhd <- function(I, parm, max.row.nbhd.size)
 
 	 post.prob.mt <- parm$clust$post.prob.mt
 
-	 tmp1.mt <- matrix(post.prob.mt[,I], ncol=length(I))
+	 tmp1.mt <- matrix(post.prob.mt[,I], ncol=length(I)) ## HOT
 	 tmp2.v <- post.prob.mt[,k]
 	 tmp3.mt <- sqrt(tmp1.mt * tmp2.v)
 	 H.v[I] <-  2*(1-colSums(tmp3.mt))
