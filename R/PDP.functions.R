@@ -1,7 +1,4 @@
 
-
-
-
 PDP_fn.compact.consistency.check <- function(parm)
 	{err <- 0
 	
@@ -126,9 +123,6 @@ PDP_fn.clip.clusters <- function(parm, keep)
 
 PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 	{	
-	
-	n2 <- parm$n2
-	
 	if (gg > 0)
 		{a2.v <- parm$clust$A.mt[,gg]
 		z.g.v <- parm$clust$s.mt[,gg] > 0
@@ -158,7 +152,7 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 		}
 
 	if (gg == 0)
-		{a2.v <- rep(1,n2)
+		{a2.v <- rep(1,parm$n2)
 		small.X <- x.mt
 		if (colSums)
 			{tmp <- colSums(-.5*(small.X - a2.v)^2)
@@ -167,146 +161,12 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 			{tmp <- sum(-.5*(small.X - a2.v)^2)
 			}
 
-		log.lik.v <-  tmp/parm$tau_int^2 -n2*.5*log(2*pi)-n2*log(parm$tau_int)
+		log.lik.v <-  tmp/parm$tau_int^2 -parm$n2*.5*log(2*pi)-parm$n2*log(parm$tau_int)
 		}
 
 	log.lik.v
 	}
 
-
-
-PDP_fn.gen.new.column <- function(I.k, in.parm)
-	{new.parm <- in.parm
-	 
-	 n2 <- new.parm$n2
-
-	## correctly set these objects:
-	## new.parm$N, new.parm$clust$n.vec, new.parm$clust$n0
-
-	#############################################
-	# copied from fn2.update.row.objects
-	#############################################
-
-	m.g <- length(I.k)
-
-	x.g.v <- x.tmp <- new.parm$X[,I.k]
-	x2.g.v <- x.g.v^2
-	if (m.g > 1)
-		{x.g.v <- rowMeans(x.g.v)
-		x2.g.v <- rowMeans(x.tmp^2)
-		}
-
-	sd.g.v <- rep(0,n2)
-	if (m.g > 1)
-		{sd.g.v <- sqrt((x2.g.v - x.g.v^2)*m.g/(m.g-1))
-		}
-
-	prior.prob.v <- c((new.parm$clust$n0+new.parm$clust$M0), (new.parm$clust$n.vec+new.parm$clust$M/new.parm$clust$K))
-	small <- 1e-3 # compared to 1
-	prior.prob.v[prior.prob.v < small] <- small
-
-	log.ss.mt <- array(,c(new.parm$clust$K, n2))
-
-	for (ss in 1:new.parm$clust$K)
-		{log.ss.mt[ss,] <- element_fn.log.lik(mean=new.parm$clust$phi.v[ss], sd=new.parm$tau, num=length(I.k), Y=x.g.v, X.sd=sd.g.v)
-		}
-
-	## adding the row on top corresponding to s=0
-	tmp.v <- element_fn.log.lik(mean=0, sd=new.parm$tau_0, num=length(I.k), Y=x.g.v, X.sd=sd.g.v)
-
-	log.ss.mt <- rbind(tmp.v, log.ss.mt)
-
-	log.ss.mt <- log.ss.mt + log(prior.prob.v)
-
-	dimnames(log.ss.mt) <- list(0:new.parm$clust$K, 1:n2)
-
-	maxx.v <- apply(log.ss.mt, 2, max)
-	log.ss.mt <- t(t(log.ss.mt) - maxx.v)
-	ss.mt <- exp(log.ss.mt)
-
-	col.sums.v <- colSums(ss.mt)
-	ss.mt <- t(t(ss.mt)/col.sums.v)
-
-	# replace zeros by "small"
-	small <- 1e-5
-	ss.mt[ss.mt < small] <- small
-
-	# again normalize 
-	col.sums.v <- colSums(ss.mt)
-	ss.mt <- t(t(ss.mt)/col.sums.v)
-
-	new.parm$clust$post.prob.mt <- ss.mt
-	new.parm$clust$log.post.prob.mt <- log(new.parm$clust$post.prob.mt)
-
-	##############################
-
-	cum.ss.mt <- apply(ss.mt, 2, cumsum) ## HOT
-	dimnames(cum.ss.mt) <- NULL
-
-	u.v <- runif(n=n2)
-
-	tmp.mt <- t(t(cum.ss.mt) > u.v)
-
-	s.v <- new.parm$clust$K + 1 - as.vector(colSums(tmp.mt)) 
-
-	########################
-
-	new.parm$new$s.v.k <- s.v
-
-	new.parm$new$n.vec.k <- array(,new.parm$clust$K)
-	for (gg in 1:new.parm$clust$K)
-		{new.parm$new$n.vec.k[gg] <- sum(s.v==gg)
-		}
-	new.parm$new$n0.k <- sum(s.v==0)
-
-	########################
-
-	log.prop.v <- array(,n2)
-	for (i in 1:n2)
-		{log.prop.v[i] <- new.parm$clust$log.post.prob.mt[(s.v[i]+1),i]
-		}
-
-	##############################
-
-	log.lik <- 0
-	for (j in 0:new.parm$clust$K)
-		{indx.j <- s.v==j
-		if ((sum(indx.j)>0)&(j>0))
-			{log.lik <- log.lik + sum(dnorm(x.g.v[indx.j], mean=new.parm$clust$phi.v[j],sd=new.parm$tau,log=TRUE))
-			}
-		if ((sum(indx.j)>0)&(j==0))
-			{log.lik <- log.lik + sum(dnorm(x.g.v[indx.j], mean=0,sd=new.parm$tau_0,log=TRUE))
-			}
-		}
-
-	add.count <- new.parm$clust$M/new.parm$clust$K
-
-	big.joint <- new.parm$clust$K*log(new.parm$clust$M) + as.numeric((new.parm$clust$n0 + new.parm$new$n0.k)>0)*log(new.parm$clust$M0) 
-	big.joint <- big.joint + lgamma(new.parm$clust$M0+new.parm$clust$M) - lgamma(new.parm$clust$M0+new.parm$clust$M+n2+new.parm$N) 
-	big.joint <- big.joint + lgamma(new.parm$clust$M0+new.parm$clust$n0+new.parm$new$n0.k) - lgamma(new.parm$clust$M0+1) 
-	big.joint <- big.joint + sum(lgamma(new.parm$clust$n.vec+new.parm$new$n.vec.k+add.count)) + sum(dnorm(new.parm$clust$phi.v,log=TRUE))
-
-	small.joint <- 0
-
-	small.joint <- new.parm$clust$K*log(new.parm$clust$M) + as.numeric(new.parm$clust$n0>0)*log(new.parm$clust$M0) 
-	small.joint <- small.joint + lgamma(new.parm$clust$M0+new.parm$clust$M) - lgamma(new.parm$clust$M0+new.parm$clust$M+new.parm$N) 
-	small.joint <- small.joint + lgamma(new.parm$clust$M0+new.parm$clust$n0) - lgamma(new.parm$clust$M0+1) 
-	small.joint <- small.joint + sum(lgamma(new.parm$clust$n.vec+add.count)) + sum(dnorm(new.parm$clust$phi.v,log=TRUE))
-
-	log.true <- log.lik + big.joint - small.joint
-
-	new.parm$new$log.w <- log.true - sum(log.prop.v)
-	new.parm$new$log.true <- log.true
-	new.parm$new$log.prop.v <- log.prop.v
-
-	new.parm$new$log.lik <- log.lik
-	new.parm$new$big.joint <- big.joint
-	new.parm$new$small.joint <- small.joint
-
-	###########################
-		
-	new.parm
-	}
 
 
 
@@ -332,28 +192,61 @@ PDP_fn.gibbs <- function(k, parm, data)
 		{parm$clust$C.m0 <- parm$clust$C.m0 - 1
 		}
 
-	##############################
-	
 	x.mt <- matrix(parm$X[,k], ncol=1)
 	# intercept cluster or any existing cluster
 	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE) 
-
-	# create new potential cluster
-	# and compute parm$new$log.w
-	parm <- PDP_fn.gen.new.column(I.k=k, in.parm=parm)
-
-	L.v <- c(L.v, parm$new$log.w)
 
 	#######################################################
 	### emptied clusters are gone forever under Gibbs sampling 
 	#######################################################
 	
-	# allow -Inf's in Gibbs sampling log-prior (just emptied clusters)
 	emptied.indx <- which(parm$clust$C.m.vec==0)
 	new.G <- parm$clust$G - length(emptied.indx)
 
+  if (length(emptied.indx) >0)
+  	{
+    	new.s.mt <- parm$clust$s.mt[,-emptied.indx]
+    	new.n.vec <- array(,parm$clust$K)
+    	for (pp in 1:parm$clust$K)
+    		{new.n.vec[pp] <- sum(new.s.mt==pp)
+      		}
+    	emptied.s.indx <- which(new.n.vec==0)
+    	new.K <- parm$clust$K-length(emptied.s.indx) 
+   	 new.n0 <- sum(new.s.mt==0)
+   	}
+  
+  if (length(emptied.indx) ==0)
+  	{
+    	new.s.mt <- parm$clust$s.mt
+    	new.n.vec <- parm$clust$n.vec
+    	emptied.s.indx <- which(new.n.vec==0)
+    	new.K <- parm$clust$K
+    	new.n0 <- parm$clust$n0
+    }	
+  
+  ## generate auxilliary P vector 
+  
+  tmp.M <- rep(parm$clust$M/new.K,parm$clust$K)
+  tmp.alpha <- tmp.M+new.n.vec
+  tmp.alpha[emptied.s.indx] <- 0
+  P.aux <- rgamma(parm$clust$K+1,c(parm$clust$M0+new.n0,tmp.alpha),1)
+  P.aux <- P.aux/sum(P.aux)
+
+  ## marginal likelihood of new cluster
+  marg.log.lik.v <- array(,length(x.mt))
+  for (tt in 1:length(x.mt))
+	{
+    	tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
+    	tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+   	marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
+  	}
+  marg.log.lik <- sum(marg.log.lik.v)
+  
+  L.v <- c(L.v, marg.log.lik) 
+  
 	log.prior.v <- array(NA, (2+parm$clust$G))
 	
+  # allow -Inf's in Gibbs sampling log-prior (just emptied clusters)
 	if (length(emptied.indx) >0) 
 		{log.prior.v[-(emptied.indx+1)] <- log(c((parm$b0+parm$clust$C.m0), (parm$clust$C.m.vec[-emptied.indx]-parm$d), (parm$b1+new.G*parm$d)))
 		log.prior.v[emptied.indx+1] <- -Inf
@@ -363,7 +256,6 @@ PDP_fn.gibbs <- function(k, parm, data)
 		{log.prior.v <- log(c((parm$b0+parm$clust$C.m0), (parm$clust$C.m.vec-parm$d), (parm$b1+new.G*parm$d)))
 		}
 
-	
 	tmp2 <- log.prior.v + L.v 
 	maxx <- max(tmp2)
 	tmp2 <- tmp2 - maxx
@@ -393,24 +285,44 @@ PDP_fn.gibbs <- function(k, parm, data)
 		}
 
 	if (new.flag) 
-		{parm$clust$G <- parm$clust$G + 1
+  {
+    ###generate the latent vector first, condition on the single kth column
+    cand.s.v.k <- array(,length(x.mt))
+    for (tt in 1:length(x.mt))
+	{
+      	tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
+      	tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+      	tmp.prob.v <- tmp.lik.v*P.aux
+      	prob.gen.v <- tmp.prob.v/sum(tmp.prob.v)
+      	cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v)
+        }
+    parm$cand$s.v.k <- cand.s.v.k
+    
+    parm$cand$n.vec.k <- array(,parm$clust$K)
+    for (gg in 1:parm$clust$K)
+    	{parm$cand$n.vec.k[gg] <- sum(cand.s.v.k==gg)
+    	}
+    parm$cand$n0.k <- sum(cand.s.v.k==0)
+    
+  ##################
+   parm$clust$G <- parm$clust$G + 1
 					
 		parm$clust$C.m.vec <- c(parm$clust$C.m.vec, 1)
 
 		parm$clust$beta.v <- c(parm$clust$beta.v, 0)
 		parm$clust$gamma.v <- c(parm$clust$gamma.v,0)
 
-		parm$clust$s.v <- c(parm$clust$s.v, parm$new$s.v.k)
+   parm$clust$s.v <- c(parm$clust$s.v, parm$cand$s.v.k)
 
 		parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
 	
-		parm$clust$n.vec <- parm$clust$n.vec + parm$new$n.vec.k
-		parm$clust$n0 <- parm$clust$n0 + parm$new$n0.k
+   parm$clust$n.vec <- parm$clust$n.vec + parm$cand$n.vec.k
+   parm$clust$n0 <- parm$clust$n0 + parm$cand$n0.k
 	
 		parm$N <- sum(parm$clust$n.vec) + parm$clust$n0
 
-		tmp.a.v <- array(, parm$n2)
-		s.G.v <- parm$new$s.v.k
+   tmp.a.v <- array(,parm$n2)
+   s.G.v <- parm$cand$s.v.k
 		indxx <- s.G.v==0
 		tmp.a.v[indxx] <- 0
 		tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
@@ -418,7 +330,7 @@ PDP_fn.gibbs <- function(k, parm, data)
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v)
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
 		parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
-		}
+  } # end  if (new.flag) 
 
 
 	list(parm, new.flag)
