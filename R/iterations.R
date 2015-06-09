@@ -332,10 +332,10 @@ fn.gen.tau  <- function(data, parm)
       parm$tau <- 1/sqrt(qgamma(gen.u,shape=shape, rate=rate))
 
 	# overwrite to avoid zeros and Inf
-	if (round(u.min, dig=5) == 1) # really close to 1
+	if (round(u.min, digits = 5) == 1) # really close to 1
 		{parm$tau<- 1/sqrt(parm$prior$inv.tau.sq$min)
 		}
-	if (round(u.max, dig=5) == 0) # really close to 0
+	if (round(u.max, digits = 5) == 0) # really close to 0
 		{parm$tau<- 1/sqrt(parm$prior$inv.tau.sq$max)
 		}
 
