@@ -1,4 +1,4 @@
-
+#' @export
 gen.clust <- function(n, p) {
 
 	true_parm <- NULL

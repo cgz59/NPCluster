@@ -39,8 +39,8 @@ gen.X <- function(n, p, true_parm) {
 	data$non.missing.indx <- 1:n
 	num.X.miss <- 0
 	
-	K.max <- round(n2/2)
-	G.max <- round(p/2) 
+	data$K.max <- round(n2/2)
+	data$G.max <- round(p/2) 
 	
 	###########################################
 	# dummy responses

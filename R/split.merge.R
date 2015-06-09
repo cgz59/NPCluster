@@ -50,11 +50,6 @@ DP_fn.smart_split <- function(parm, data)
 
 ###########################################################
 
-
-fn.funky <- function(...) {
-    stop("Missing function")
-}
-
 DP_fn.log.lik <- function(...) {
     stop("Missing function")
 }
