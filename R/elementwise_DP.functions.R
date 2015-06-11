@@ -6,7 +6,7 @@ element_fn.compact_consistency.check <- function(parm)
 	if (max(unique(parm$clust$s.v)) != parm$clust$K)
 		{err <- 1
 		}
-	
+
 	err <- element_fn.consistency.check(parm)
 
 	err
@@ -15,7 +15,7 @@ element_fn.compact_consistency.check <- function(parm)
 
 element_fn.consistency.check <- function(parm)
 	{err <- 0
-	
+
 	if (!is.null(parm$clust$row.nbhd))
 		{if (sum(unlist(lapply(parm$clust$row.nbhd, length))) != length(parm$row.subset.I))
 			{err <- 2
@@ -53,7 +53,7 @@ element_fn.swap.clusters <- function(parm, g1, g2)
 	buffer <- parm$clust$phi.v[g1]
 	parm$clust$phi.v[g1] <- parm$clust$phi.v[g2]
 	parm$clust$phi.v[g2] <- buffer
-		
+
 	buffer <- parm$clust$n.vec[g1]
       parm$clust$n.vec[g1] <- parm$clust$n.vec[g2]
       parm$clust$n.vec[g2] <- buffer
@@ -79,9 +79,9 @@ element_fn.log.lik <- function(mean, sd, num, Y, X.sd)
 
 
 element_fn.gen.phi <- function(parm, Y, lik.sd)
-{ 	
+{
 	if (is.null(Y))
-		{lik.sd <- Inf 
+		{lik.sd <- Inf
 		Y <- 0 #dummy
 		}
 
@@ -98,14 +98,14 @@ element_fn.gen.phi <- function(parm, Y, lik.sd)
 
 
 element_fn.nbhd <- function(I, parm, max.row.nbhd.size)
-	{if (length(I)>1) 
+	{if (length(I)>1)
 		{k <- sample(I, size=1)
 		}
-	if (length(I)==1) 
+	if (length(I)==1)
 		{k <- I
 		}
 
-       H.v <- rep(Inf,parm$N) 
+   H.v <- rep(Inf,parm$N)
 
 	 post.prob.mt <- parm$clust$post.prob.mt
 
@@ -114,7 +114,7 @@ element_fn.nbhd <- function(I, parm, max.row.nbhd.size)
 	 tmp3.mt <- sqrt(tmp1.mt * tmp2.v)
 	 H.v[I] <-  2*(1-colSums(tmp3.mt))
 
-	 cutoff <- parm$row.delta 
+	 cutoff <- parm$row.delta
 	 I.k <- which(H.v <= cutoff)
 
 	if (length(I.k) > max.row.nbhd.size)
@@ -150,7 +150,7 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 	#
 	Y.v <- parm$Y[parm$row.subset.I]
 	X.sd.v <- parm$X.sd[parm$row.subset.I]
-	## g.v also equals parm$g[parm$row.subset.I]  
+	## g.v also equals parm$g[parm$row.subset.I]
 	g.v <- (parm$row.subset.I-1) %/% parm$n2 + 1
 	num.k.v <-  parm$clust$C.m.vec[g.v]
 
@@ -174,11 +174,13 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 	col.sums.v <- colSums(ss.mt)
 	ss.mt <- t(t(ss.mt)/col.sums.v)
 
-	# replace zeros by "small"
-	small <- 1e-5
-	ss.mt[ss.mt < small] <- small
+	# TODO Ask GS if second normalization is really necessary
 
-	# again normalize 
+	# replace zeros by "small"
+	small2 <- 1e-5
+	ss.mt[ss.mt < small2] <- small2
+
+	# again normalize
 	col.sums.v <- colSums(ss.mt)
 	ss.mt <- t(t(ss.mt)/col.sums.v)
 
@@ -189,10 +191,14 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 	### now compute the delta-neighborhoods
 	#########################################
 
-	I <- parm$row.subset.I 
+	# START
+	# set.seed(666)
+	# END
+
+	I <- parm$row.subset.I
 	parm$clust$row.nbhd <- NULL
 	parm$clust$row.nbhd.k <- NULL
-	
+
 	while (length(I)>=1)
 		{tmp <- element_fn.nbhd(I, parm, max.row.nbhd.size)
 		k <- tmp[[1]]
@@ -203,21 +209,55 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 		parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, k)
 		}
 
+
+
+
+	# START
+	# print(paste(max(parm$row.subset.I), min(parm$row.subset.I), length(parm$row.subset.I)))
+# 	engine <- createEngine(sort = TRUE)
+# 	set.seed(666)
+# 	test <- .computePmfAndNeighborhoods(engine$engine,
+# 	                            parm$clust$n0, parm$clust$n.vec, 1e-3, 1e-5,
+# 	                            parm$clust$K, parm$N,
+# 	                            parm$Y, parm$X.sd, parm$row.subset.I,
+# 	                            parm$clust$C.m.vec, parm$n2,
+# 	                            parm$clust$phi.v, parm$tau, parm$tau_0,
+# 	                            max.row.nbhd.size, parm$row.delta)
+#
+# 	# print(log.ss.mt[,parm$row.subset.I[1]])
+# 	#       K <- parm$clust$K
+# 	# 			print(parm$clust$phi.v[K])
+# 	# 			print(parm$tau)
+# 	# 			print(num.k.v[1])
+# 	# 			print(Y.v[1])
+# 	# 			print(X.sd.v[1])
+# 	# 			print(element_fn.log.lik(mean=parm$clust$phi.v[K], sd=parm$tau, num=num.k.v[1], Y=Y.v[1], X.sd=X.sd.v[1]))
+# 	#
+# 	# 	 print(ss.mt[,parm$row.subset.I[1]])
+# 	# 	 print(sum(ss.mt, na.rm = TRUE))
+#
+# 	# print(k)
+# 	# print(tmp3.mt[,1])
+#
+# 	print(test$neighbor)
+
+	## END
+
 	parm
 	}
-	 
+
 
 
 ###########################################################
 
 element_fn.row.gibbs.DP <- function(parm)
-{	
+{
      k <- parm$k
 	I.k <- parm$I.k
 	s.k <- parm$clust$s.v[k]
 
 	###############
-	
+
 	err <- element_fn.consistency.check(parm)
 	if (err > 0)
 		{stop(paste("GIBBS STEP - 0: failed consistency check: err=",err))
@@ -235,7 +275,7 @@ element_fn.row.gibbs.DP <- function(parm)
 	if (s.k == 0)
 		{parm$clust$n0 <- parm$clust$n0 - 1
 		}
-	
+
 	# sum(parm$clust$n.vec) + parm$clust$n0 == (parm$N-1)
 
 	#######################################################
@@ -247,7 +287,7 @@ element_fn.row.gibbs.DP <- function(parm)
 	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
-	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k) 
+	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k)
 	# add possibility that s=0 in front
 	L.v <- c(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k, Y=Y.k, X.sd=X.sd.k), L.v)
 
@@ -261,11 +301,11 @@ element_fn.row.gibbs.DP <- function(parm)
 	L.v <- c(L.v, new.L)
 
 	############
-	
+
 	# forcing singletons to leave empty clusters
 	log.prior.v <- log(c((parm$clust$M0+parm$clust$n0), parm$clust$n.vec[-parm$clust$K], parm$clust$M))
-	
-	tmp2 <- log.prior.v + L.v 
+
+	tmp2 <- log.prior.v + L.v
 	maxx <- max(tmp2)
 	tmp2 <- tmp2 - maxx
 	tmp2 <- exp(tmp2)
@@ -275,13 +315,13 @@ element_fn.row.gibbs.DP <- function(parm)
 
 
 	########################################################################
-	# store current state 
+	# store current state
 	old.parm <- parm
 
 	########################################################################
 
 	new.s.k <- sample(0:parm$clust$K, size=length(I.k), replace=TRUE, prob=parm$clust$post.k)
-				
+
 	parm$clust$s.v[k] <- new.s.k
 	if (new.s.k > 0)
 		{parm$clust$n.vec[new.s.k] <- parm$clust$n.vec[new.s.k] + 1
@@ -304,12 +344,12 @@ element_fn.row.gibbs.DP <- function(parm)
 ###########################################################
 
 element_fn.fast.DP.iter <- function(parm)
-{	
+{
      k <- parm$k
 	I.k <- parm$I.k
 
 	###############
-	
+
 	err <- element_fn.consistency.check(parm)
 	if (err > 0)
 		{stop(paste("FORWARD STEP - 0: failed consistency check: err=",err))
@@ -340,12 +380,12 @@ element_fn.fast.DP.iter <- function(parm)
 	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
-	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k) 
+	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k)
 	# add possibility that s=0 in front
 	L.v <- c(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k, Y=Y.k, X.sd=X.sd.k), L.v)
 
 	############
-	
+
 	log.prior.v <- log(c((parm$clust$M0+parm$clust$n0.k.comp), parm$clust$n.vec.k.comp))
 
 	#######################################################
@@ -355,13 +395,13 @@ element_fn.fast.DP.iter <- function(parm)
 	#######################################################
 
 	newly.empty.indx <- 1+which(parm$clust$n.vec.k.comp==0)
-	
-	# possibly overwrite some 0's 
+
+	# possibly overwrite some 0's
 	if (length(newly.empty.indx) > 0)
 		{log.prior.v[newly.empty.indx] <- log(parm$clust$M/length(newly.empty.indx))
 		}
 
-	tmp2 <- log.prior.v + L.v 
+	tmp2 <- log.prior.v + L.v
 	maxx <- max(tmp2)
 	tmp2 <- tmp2 - maxx
 	tmp2 <- exp(tmp2)
@@ -371,24 +411,24 @@ element_fn.fast.DP.iter <- function(parm)
 
 
 	########################################################################
-	# store current state 
+	# store current state
 	old.parm <- parm
 
 	########################################################################
 
 	new.s.k <- sample(0:parm$clust$K, size=length(I.k), replace=TRUE, prob=parm$clust$post.k)
-	old.s.k <- old.parm$clust$s.v[I.k] 
+	old.s.k <- old.parm$clust$s.v[I.k]
 
 	exit <- (sum(new.s.k != old.s.k)==0)
 	flip <- 1
 
   if (!exit) # CONTINUE W/O EXITING FUNCTION
-  {				
+  {
 	parm$clust$s.v[I.k] <- new.s.k
-	
+
 	rho.prop <- 0
 	parm$clust$n.vec <- array(0, parm$clust$K)
-	
+
 	for (gg in 0:parm$clust$K)
 		{flag.gg <- (new.s.k==gg)
 		 count.gg <- sum(flag.gg)
@@ -400,7 +440,7 @@ element_fn.fast.DP.iter <- function(parm)
 		if (gg == 0)
 			{parm$clust$n0 <- parm$clust$n0.k.comp + count.gg
 			}
-			 
+
 		 if (count.gg > 0)
 			{rho.prop <- rho.prop + log(parm$clust$post.k[gg+1])*count.gg
 			}
@@ -408,12 +448,12 @@ element_fn.fast.DP.iter <- function(parm)
 
 	# sum(parm$clust$n.vec) + parm$clust$n0 == parm$N
 
-			
-	########################################## 
-	########################################## 
+
+	##########################################
+	##########################################
 	##### Computing proposal prob of reverse move
-	########################################## 
-	########################################## 
+	##########################################
+	##########################################
 
 	for (gg in 0:parm$clust$K)
 		{flag.gg <- (old.s.k==gg)
@@ -449,7 +489,7 @@ element_fn.fast.DP.iter <- function(parm)
 
 	Y.k.v <- parm$Y[I.k]
 	X.sd.k.v <- parm$X.sd[I.k]
-	## g.k.v also equals parm$g[I.k]  
+	## g.k.v also equals parm$g[I.k]
 	g.k.v <- (I.k-1) %/% parm$n2 + 1
 	num.k.v <-  parm$clust$C.m.vec[g.k.v]
 
@@ -471,11 +511,11 @@ element_fn.fast.DP.iter <- function(parm)
 	if (sum(old.s.k == 0)>0)
 		{old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v[old.s.k == 0], Y=Y.k.v[old.s.k == 0], X.sd=X.sd.k.v[old.s.k == 0]))
 		}
-	
+
 	rho.tru <- rho.tru + new.log.lik - old.log.lik
 
 	########## toss a coin #################
-	
+
 	prob <- exp(min((rho.tru-rho.prop),0))
 	flip <- as.logical(rbinom(n=1, size=1, prob=prob))
 	if (!flip) {parm <- init.cc.parm}
@@ -491,12 +531,12 @@ element_fn.fast.DP.iter <- function(parm)
 element_fn.gen.new <- function(parm, num.gen)
 	{
 	parm$clust$K.old <- parm$clust$K
-	
+
 	for (tt in 1:num.gen)
 		{
 		# generate from prior
 		new.phi <- element_fn.gen.phi(parm, Y=NULL, lik.sd=NULL)
-		#	
+		#
 		parm$clust$n.vec <- c(parm$clust$n.vec, 0)
 		parm$clust$phi.v <- c(parm$clust$phi.v, new.phi)
 		parm$clust$K <- parm$clust$K + 1
@@ -515,7 +555,7 @@ element_fn.drop <- function(parm)
 	##########################################
 	## Drop empty clusters:
 	## (i)  Move empty clusters to end by relabeling clusters
-	## (ii) Set parm$clust$K equal to number of non-empty clusters 
+	## (ii) Set parm$clust$K equal to number of non-empty clusters
 	## (ii) Retain only clusters  1,...,parm$clust$K
 	#########################################
 
@@ -534,23 +574,23 @@ element_fn.drop <- function(parm)
 			}
 		parm <- element_fn.swap.clusters(parm, g1=new.label, g2=old.label)
  		}
-	} 
-		
+	}
+
 	##########
 
 	keep <- 1:parm$clust$K
 
-	parm$clust$phi.v <- parm$clust$phi.v[keep]	
+	parm$clust$phi.v <- parm$clust$phi.v[keep]
 	parm$clust$n.vec <- parm$clust$n.vec[keep]
 	parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
-	
+
 	parm
 	}
 
 
 
 element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes)
-{		
+{
 
 	if (row.frac.probes < 1)
 		{parm$row.subset.I <- sort(sample(1:parm$N, round(row.frac.probes*parm$N)))
@@ -570,7 +610,7 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes)
 	if (err > 0)
 		{stop(paste("ELEMENT_DP MAIN: failed consistency check: err=",err))
 		}
-	
+
 	#################################
 	# generate new empty clusters from prior
 	#################################
@@ -610,7 +650,7 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes)
 	##########################################
 	## Drop empty clusters:
 	## (i)  Move empty clusters to end by relabeling clusters
-	## (ii) Set parm$clust$K equal to number of non-empty clusters 
+	## (ii) Set parm$clust$K equal to number of non-empty clusters
 	## (ii) Retain only clusters  1,...,parm$clust$K
 	#########################################
 

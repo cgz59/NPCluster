@@ -5,3 +5,15 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_rcpp_hello_world', PACKAGE = 'NPCluster')
 }
 
+.createEngine <- function(sort) {
+    .Call('NPCluster_createEngine', PACKAGE = 'NPCluster', sort)
+}
+
+.accessEngine <- function(sexp) {
+    .Call('NPCluster_accessEngine', PACKAGE = 'NPCluster', sexp)
+}
+
+.computePmfAndNeighborhoods <- function(sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff) {
+    .Call('NPCluster_computePmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff)
+}
+

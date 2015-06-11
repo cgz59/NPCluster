@@ -22,12 +22,12 @@ fn.dmvnorm <- function(x, mean, sigma, inv.sigma, log=TRUE)
 
 	val
 	}
- 
+
 
 
 fn.quality.check <- function(parm)
 	{err <- 0
-	
+
 	if (!is.null(parm$clust$col.nbhd))
 		{if (sum(unlist(lapply(parm$clust$col.nbhd, length))) != length(parm$col.subset.I))
 			{err <- 1
@@ -37,7 +37,7 @@ fn.quality.check <- function(parm)
 	if (sum(diag(parm$clust$tBB.mt) < 0) > 0)
 		{err <- 2
 		}
-	
+
 	if (ncol(parm$clust$A.mt) != parm$clust$G)
 		{err <- 3
 		}
@@ -50,11 +50,11 @@ fn.quality.check <- function(parm)
 		{err <- 5
 		}
 
-	if (length(parm$clust$n.vec) != parm$clust$K) 
+	if (length(parm$clust$n.vec) != parm$clust$K)
 		{err <- 6
 		}
 
-	if (length(parm$clust$phi.v) != parm$clust$K) 
+	if (length(parm$clust$phi.v) != parm$clust$K)
 		{err <- 7
 		}
 
@@ -69,7 +69,7 @@ fn.quality.check <- function(parm)
 ######################
 
 fn.init.clusters <- function(parm)
-{	
+{
 	X.mt <- parm$X
 	num.centers <- parm$G.new
 
@@ -93,14 +93,14 @@ fn.init.clusters <- function(parm)
 	# start from PDP model with d=0 (i.e DP)
 	parm$d <- 0
 
- 
+
 	parm
 }
 
 
 fn.eda <- function(parm, data)
-{	
-	
+{
+
 	parm <- fn.init.clusters(parm)
 	# reintroduced on 6/29/12
 	parm$G.max <- min(parm$p/2, round(parm$clust$G*1.1))
@@ -122,7 +122,7 @@ fn.eda <- function(parm, data)
 	parm$clust$C.m0 <- parm$p - sum(parm$clust$C.m.vec)
 
 	parm$clust$M <- parm$a.R
-	parm$clust$M0 <- .01*parm$clust$M 
+	parm$clust$M0 <- .01*parm$clust$M
 
 	parm$clust$K <- data$K.max
 
@@ -130,7 +130,7 @@ fn.eda <- function(parm, data)
 
 	parm$clust$mu2 <- mean(as.vector(parm$X))
 	parm$clust$tau2 <- diff(range(as.vector(parm$X)))/6
-	
+
 	#################################
 
 	parm$g <- rep(1:parm$clust$G,each=parm$n2)
@@ -138,10 +138,12 @@ fn.eda <- function(parm, data)
 
 	parm$Y <- as.vector(parm$Y)
 
-	tmp <- kmeans(parm$Y, iter.max=1000, centers=data$K.max, nstart=10)
+	tmp <- kmeans(parm$Y, iter.max=1000, centers=data$K.max, nstart=10,
+	              #algorithm = "MacQueen" # comment out for consistency with SG original code
+	              )
 	parm$clust$s.v <- tmp$cluster
 	parm$clust$phi.v <- as.vector(tmp$centers)
-	
+
 	parm$clust$n.vec <- tmp$size
 	# number of s equal to 0
 	parm$clust$n0 <- 0
@@ -166,13 +168,13 @@ fn.eda <- function(parm, data)
 
 	###################################
 
-	parm$tau_0 <- sqrt(1+parm$tau^2)	
-	
+	parm$tau_0 <- sqrt(1+parm$tau^2)
+
 	# 1-parm$tau^2/var(as.vector(parm$X))
 
 	## objects of full size (based on all n2 cases)
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
-	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt	
+	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
 
 	parm <- fn.assign.priors(parm, data)
 
@@ -200,7 +202,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 	parm$G.new <- data$G.max
 	tmp <- fn.eda(parm, data)
 	parm <- tmp[[2]]
-	
+
 	#################
 
 	parm <- fn.hyperparameters(data, parm)
@@ -209,22 +211,22 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
-	
+
 	parm
 
 	}
-		
+
 fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
 	{
 
 #	parm <- true_parm
 
 	parm <- NULL
-		
+
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
-			
-	# mass parameter of elementwise(s) groups 
+
+	# mass parameter of elementwise(s) groups
 	# stored later in parm$clust$M
 	parm$a.R <- true$a.R
 
@@ -233,7 +235,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 	# mass paramater of column-intercept cluster
 	parm$b0 <- true$b0
-	
+
 #	parm$clust$C.m0 <- 0
 #
 #	parm$clust$A.mt <- array(,c(parm$n2,parm$clust$G))
@@ -260,7 +262,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 	# delta-neighborhood threshold for elements
 	parm$row.delta <- .1
-	
+
 	#########################################
 	# generating the R- and C- clusters
 	########################################
@@ -270,7 +272,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 
 	parm <- fn.assign.priors(parm, data)
-	
+
 	parm
 
 	}
@@ -278,23 +280,23 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 fn.assign.priors <- function(parm, data)
 	{
-	
+
 	parm$prior$tau <- NULL
 	parm$prior$tau$alpha.tau <- 1e-2
 	parm$prior$tau$beta.tau <- 1e-2
-	
+
 	parm$prior$tau$max <- sqrt(.75)*sd(as.vector(data$X), na.rm=TRUE)
 	parm$prior$tau$min <- 1e-10
 	parm$prior$tau.sq$max <- parm$prior$tau$max^2
 	parm$prior$tau.sq$min <- parm$prior$tau$min^2
 	parm$prior$inv.tau.sq$max <- 1/parm$prior$tau.sq$min
 	parm$prior$inv.tau.sq$min <- 1/parm$prior$tau.sq$max
-		
+
 	parm
 	}
 
 
- 
+
 ########################################
 
 fn.gen.tau  <- function(data, parm)
@@ -304,7 +306,7 @@ fn.gen.tau  <- function(data, parm)
 	###################
 
 	# only covariates assigned to non-zero row and non-zero group clusters matter
-	
+
 	sum.resid.sq <- 0
 	count <- 0
 
@@ -320,7 +322,7 @@ fn.gen.tau  <- function(data, parm)
 			count <- count + sum(z.g.v)*sum(flag.v)
 			}
 
-		}	
+		}
 
 	shape <- parm$prior$tau$alpha + count/2
 	rate <- parm$prior$tau$beta + sum.resid.sq/2
@@ -344,7 +346,7 @@ fn.gen.tau  <- function(data, parm)
 	###################
 
 	# only covariates assigned to intercept cluster matter
-	
+
 	sum.resid.sq <- 0
 	flag.v <- parm$clust$c.v == 0
 	count <- parm$clust$C.m0*parm$n2
@@ -353,9 +355,9 @@ fn.gen.tau  <- function(data, parm)
 			{X.g.mt <- parm$X[,flag.v]
 			a.g.v <- rep(1,parm$n2)
 			resid.g.mt <- X.g.mt - a.g.v
-			sum.resid.sq <- sum.resid.sq + sum(resid.g.mt^2) 
+			sum.resid.sq <- sum.resid.sq + sum(resid.g.mt^2)
 			}
-	
+
 
 	shape <- parm$prior$tau$alpha + count/2
 	rate <- parm$prior$tau$beta + sum.resid.sq/2
@@ -396,7 +398,7 @@ fn.gen.tau_0  <- function(data, parm)
 
 		if ((sum(1-z.g.v) > 0) & (sum(flag.v)>0))
 			{X.g.mt <- parm$X[!z.g.v,flag.v]
-			resid.g.mt <- X.g.mt 
+			resid.g.mt <- X.g.mt
 			sum.resid.sq <- sum.resid.sq + sum(resid.g.mt^2)
 			count <- count + sum(1-z.g.v)*sum(flag.v)
 			}
@@ -405,7 +407,7 @@ fn.gen.tau_0  <- function(data, parm)
 	shape <- 1 + count/2
 	rate <- 1 + sum.resid.sq/2
 
-	# minimum possible value of parm$tau_0 = 1.5 * maximum possible value of parm$tau 
+	# minimum possible value of parm$tau_0 = 1.5 * maximum possible value of parm$tau
 	# maximum possible value of parm$tau_0 = 3 * sd(as.vector(data$X))
 	u.min <- pgamma(1/9 / var(as.vector(data$X),na.rm=TRUE),shape=shape, rate=rate)
 	u.max <- pgamma(1/1.5^2/parm$prior$tau.sq$min,shape=shape, rate=rate)
@@ -431,13 +433,13 @@ fn.hyperparameters <- function(data, parm)
 
 
 fn.funky <- function(s,t)
-	{# on log scale 
-	lgamma(s+t) - lgamma(s) 
+	{# on log scale
+	lgamma(s+t) - lgamma(s)
 	}
 
 fn.d <- function(d, parm)
 	{
-	
+
 	# formula in review paper by Lijoi and Prunster
 	log.lik <- sum(log(parm$b1 + (1:(parm$clust$G-1))*d)) - fn.funky((parm$b1+1), (parm$p-1)) + sum(fn.funky((1-d), (parm$clust$C.m.vec-1)))
 
@@ -449,7 +451,7 @@ fn.d <- function(d, parm)
 
 fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 	{
-	
+
 
 	## update parm$d conditional on parm$b1
 	## 1/w must be an integer
@@ -462,7 +464,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 	log.lik.v <- sapply(d.v, fn.d, parm)
 	# putting 1/2 prior mass on 0 and remaining spread uniformly on positive points in d.v
 	log.p.v <- log(.5) + c(0,  rep(-log(len-1),(len-1)))
-	
+
 	log.post.v <- log.lik.v + log.p.v
 	log.post.v <- log.post.v - max(log.post.v)
 	post.v <- exp(log.post.v)
@@ -471,14 +473,14 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 	# plot(d.v, post.v, type="l")
 
 	prop.d <- sample(d.v, size=1, prob=post.v)
-	
+
 	if (prop.d > 0)
 		{prop.d <- runif(n=1, min=(prop.d-w), max=(prop.d+w))
 		}
 
 	if (prop.d != parm$d)
 		{
-		# MH ratio for independent proposals and 
+		# MH ratio for independent proposals and
 		# prior same for all d (which is true if 0 wp .5 and \in (0,max.d) wp .5)
 
 		log.ratio <- fn.d(d=prop.d, parm) - fn.d(d=parm$d, parm)
@@ -490,7 +492,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 		}
 
 	parm
-	
+
 	}
 
 ########################################
@@ -500,10 +502,10 @@ fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm <- PDP_fn.main(parm, data, col.frac.probes)
 
 	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes)
-	
+
 	parm <- fn.poissonDP.hyperparm(data, parm, w=.01, max.d=1)
 
-	parm <- fn.hyperparameters(data, parm)	
+	parm <- fn.hyperparameters(data, parm)
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
@@ -558,7 +560,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K
-		All.Stuff$tau.v[cc] <- parm$tau 
+		All.Stuff$tau.v[cc] <- parm$tau
 		All.Stuff$tau_0.v[cc] <- parm$tau_0
 		All.Stuff$tau_int.v[cc] <- parm$tau_int
 
@@ -569,7 +571,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 		All.Stuff$row.flip.v[cc]  <- parm$clust$row.flip
 
 		All.Stuff$gibbs.new_col_clust.v[cc]  <- parm$clust$gibbs.new.flag
-		
+
 		tmp.mat <- array(0,c(parm$p,parm$p))
 
 		for (jj in 1:parm$clust$G)
@@ -590,7 +592,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 	All.Stuff$init.parm <- init.parm
 
 	###
-	
+
 	All.Stuff
 	}
 
