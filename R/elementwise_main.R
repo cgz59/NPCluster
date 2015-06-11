@@ -1,7 +1,7 @@
 
 fn1.update.element.objects <- function(parm)
 	{
-	
+
 	parm$clust$s.mt <- array(parm$clust$s.v, c(parm$n2, parm$clust$G))
 
 	for (g in 1:parm$clust$G)
@@ -33,13 +33,13 @@ fn1.update.element.objects <- function(parm)
 
 fn2.update.element.objects <- function(parm)
 	{
-	
+
 	parm$Y <- parm$X.sd <- array(,c(parm$n2, parm$clust$G))
 
-	# group covariate tells which parm$clust$rho.g 
+	# group covariate tells which parm$clust$rho.g
 	# to use for likelihood calculation
 	parm$g <- rep(1:parm$clust$G,each = parm$n2)
-		
+
 	for (g in 1:parm$clust$G)
 		{I.g <- (parm$clust$c.v==g)
 		 m.g <- parm$clust$C.m.vec[g]
@@ -74,15 +74,16 @@ fn2.update.element.objects <- function(parm)
 
 
 
-fn.element.DP <- function(data, parm, max.row.nbhd.size, row.frac.probes)
-{ 	
-	# essentially, a Bush-Mac move: given groups, the parm$N=n2XG number of 
+fn.element.DP <- function(data, parm, max.row.nbhd.size, row.frac.probes,
+                          computeMode)
+{
+	# essentially, a Bush-Mac move: given groups, the parm$N=n2XG number of
 	# invidividual elements (summaries of microarray elements) belonging to group g>0
 	# are updated for s (phi) and z
 
 	parm <- fn2.update.element.objects(parm)
 
-	parm <- element_fn.fast.DP(parm, max.row.nbhd.size, row.frac.probes)
+	parm <- element_fn.fast.DP(parm, max.row.nbhd.size, row.frac.probes, computeMode)
 
 	#############################
 	## Important: do not remove call to fn1.update.element.objects

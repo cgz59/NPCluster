@@ -133,9 +133,11 @@ element_fn.nbhd <- function(I, parm, max.row.nbhd.size)
 
 
 
-element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
+element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, computeMode)
 
 	{
+
+  if (computeMode == "R") {
 
 	################################################
 	### Compute pmf of cluster variables w_1,...,w_n
@@ -191,9 +193,7 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 	### now compute the delta-neighborhoods
 	#########################################
 
-	# START
-	# set.seed(666)
-	# END
+  # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
 
 	I <- parm$row.subset.I
 	parm$clust$row.nbhd <- NULL
@@ -209,37 +209,42 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size)
 		parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, k)
 		}
 
-
+  } else { # computeMode != "R"
 
 
 	# START
-	# print(paste(max(parm$row.subset.I), min(parm$row.subset.I), length(parm$row.subset.I)))
-# 	engine <- createEngine(sort = TRUE)
-# 	set.seed(666)
-# 	test <- .computePmfAndNeighborhoods(engine$engine,
-# 	                            parm$clust$n0, parm$clust$n.vec, 1e-3, 1e-5,
-# 	                            parm$clust$K, parm$N,
-# 	                            parm$Y, parm$X.sd, parm$row.subset.I,
-# 	                            parm$clust$C.m.vec, parm$n2,
-# 	                            parm$clust$phi.v, parm$tau, parm$tau_0,
-# 	                            max.row.nbhd.size, parm$row.delta)
+	# .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+
+	engine <- createEngine(sort = TRUE)
+	test <- .computePmfAndNeighborhoods(engine$engine,
+	                            parm$clust$n0, parm$clust$n.vec, 1e-3, 1e-5,
+	                            parm$clust$K, parm$N,
+	                            parm$Y, parm$X.sd, parm$row.subset.I,
+	                            parm$clust$C.m.vec, parm$n2,
+	                            parm$clust$phi.v, parm$tau, parm$tau_0,
+	                            max.row.nbhd.size, parm$row.delta)
+
+# 	if (!all(parm$clust$row.nbhd.k == test$index)) {
+# 	  stop("Error in C++ draw")
+# 	}
 #
-# 	# print(log.ss.mt[,parm$row.subset.I[1]])
-# 	#       K <- parm$clust$K
-# 	# 			print(parm$clust$phi.v[K])
-# 	# 			print(parm$tau)
-# 	# 			print(num.k.v[1])
-# 	# 			print(Y.v[1])
-# 	# 			print(X.sd.v[1])
-# 	# 			print(element_fn.log.lik(mean=parm$clust$phi.v[K], sd=parm$tau, num=num.k.v[1], Y=Y.v[1], X.sd=X.sd.v[1]))
-# 	#
-# 	# 	 print(ss.mt[,parm$row.subset.I[1]])
-# 	# 	 print(sum(ss.mt, na.rm = TRUE))
-#
-# 	# print(k)
-# 	# print(tmp3.mt[,1])
-#
-# 	print(test$neighbor)
+# 	if (!all(unlist(parm$clust$row.nbhd) == test$neighbor)) {
+# 	  stop("Error in C++ draw")
+# 	}
+
+
+	# Convert from simple flat format to list of int vectors
+	end <- test$offset[-1] - 1
+	begin <- test$offset
+	length(begin) <- length(begin) - 1
+
+	parm$clust$row.nbhd <- lapply(1:length(begin),
+	                              FUN = function(x) {
+	                                test$neighbor[begin[x]:end[x]]
+	                              })
+	parm$clust$row.nbhd.k <- test$index
+
+  } # computeMode
 
 	## END
 
@@ -589,7 +594,7 @@ element_fn.drop <- function(parm)
 
 
 
-element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes)
+element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes, computeMode)
 {
 
 	if (row.frac.probes < 1)
@@ -604,7 +609,7 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes)
 	# compute delta-neighborhoods
 	#########################
 
-	parm <- element_fn.post.prob.and.delta(parm, max.row.nbhd.size)
+	parm <- element_fn.post.prob.and.delta(parm, max.row.nbhd.size, computeMode)
 
 	err <- element_fn.consistency.check(parm)
 	if (err > 0)

@@ -184,7 +184,7 @@ fn.eda <- function(parm, data)
 
 
 
-fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes)
+fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 	{
 
 	# first, impute missing X values by their column-specific means
@@ -207,7 +207,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 
 	parm <- fn.hyperparameters(data, parm)
 
-	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes=1)
+	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes=1, computeMode)
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
@@ -216,7 +216,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 
 	}
 
-fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
+fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode = "R")
 	{
 
 #	parm <- true_parm
@@ -268,7 +268,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	########################################
 
 	parm$shift <- true$shift
-	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes)
+	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 
 
 	parm <- fn.assign.priors(parm, data)
@@ -497,11 +497,12 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 
 ########################################
 
-fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
+fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
+                    computeMode)
 	{
 	parm <- PDP_fn.main(parm, data, col.frac.probes)
 
-	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes)
+	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes, computeMode)
 
 	parm <- fn.poissonDP.hyperparm(data, parm, w=.01, max.d=1)
 
@@ -522,11 +523,12 @@ fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 
 
-fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
+fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
+                    computeMode = "R")
 	{
 
 	# initialize
-	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
+	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
 	init.parm <- parm
 
 	err <- fn.quality.check(parm)
@@ -535,7 +537,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 		}
 
 	for (cc in 1:n.burn)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "BURN = ",cc,date(),"***********"))
@@ -556,7 +558,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
 	for (cc in 1:n.reps)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K
