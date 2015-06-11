@@ -185,14 +185,14 @@ private:
 			drawNextNeighborhood(beginI, endI, list, offset, index,
 				cutOff, maxSize, K);
 	  	}
- 	  	offset.push_back(list.size()); // Inclusive counting
+ 	  	offset.push_back(list.size() + 1); // Inclusive counting
 	}
 
 	void drawNextNeighborhood(FastIterator& begin, const FastIterator& end,
 							  StdIntVector& list, StdIntVector& offset, StdIntVector& index,
 							  double cutOff,
 							  const int maxSize, const int K) {
-		offset.push_back(list.size()); // Add next offset to a neighborhood
+		offset.push_back(list.size() + 1); // Add next offset to a neighborhood
 		if (std::distance(begin, end) == 1) {
 			// Singleton
 			list.push_back(begin->second);
