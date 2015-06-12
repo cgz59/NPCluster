@@ -193,8 +193,28 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		}
 
 	x.mt <- matrix(parm$X[,k], ncol=1)
+
+	if (computeMode == "R") {
+
 	# intercept cluster or any existing cluster
-	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE)
+	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE) # HOT
+
+
+  } else { # computeMode
+    engine <- createEngine(sort = TRUE)
+    test <- .computePdpLogLikelihood(engine$engine, k, parm$X,
+                                     parm$clust$A.mt, parm$clust$s.mt,
+                                     parm$clust$G, parm$n2,
+                                     parm$tau, parm$tau_0, parm$tau_int, FALSE)
+    L.v <- test$logLikehood
+  } # computeMode
+  # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
+
+# 	abs <- abs(L.v - test$logLikelihood)
+# 	pass <- all(abs < 1e-14)
+# 	if(!pass) {
+# 	  stop("bad compute")
+# 	}
 
 	#######################################################
 	### emptied clusters are gone forever under Gibbs sampling

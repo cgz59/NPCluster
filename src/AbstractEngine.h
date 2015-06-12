@@ -37,6 +37,74 @@ public:
   // virtual void computePmfAndNeighborhoods() = 0; // pure virtual
 
 
+  Rcpp::List computePdpLogLikelihood(const int k, const Rcpp::NumericMatrix& X,
+							const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
+							const int G, const int N,
+							const double tau, const double tau0, const double tauInt, bool colSums) {
+	using namespace Rcpp;
+
+	if (colSums) {
+		stop("colSums = TRUE is not yet implemented.");
+	}
+
+	// TODO X may be constant, so may consider making single, padded copy for vectorization
+
+	NumericVector logLikelihood(G + 1);
+
+	const auto Xmt = std::begin(X) + (k - 1) * N;
+
+// 	std::for_each(Xmt, Xmt + N, [](double x) {
+// 		std::cerr << " " << x;
+// 	});
+// 	std::cerr << std::endl;
+
+	// gg == 0 case
+
+	const auto tmp = std::accumulate(
+		Xmt, Xmt + N, 0.0,
+		[](double sum, double x) {
+			return (sum + (x - 1.0) * (x - 1.0));
+		}
+	);
+	logLikelihood[0] = -0.5 * tmp / (tauInt * tauInt) - N * 0.5 * std::log(2.0 * M_PI)
+											          - N * std::log(tauInt);
+	// gg > 0 cases
+	for (int gg = 1; gg <= G; ++gg) { // TODO Parallelize
+		auto Xmtgg = Xmt;
+		auto Agg = std::begin(A) + (gg - 1) * N;
+		auto Sgg = std::begin(S) + (gg - 1) * N;
+
+		const auto   occupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau);
+		const auto unoccupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau0);
+
+		auto tmp = 0.0;
+		for (int i = 0; i < N; ++i) { // TODO Could use std::accumulate with zip(Agg, Sgg)
+			if (*Sgg == 0) {
+				tmp += -0.5 * (*Xmtgg) * (*Xmtgg) / (tau0 * tau0) + unoccupied;
+			} else {
+				tmp += -0.5 * (*Xmtgg - *Agg) * (*Xmtgg - *Agg) / (tau * tau) + occupied;
+			}
+			++Xmtgg;
+			++Agg;
+			++Sgg;
+		}
+		logLikelihood[gg] = tmp;
+	}
+
+// 	for (auto x : logLikelihood) {
+// 		std::cerr << " " << x;
+// 	}
+// 	std::cerr << std::endl;
+
+	return Rcpp::List::create(
+		Rcpp::Named("logLikelihood") = logLikelihood
+	);
+  }
+
+
+
+
+
   double logLikelihood(double mean, double sd, int num, double Y, double Xsd) {
   	return -num / 2.0 * std::log(2.0 * M_PI * sd * sd)
   		- 0.5 * num * (Y - mean) * (Y - mean) / (sd * sd)
