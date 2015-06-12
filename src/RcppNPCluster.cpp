@@ -3,6 +3,7 @@
  */
 
 #include "Rcpp.h"
+#include "RcppEigen.h"
 
 #include "AbstractEngine.h"
 
@@ -74,4 +75,13 @@ Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K) {
 	}
 
 	return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+}
+
+// [[Rcpp::export(.fastXtX)]]
+Rcpp::NumericMatrix fastXtX(const Rcpp::NumericMatrix& rX) {
+	using namespace Eigen;
+  using namespace Rcpp;
+	const Map<MatrixXd> X(as<Map<MatrixXd> >(rX));
+
+	return wrap(X.transpose() * X);
 }

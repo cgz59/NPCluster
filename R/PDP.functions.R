@@ -194,7 +194,8 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
 	x.mt <- matrix(parm$X[,k], ncol=1)
 
-	if (computeMode == "R") {
+	exactMatchResults <- FALSE # TODO move into computeModel object
+	if (computeMode == "R" | exactMatchResults) {
 
 	# intercept cluster or any existing cluster
 	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE) # HOT
@@ -353,9 +354,14 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		tmp.a.v[indxx] <- 0
 		tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
 		#
-		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v)
+		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
-		parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+
+		if (computeMode == "R") {
+		  parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
+		} else {
+		  parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
+		}
   } # end  if (new.flag)
 
 
