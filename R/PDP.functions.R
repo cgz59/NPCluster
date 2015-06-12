@@ -1,7 +1,7 @@
 
 PDP_fn.compact.consistency.check <- function(parm)
 	{err <- 0
-	
+
 	if (max(sort(unique(parm$clust$c.v))) != parm$clust$G)
 		{err <- 1
 		}
@@ -19,17 +19,17 @@ PDP_fn.compact.consistency.check <- function(parm)
 
 PDP_fn.consistency.check <- function(parm)
 	{err <- 0
-	
-	
+
+
 	if (sum(parm$clust$C.m.vec) + parm$clust$C.m0 != parm$p)
 		{err <- 4
 		}
 
-	if (length(parm$clust$n.vec) != parm$clust$K) 
+	if (length(parm$clust$n.vec) != parm$clust$K)
 		{err <- 9
 		}
 
-	if (length(parm$clust$phi.v) != parm$clust$K) 
+	if (length(parm$clust$phi.v) != parm$clust$K)
 		{err <- 10
 		}
 
@@ -53,15 +53,15 @@ PDP_fn.swap.clusters <- function(parm, g1, g2)
 	buffer <- parm$clust$s.mt[,g1]
 	parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2]
 	parm$clust$s.mt[,g2] <- buffer
-							
+
 	buffer <- parm$clust$beta.v[g1]
 	parm$clust$beta.v[g1] <- parm$clust$beta.v[g2]
 	parm$clust$beta.v[g2] <- buffer
-				
+
 	buffer <- parm$clust$gamma.v[g1]
 	parm$clust$gamma.v[g1] <- parm$clust$gamma.v[g2]
 	parm$clust$gamma.v[g2] <- buffer
-			
+
 	buffer <- parm$clust$C.m.vec[g1]
       parm$clust$C.m.vec[g1] <- parm$clust$C.m.vec[g2]
       parm$clust$C.m.vec[g2] <- buffer
@@ -92,7 +92,7 @@ PDP_fn.swap.clusters <- function(parm, g1, g2)
 	buffer <- parm$clust$tBB.mt[(g1+1),]
 	parm$clust$tBB.mt[(g1+1),] <- parm$clust$tBB.mt[(g2+1),]
 	parm$clust$tBB.mt[(g2+1),] <- buffer
-	
+
 	parm
 	}
 
@@ -122,7 +122,7 @@ PDP_fn.clip.clusters <- function(parm, keep)
 
 
 PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
-	{	
+	{
 	if (gg > 0)
 		{a2.v <- parm$clust$A.mt[,gg]
 		z.g.v <- parm$clust$s.mt[,gg] > 0
@@ -173,7 +173,7 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 ###########################################################
 
 
-PDP_fn.gibbs <- function(k, parm, data)
+PDP_fn.gibbs <- function(k, parm, data, computeMode)
 {	k <- parm$k
 
 	err <- PDP_fn.consistency.check(parm)
@@ -184,7 +184,7 @@ PDP_fn.gibbs <- function(k, parm, data)
 	old.c.k <- parm$clust$c.v[k]
 
 	###############
-	
+
 	if (old.c.k > 0)
 		{parm$clust$C.m.vec[old.c.k] <- parm$clust$C.m.vec[old.c.k] - 1
 		}
@@ -194,27 +194,33 @@ PDP_fn.gibbs <- function(k, parm, data)
 
 	x.mt <- matrix(parm$X[,k], ncol=1)
 	# intercept cluster or any existing cluster
-	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE) 
+	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE)
 
 	#######################################################
-	### emptied clusters are gone forever under Gibbs sampling 
+	### emptied clusters are gone forever under Gibbs sampling
 	#######################################################
-	
+
 	emptied.indx <- which(parm$clust$C.m.vec==0)
 	new.G <- parm$clust$G - length(emptied.indx)
 
   if (length(emptied.indx) >0)
   	{
     	new.s.mt <- parm$clust$s.mt[,-emptied.indx]
-    	new.n.vec <- array(,parm$clust$K)
-    	for (pp in 1:parm$clust$K)
-    		{new.n.vec[pp] <- sum(new.s.mt==pp)
-      		}
+
+    	if (computeMode == "R") {
+    	  new.n.vec <- array(,parm$clust$K)
+    	  for (pp in 1:parm$clust$K) {
+    	    new.n.vec[pp] <- sum(new.s.mt==pp) # HOT
+    	  }
+    	} else { # computeMode
+    	  new.n.vec <- .fastTabulate(new.s.mt, parm$clust$K)
+    	} # computeMode
+
     	emptied.s.indx <- which(new.n.vec==0)
-    	new.K <- parm$clust$K-length(emptied.s.indx) 
+    	new.K <- parm$clust$K-length(emptied.s.indx)
    	 new.n0 <- sum(new.s.mt==0)
    	}
-  
+
   if (length(emptied.indx) ==0)
   	{
     	new.s.mt <- parm$clust$s.mt
@@ -222,10 +228,10 @@ PDP_fn.gibbs <- function(k, parm, data)
     	emptied.s.indx <- which(new.n.vec==0)
     	new.K <- parm$clust$K
     	new.n0 <- parm$clust$n0
-    }	
-  
-  ## generate auxilliary P vector 
-  
+    }
+
+  ## generate auxilliary P vector
+
   tmp.M <- rep(parm$clust$M/new.K,parm$clust$K)
   tmp.alpha <- tmp.M+new.n.vec
   tmp.alpha[emptied.s.indx] <- 0
@@ -241,22 +247,22 @@ PDP_fn.gibbs <- function(k, parm, data)
    	marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
   	}
   marg.log.lik <- sum(marg.log.lik.v)
-  
-  L.v <- c(L.v, marg.log.lik) 
-  
+
+  L.v <- c(L.v, marg.log.lik)
+
 	log.prior.v <- array(NA, (2+parm$clust$G))
-	
+
   # allow -Inf's in Gibbs sampling log-prior (just emptied clusters)
-	if (length(emptied.indx) >0) 
+	if (length(emptied.indx) >0)
 		{log.prior.v[-(emptied.indx+1)] <- log(c((parm$b0+parm$clust$C.m0), (parm$clust$C.m.vec[-emptied.indx]-parm$d), (parm$b1+new.G*parm$d)))
 		log.prior.v[emptied.indx+1] <- -Inf
 		}
 
-	if (length(emptied.indx) ==0) 
+	if (length(emptied.indx) ==0)
 		{log.prior.v <- log(c((parm$b0+parm$clust$C.m0), (parm$clust$C.m.vec-parm$d), (parm$b1+new.G*parm$d)))
 		}
 
-	tmp2 <- log.prior.v + L.v 
+	tmp2 <- log.prior.v + L.v
 	maxx <- max(tmp2)
 	tmp2 <- tmp2 - maxx
 
@@ -266,7 +272,7 @@ PDP_fn.gibbs <- function(k, parm, data)
 	parm$clust$post.k <- parm$clust$post.k / sum(parm$clust$post.k)
 
 	########################################################################
-	# store current state 
+	# store current state
 	old.parm <- parm
 
 	########################################################################
@@ -279,12 +285,12 @@ PDP_fn.gibbs <- function(k, parm, data)
 
 	count.0 <- sum(new.c.k==0)
 	parm$clust$C.m0 <- parm$clust$C.m0 + count.0
-	
+
 	if ((count.0 == 0)&(!new.flag))
-		{parm$clust$C.m.vec[new.c.k] <- parm$clust$C.m.vec[new.c.k] + 1			 
+		{parm$clust$C.m.vec[new.c.k] <- parm$clust$C.m.vec[new.c.k] + 1
 		}
 
-	if (new.flag) 
+	if (new.flag)
   {
     ###generate the latent vector first, condition on the single kth column
     cand.s.v.k <- array(,length(x.mt))
@@ -297,16 +303,16 @@ PDP_fn.gibbs <- function(k, parm, data)
       	cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v)
         }
     parm$cand$s.v.k <- cand.s.v.k
-    
+
     parm$cand$n.vec.k <- array(,parm$clust$K)
     for (gg in 1:parm$clust$K)
     	{parm$cand$n.vec.k[gg] <- sum(cand.s.v.k==gg)
     	}
     parm$cand$n0.k <- sum(cand.s.v.k==0)
-    
+
   ##################
    parm$clust$G <- parm$clust$G + 1
-					
+
 		parm$clust$C.m.vec <- c(parm$clust$C.m.vec, 1)
 
 		parm$clust$beta.v <- c(parm$clust$beta.v, 0)
@@ -315,10 +321,10 @@ PDP_fn.gibbs <- function(k, parm, data)
    parm$clust$s.v <- c(parm$clust$s.v, parm$cand$s.v.k)
 
 		parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
-	
+
    parm$clust$n.vec <- parm$clust$n.vec + parm$cand$n.vec.k
    parm$clust$n0 <- parm$clust$n0 + parm$cand$n0.k
-	
+
 		parm$N <- sum(parm$clust$n.vec) + parm$clust$n0
 
    tmp.a.v <- array(,parm$n2)
@@ -330,7 +336,7 @@ PDP_fn.gibbs <- function(k, parm, data)
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v)
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
 		parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
-  } # end  if (new.flag) 
+  } # end  if (new.flag)
 
 
 	list(parm, new.flag)
@@ -347,7 +353,7 @@ PDP_fn.drop <- function(parm)
 	##########################################
 	## Drop empty clusters:
 	## (i)  Move empty clusters to end by relabeling clusters
-	## (ii) Set parm$clust$G equal to number of non-empty clusters 
+	## (ii) Set parm$clust$G equal to number of non-empty clusters
 	## (ii) Retain only clusters  1,...,parm$clust$G
 	#########################################
 
@@ -368,8 +374,8 @@ PDP_fn.drop <- function(parm)
 			}
 		parm <- PDP_fn.swap.clusters(parm, g1=new.label, g2=old.label)
  		}
-	} 
-		
+	}
+
 	##########
 
 	keep <- 1:parm$clust$G
@@ -396,10 +402,10 @@ PDP_fn.drop <- function(parm)
 
 
 
-PDP_fn.main <- function(parm, data, col.frac.probes)
-{		
+PDP_fn.main <- function(parm, data, col.frac.probes, computeMode)
+{
 	p <- parm$p
-	
+
 	if (col.frac.probes < 1)
 		{parm$col.subset.I <- sort(sample(1:p, round(col.frac.probes*p)))
 		}
@@ -415,23 +421,23 @@ PDP_fn.main <- function(parm, data, col.frac.probes)
 
 			parm$k <- cc
 
-			tmp <- PDP_fn.gibbs(k=parm$k, parm, data)
+			tmp <- PDP_fn.gibbs(k=parm$k, parm, data, computeMode)
 			parm <- tmp[[1]]
 			gibbs.new.flag.v <- c(gibbs.new.flag.v, tmp[[2]])
-				
+
 			}
 
 	err <- PDP_fn.consistency.check(parm)
 	if (err > 0)
 			{stop(paste("LOOP: failed consistency check: err=",err))
-			}		
-			
+			}
+
 	parm$clust$gibbs.new.flag <- mean(gibbs.new.flag.v)
-	
+
 	##########################################
 	## Drop empty group clusters:
 	## (i)  Move empty clusters to end by relabeling clusters
-	## (ii) Set parm$clust$G equal to number of non-empty clusters 
+	## (ii) Set parm$clust$G equal to number of non-empty clusters
 	## (ii) Retain only clusters  1,...,parm$clust$G
 	#########################################
 

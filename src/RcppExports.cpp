@@ -64,3 +64,15 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// fastTabulate
+Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K);
+RcppExport SEXP NPCluster_fastTabulate(SEXP matSEXP, SEXP KSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    __result = Rcpp::wrap(fastTabulate(mat, K));
+    return __result;
+END_RCPP
+}

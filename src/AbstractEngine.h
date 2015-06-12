@@ -179,8 +179,6 @@ private:
 		FastIterator beginI = std::begin(I);
 		const FastIterator endI = std::end(I);
 
-		int loops = 0;
-
 	  	while (beginI != endI) {
 			drawNextNeighborhood(beginI, endI, list, offset, index,
 				cutOff, maxSize, K);

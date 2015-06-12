@@ -1,28 +1,38 @@
 function() {
-	prof <- profileExample(n = 50, p = 250, n.burn = 100, n.reps = 200)
-	rows <- grep("elementwise_DP.functions.R", row.names(prof))
+	prof <- profileExample(n = 100, p = 500, n.burn = 10, n.reps = 20,
+	                       row.frac.probes = 0.25, col.frac.probes = 0.25,
+	                       computeMode = "C")
 
+	# rows <- grep("elementwise_DP.functions.R", row.names(prof))
 
-	prof <- prof[order(expand_numbers(row.names(prof))),]
+	expand_numbers <- function(names) {
+	  names <- sub("R#(\\d)$", "R#000\\1", names)
+	  names <- sub("R#(\\d\\d)$", "R#00\\1", names)
+	  names <- sub("R#(\\d\\d\\d)$", "R#0\\1", names)
+	  names
+	}
+
+	filteredProf <- prof[prof$self.pct >= 1.00,]
+	orderedProf <- filteredProf[order(expand_numbers(row.names(filteredProf))),]
 
 
 }
 
 
-expand_numbers <- function(names) {
-	names <- sub("R#(\\d)$", "R#000\\1", names)
-	names <- sub("R#(\\d\\d)$", "R#00\\1", names)
-	names <- sub("R#(\\d\\d\\d)$", "R#0\\1", names)
-	names
-}
+
 
 
 quick_profile <- function() {
 
+  n <- 100
+  p <- 500
+  n.burn <- 10
+  n.reps <- 20
+
   set.seed(666)
-  simulation <- simulateExample(n = 25, p = 125)
+  simulation <- simulateExample(n = n, p = p)
   system.time(
-      posterior <- fitExample(simulation, n.burn = 100, n.reps = 200, computeMode = "R")
+      posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps, computeMode = "R")
   )
   d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
@@ -32,9 +42,9 @@ quick_profile <- function() {
   se_mean.taxicab
 
   set.seed(666)
-  simulation <- simulateExample(n = 25, p = 125)
+  simulation <- simulateExample(n = n, p = p)
   system.time(
-    posterior <- fitExample(simulation, n.burn = 100, n.reps = 200, computeMode = "C")
+    posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps, computeMode = "C")
   )
   d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
@@ -42,6 +52,7 @@ quick_profile <- function() {
   d_credible.v
   mean.taxicab
   se_mean.taxicab
+
 
 
 #   user  system elapsed

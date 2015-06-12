@@ -5,7 +5,7 @@
 \title{Fit an example DPP model}
 \usage{
 fitExample(data, n.burn = 10, n.reps = 20, max.row.nbhd.size = 50,
-  row.frac.probes = 0.05, col.frac.probes = 0.05)
+  row.frac.probes = 0.05, col.frac.probes = 0.05, computeMode = "R")
 }
 \description{
 \code{fitExample} fits an example DPP model

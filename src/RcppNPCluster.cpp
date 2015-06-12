@@ -52,3 +52,16 @@ Rcpp::List computePmfAndNeighborhoods(SEXP sexp,
                                      phiV, tau, tau0,
                                      maxNeighborhoodSize, cutOff);
 }
+
+// [[Rcpp::export(.fastTabulate)]]
+Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K) {
+	using namespace Rcpp;
+	IntegerVector count(K + 1);
+
+	// TODO Can parallelize this reduction
+	for (auto it = std::begin(mat); it != std::end(mat); ++it) {
+		count[*it]++;
+	}
+
+	return IntegerVector(std::begin(count) + 1, std::end(count));
+}

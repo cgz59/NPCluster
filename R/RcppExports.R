@@ -17,3 +17,7 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_computePmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff)
 }
 
+.fastTabulate <- function(mat, K) {
+    .Call('NPCluster_fastTabulate', PACKAGE = 'NPCluster', mat, K)
+}
+

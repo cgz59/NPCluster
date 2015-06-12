@@ -139,7 +139,7 @@ fn.eda <- function(parm, data)
 	parm$Y <- as.vector(parm$Y)
 
 	tmp <- kmeans(parm$Y, iter.max=1000, centers=data$K.max, nstart=10,
-	              #algorithm = "MacQueen" # comment out for consistency with SG original code
+	              algorithm = "MacQueen" # comment out for consistency with SG original code
 	              )
 	parm$clust$s.v <- tmp$cluster
 	parm$clust$phi.v <- as.vector(tmp$centers)
@@ -500,7 +500,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
                     computeMode)
 	{
-	parm <- PDP_fn.main(parm, data, col.frac.probes)
+	parm <- PDP_fn.main(parm, data, col.frac.probes, computeMode)
 
 	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes, computeMode)
 
