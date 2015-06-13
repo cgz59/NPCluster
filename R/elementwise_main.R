@@ -1,5 +1,5 @@
 
-fn1.update.element.objects <- function(parm)
+fn1.update.element.objects <- function(parm, computeMode)
 	{
 
 	parm$clust$s.mt <- array(parm$clust$s.v, c(parm$n2, parm$clust$G))
@@ -19,19 +19,29 @@ fn1.update.element.objects <- function(parm)
 
 	parm$clust$theta.v <- as.vector(parm$clust$A.mt)
 
-	parm$clust$n.vec <- array(,parm$clust$K)
+	if (computeMode$useR | !computeMode$test1) {
 
-	for (s in 1:parm$clust$K)
-		{parm$clust$n.vec[s] <- sum(parm$clust$s.v==s)
-		}
+	  parm$clust$n.vec <- array(,parm$clust$K)
+	  for (s in 1:parm$clust$K)
+		  {parm$clust$n.vec[s] <- sum(parm$clust$s.v==s)
+	  }
+	  parm$clust$n0 <- sum(parm$clust$s.v==0)
 
-	parm$clust$n0 <- sum(parm$clust$s.v==0)
+	} else {
+
+	  all.n.vec <- .fastTabulateVector(parm$clust$s.v, parm$clust$K, TRUE)
+	  parm$clust$n0 <- all.n.vec[1]
+	  parm$clust$ n.vec <- all.n.vec[-1]
+
+  }
+
+
 
 	parm
 	}
 
 
-fn2.update.element.objects <- function(parm)
+fn2.update.element.objects <- function(parm, computeMode)
 	{
 
 	parm$Y <- parm$X.sd <- array(,c(parm$n2, parm$clust$G))
@@ -67,7 +77,7 @@ fn2.update.element.objects <- function(parm)
 
 	#####################
 
-	parm <- fn1.update.element.objects(parm)
+	parm <- fn1.update.element.objects(parm, computeMode)
 
 	parm
 	}
@@ -81,7 +91,7 @@ fn.element.DP <- function(data, parm, max.row.nbhd.size, row.frac.probes,
 	# invidividual elements (summaries of microarray elements) belonging to group g>0
 	# are updated for s (phi) and z
 
-	parm <- fn2.update.element.objects(parm)
+	parm <- fn2.update.element.objects(parm, computeMode)
 
 	parm <- element_fn.fast.DP(parm, max.row.nbhd.size, row.frac.probes, computeMode)
 
@@ -90,7 +100,7 @@ fn.element.DP <- function(data, parm, max.row.nbhd.size, row.frac.probes,
 	## updates A.mt, theta.v, B.mt, tBB.mt, s.v, s.mt, n.vec, n0
 	#############################
 
-	parm <- fn1.update.element.objects(parm)
+	parm <- fn1.update.element.objects(parm, computeMode)
 
   	parm
 }

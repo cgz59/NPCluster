@@ -17,7 +17,7 @@ EnginePtr parsePtr(SEXP sexp) {
 	return ptr;
 }
 
- 
+
 // [[Rcpp::export(.createEngine)]]
 Rcpp::List createEngine(bool sort) {
 
@@ -75,6 +75,23 @@ Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K) {
 	}
 
 	return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+}
+
+// [[Rcpp::export(.fastTabulateVector)]]
+Rcpp::IntegerVector fastTabulateVector(const Rcpp::IntegerVector& vec, const int K,
+                                       const bool includeZero) {
+  using namespace Rcpp;
+  IntegerVector count(K + 1);  // C uses 0-indexing
+
+  for (auto it = std::begin(vec); it != std::end(vec); ++it) {
+    count[*it]++;
+  }
+
+  if (includeZero) {
+    return count;
+  } else {
+    return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+  }
 }
 
 // [[Rcpp::export(.fastXtX)]]

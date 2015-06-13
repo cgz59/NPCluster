@@ -98,6 +98,19 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// fastTabulateVector
+Rcpp::IntegerVector fastTabulateVector(const Rcpp::IntegerVector& vec, const int K, const bool includeZero);
+RcppExport SEXP NPCluster_fastTabulateVector(SEXP vecSEXP, SEXP KSEXP, SEXP includeZeroSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type vec(vecSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< const bool >::type includeZero(includeZeroSEXP);
+    __result = Rcpp::wrap(fastTabulateVector(vec, K, includeZero));
+    return __result;
+END_RCPP
+}
 // fastXtX
 Rcpp::NumericMatrix fastXtX(const Rcpp::NumericMatrix& rX);
 RcppExport SEXP NPCluster_fastXtX(SEXP rXSEXP) {

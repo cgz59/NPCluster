@@ -25,6 +25,10 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_fastTabulate', PACKAGE = 'NPCluster', mat, K)
 }
 
+.fastTabulateVector <- function(vec, K, includeZero) {
+    .Call('NPCluster_fastTabulateVector', PACKAGE = 'NPCluster', vec, K, includeZero)
+}
+
 .fastXtX <- function(rX) {
     .Call('NPCluster_fastXtX', PACKAGE = 'NPCluster', rX)
 }
