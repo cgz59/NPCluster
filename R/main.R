@@ -41,6 +41,9 @@ simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
 #' se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
 #' }
 #'
+#' @useDynLib NPCluster, .registration = TRUE
+#' @importFrom Rcpp evalCpp
+#'
 #' @export
 fitExample <- function(data,
 											 n.burn = 10,
@@ -48,11 +51,15 @@ fitExample <- function(data,
 											 max.row.nbhd.size = 50, # should be small compared to n2 * G
 											 row.frac.probes = 0.05,
 											 col.frac.probes = 0.05,
-											 computeMode = "R") {
+											 computeMode = createComputeMode()) {
 
 	if (!inherits(data, "NPClustSimulation")) {
 		stop("Wrong data structure")
 	}
+
+  if (!inherits(computeMode, "computeMode")) {
+    stop("Wrong compute mode")
+  }
 
 	###################
 	# Detect clusters
@@ -72,7 +79,7 @@ profileExample <- function(n = 25,
 													 n.reps = 20,
 													 row.frac.probes = 0.05,
 													 col.frac.probes = 0.05,
-													 computeMode = "R") {
+													 computeMode = createComputeMode()) {
 	simulation <- simulateExample(n, p)
 
 	Rprof(line.profiling = TRUE, interval = 0.001)
@@ -85,19 +92,39 @@ profileExample <- function(n = 25,
 	summaryRprof(lines = "show")$by.self
 }
 
-#' @useDynLib NPCluster, .registration = TRUE
-#' @importFrom Rcpp evalCpp
+
+#' createComputeMode
 #' @export
-createEngine <- function(sort) {
-	.createEngine(sort)
+createComputeMode <- function(language = "R",
+                              exactBitStream = FALSE,
+                              extraSort = TRUE,
+                              test1 = FALSE,
+                              test2 = FALSE,
+                              test3 = FALSE) {
+  if (!(language %in% c("C","R"))) {
+    stop("Invalid language")
+  }
+
+  useR <- (language == "R")
+  device <- NULL
+  if (!useR) {
+    doSort <- (exactBitStream | !extraSort)
+    device <- .createEngine(doSort)
+  }
+
+  object <- list(
+    useR = (language == "R"),
+    device = device,
+    exactBitStream = exactBitStream,
+    extraSort = extraSort,
+    test1 = test1,
+    test2 = test2,
+    test3 = test3
+  )
+  class(object) <- "computeMode"
+  return(object)
 }
 
-#' @export
-accessEngine <- function(engine) {
-  .accessEngine(engine)
-}
 
-#' @export
-computePmfAndNeighborhoods <- function(engine, n0, vec.n, small) {
-  .computePmfAndNeighborhoods(engine, n0, vec.n, small)
-}
+
+

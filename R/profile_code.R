@@ -1,5 +1,5 @@
 function() {
-	prof <- profileExample(n = 100, p = 500, n.burn = 10, n.reps = 20,
+	prof <- profileExample(n = 400, p = 500, n.burn = 10, n.reps = 20,
 	                       row.frac.probes = 0.25, col.frac.probes = 0.25,
 	                       computeMode = "C")
 
@@ -29,10 +29,14 @@ quick_profile <- function() {
   n.burn <- 10
   n.reps <- 20
 
+  n <- 25
+  p <- 125
+
   set.seed(666)
   simulation <- simulateExample(n = n, p = p)
   system.time(
-      posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps, computeMode = "R")
+      posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
+                              computeMode = createComputeMode())
   )
   d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
@@ -44,7 +48,10 @@ quick_profile <- function() {
   set.seed(666)
   simulation <- simulateExample(n = n, p = p)
   system.time(
-    posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps, computeMode = "C")
+    posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
+                            computeMode = createComputeMode(language = "C",
+                                                            exactBitStream = TRUE))
+
   )
   d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
@@ -52,6 +59,23 @@ quick_profile <- function() {
   d_credible.v
   mean.taxicab
   se_mean.taxicab
+
+  set.seed(666)
+  simulation <- simulateExample(n = n, p = p)
+  system.time(
+    posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
+                            computeMode = createComputeMode(language = "C",
+                                                            exactBitStream = FALSE))
+
+  )
+  d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
+  mean.taxicab <- mean(posterior$mean.taxicab.v)
+  se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
+  d_credible.v
+  mean.taxicab
+  se_mean.taxicab
+
+
 
 
 

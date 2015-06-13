@@ -137,7 +137,7 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, computeMode)
 
 	{
 
-  if (computeMode == "R") {
+  if (computeMode$useR) {
 
 	################################################
 	### Compute pmf of cluster variables w_1,...,w_n
@@ -215,8 +215,8 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, computeMode)
 	# START
 	# .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
 
-	engine <- createEngine(sort = TRUE)
-	test <- .computePmfAndNeighborhoods(engine$engine,
+#	engine <- createEngine(sort = TRUE)
+	test <- .computePmfAndNeighborhoods(computeMode$device$engine,
 	                            parm$clust$n0, parm$clust$n.vec, 1e-3, 1e-5,
 	                            parm$clust$K, parm$N,
 	                            parm$Y, parm$X.sd, parm$row.subset.I,

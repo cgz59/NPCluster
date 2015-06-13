@@ -98,7 +98,7 @@ fn.init.clusters <- function(parm)
 }
 
 
-fn.eda <- function(parm, data)
+fn.eda <- function(parm, data, computeMode)
 {
 
 	parm <- fn.init.clusters(parm)
@@ -138,9 +138,28 @@ fn.eda <- function(parm, data)
 
 	parm$Y <- as.vector(parm$Y)
 
-	tmp <- kmeans(parm$Y, iter.max=1000, centers=data$K.max, nstart=10,
-	              algorithm = "MacQueen" # comment out for consistency with SG original code
-	              )
+	# if (computeMode$useR) {
+
+	tmp <- tryCatch({
+	  iter.max <- ifelse((length(parm$Y) > 1000), 10, 1000)
+	  kmeans(parm$Y, iter.max = iter.max, centers = data$K.max, nstart = 10,
+	         algorithm = "Hartigan-Wong" # TODO: MAcQueen works better?
+	  )}, error = function(e) {
+	    print("Kmeans did not converge ... using random assignment")
+	    cluster <- sample(1:data$K.max, size = length(parm$Y), replace = TRUE)
+	    centers <- sapply(1:data$K.max, FUN = function(x) {
+	      mean(parm$Y[which(cluster == x)])
+	    })
+	    list(cluster = cluster, centers = centers, size = data$K.max)
+	  })
+
+# 	} else {
+#
+# 	  tmp <- .fastKMeans(matrix(parm$Y, nrow = 1), data$K.max)
+# 	  tmp$cluster <- tmp$cluster + 1
+#
+# 	}
+
 	parm$clust$s.v <- tmp$cluster
 	parm$clust$phi.v <- as.vector(tmp$centers)
 
@@ -200,7 +219,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 		}
 
 	parm$G.new <- data$G.max
-	tmp <- fn.eda(parm, data)
+	tmp <- fn.eda(parm, data, computeMode)
 	parm <- tmp[[2]]
 
 	#################

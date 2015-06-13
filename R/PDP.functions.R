@@ -194,16 +194,15 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
 	x.mt <- matrix(parm$X[,k], ncol=1)
 
-	exactMatchResults <- FALSE # TODO move into computeModel object
-	if (computeMode == "R" | exactMatchResults) {
+	if (computeMode$useR | computeMode$exactBitStream) {
 
 	# intercept cluster or any existing cluster
 	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE) # HOT
 
 
   } else { # computeMode
-    engine <- createEngine(sort = TRUE)
-    test <- .computePdpLogLikelihood(engine$engine, k, parm$X,
+    # engine <- createEngine(sort = TRUE)
+    test <- .computePdpLogLikelihood(computeMode$device$engine, k, parm$X,
                                      parm$clust$A.mt, parm$clust$s.mt,
                                      parm$clust$G, parm$n2,
                                      parm$tau, parm$tau_0, parm$tau_int, FALSE)
@@ -228,7 +227,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
   	{
     	new.s.mt <- parm$clust$s.mt[,-emptied.indx]
 
-    	if (computeMode == "R") {
+    	if (computeMode$useR) {
     	  new.n.vec <- array(,parm$clust$K)
     	  for (pp in 1:parm$clust$K) {
     	    new.n.vec[pp] <- sum(new.s.mt==pp) # HOT
@@ -357,7 +356,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
 
-		if (computeMode == "R") {
+		if (computeMode$useR) {
 		  parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
 		} else {
 		  parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)

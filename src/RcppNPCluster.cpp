@@ -17,7 +17,7 @@ EnginePtr parsePtr(SEXP sexp) {
 	return ptr;
 }
 
-
+ 
 // [[Rcpp::export(.createEngine)]]
 Rcpp::List createEngine(bool sort) {
 
