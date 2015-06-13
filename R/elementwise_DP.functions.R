@@ -348,7 +348,7 @@ element_fn.row.gibbs.DP <- function(parm)
 
 ###########################################################
 
-element_fn.fast.DP.iter <- function(parm)
+element_fn.fast.DP.iter <- function(parm, computeMode)
 {
      k <- parm$k
 	I.k <- parm$I.k
@@ -366,11 +366,23 @@ element_fn.fast.DP.iter <- function(parm)
 	###############
 
 	subset.s <- parm$clust$s.v[I.k]
-	parm$clust$n.vec.k <- array(,parm$clust$K)
-	for (gg in 1:parm$clust$K)
-		{parm$clust$n.vec.k[gg] <- sum(subset.s==gg)
+
+	if (computeMode$useR | !computeMode$test1) {
+
+	  parm$clust$n.vec.k <- array(,parm$clust$K)
+	  for (gg in 1:parm$clust$K) {
+	    parm$clust$n.vec.k[gg] <- sum(subset.s==gg)
 		}
-	parm$clust$n0.k <- sum(subset.s==0)
+	  parm$clust$n0.k <- sum(subset.s==0)
+
+	} else {
+
+	  # If this gets hot again, could write a fast subsettedTabulate
+	  all.n.vec <- .fastTabulateVector(subset.s, parm$clust$K, TRUE)
+	  parm$clust$n0.k <- all.n.vec[1]
+	  parm$clust$n.vec.k <- all.n.vec[-1]
+
+	}
 
 	parm$clust$n.vec.k.comp <- parm$clust$n.vec - parm$clust$n.vec.k
 	parm$clust$n0.k.comp <- parm$clust$n0 - parm$clust$n0.k
@@ -636,7 +648,7 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes, compute
 		 # parm$I.k will contain at least parm$k
 
 		if (length(parm$I.k) > 1)
-			{tmp <- element_fn.fast.DP.iter(parm)
+			{tmp <- element_fn.fast.DP.iter(parm, computeMode)
 		 	parm <- tmp[[1]]
 		 	flip.v <- c(flip.v, tmp[[2]])
 			}
