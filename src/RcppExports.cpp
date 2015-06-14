@@ -122,3 +122,30 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// fastPrior
+Rcpp::List fastPrior(const Rcpp::IntegerVector& Sk, const Rcpp::IntegerVector& Nk, const int N0, const Rcpp::NumericVector& Pk, const int K);
+RcppExport SEXP NPCluster_fastPrior(SEXP SkSEXP, SEXP NkSEXP, SEXP N0SEXP, SEXP PkSEXP, SEXP KSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type Sk(SkSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type Nk(NkSEXP);
+    Rcpp::traits::input_parameter< const int >::type N0(N0SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type Pk(PkSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    __result = Rcpp::wrap(fastPrior(Sk, Nk, N0, Pk, K));
+    return __result;
+END_RCPP
+}
+// fastSumSafeLog
+double fastSumSafeLog(const Rcpp::NumericVector& prob, const Rcpp::IntegerVector& count);
+RcppExport SEXP NPCluster_fastSumSafeLog(SEXP probSEXP, SEXP countSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type prob(probSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type count(countSEXP);
+    __result = Rcpp::wrap(fastSumSafeLog(prob, count));
+    return __result;
+END_RCPP
+}

@@ -102,3 +102,53 @@ Rcpp::NumericMatrix fastXtX(const Rcpp::NumericMatrix& rX) {
 
 	return wrap(X.transpose() * X);
 }
+
+
+// for (gg in 0:parm$clust$K)
+// {flag.gg <- (new.s.k==gg)
+//   count.gg <- sum(flag.gg)
+//
+//   if (gg > 0)
+//   {parm$clust$n.vec[gg] <- parm$clust$n.vec.k.comp[gg] + count.gg
+//   }
+//
+//   if (gg == 0)
+//   {parm$clust$n0 <- parm$clust$n0.k.comp + count.gg
+//   }
+//
+//   if (count.gg > 0)
+//   {rho.prop <- rho.prop + log(parm$clust$post.k[gg+1])*count.gg
+//   }
+// }
+
+
+// [[Rcpp::export(.fastPrior)]]
+Rcpp::List fastPrior(const Rcpp::IntegerVector& Sk,
+                     const Rcpp::IntegerVector& Nk,
+                     const int N0,
+                     const Rcpp::NumericVector& Pk,
+                     const int K) {
+  using namespace Rcpp;
+
+  IntegerVector count(K + 1);  // C uses 0-indexing
+
+  double rho = 0.0;
+
+  return List::create(
+    _["count"] = count,
+    _["rho"] = rho
+  );
+}
+
+// [[Rcpp::export(.fastSumSafeLog)]]
+double fastSumSafeLog(const Rcpp::NumericVector& prob,
+                      const Rcpp::IntegerVector& count) {
+  double total = 0.0;
+  for (int i = 0; i < prob.length(); ++i) {
+    if (count[i] > 0) {
+      total += std::log(prob[i]) * count[i];
+    }
+  }
+  return total;
+}
+

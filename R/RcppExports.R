@@ -33,3 +33,11 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_fastXtX', PACKAGE = 'NPCluster', rX)
 }
 
+.fastPrior <- function(Sk, Nk, N0, Pk, K) {
+    .Call('NPCluster_fastPrior', PACKAGE = 'NPCluster', Sk, Nk, N0, Pk, K)
+}
+
+.fastSumSafeLog <- function(prob, count) {
+    .Call('NPCluster_fastSumSafeLog', PACKAGE = 'NPCluster', prob, count)
+}
+
