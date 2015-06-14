@@ -87,14 +87,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // fastTabulate
-Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K);
-RcppExport SEXP NPCluster_fastTabulate(SEXP matSEXP, SEXP KSEXP) {
+Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K, bool includeZero);
+RcppExport SEXP NPCluster_fastTabulate(SEXP matSEXP, SEXP KSEXP, SEXP includeZeroSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type mat(matSEXP);
     Rcpp::traits::input_parameter< const int >::type K(KSEXP);
-    __result = Rcpp::wrap(fastTabulate(mat, K));
+    Rcpp::traits::input_parameter< bool >::type includeZero(includeZeroSEXP);
+    __result = Rcpp::wrap(fastTabulate(mat, K, includeZero));
     return __result;
 END_RCPP
 }
@@ -119,21 +120,6 @@ BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type rX(rXSEXP);
     __result = Rcpp::wrap(fastXtX(rX));
-    return __result;
-END_RCPP
-}
-// fastPrior
-Rcpp::List fastPrior(const Rcpp::IntegerVector& Sk, const Rcpp::IntegerVector& Nk, const int N0, const Rcpp::NumericVector& Pk, const int K);
-RcppExport SEXP NPCluster_fastPrior(SEXP SkSEXP, SEXP NkSEXP, SEXP N0SEXP, SEXP PkSEXP, SEXP KSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type Sk(SkSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type Nk(NkSEXP);
-    Rcpp::traits::input_parameter< const int >::type N0(N0SEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type Pk(PkSEXP);
-    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
-    __result = Rcpp::wrap(fastPrior(Sk, Nk, N0, Pk, K));
     return __result;
 END_RCPP
 }

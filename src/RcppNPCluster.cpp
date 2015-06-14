@@ -62,11 +62,20 @@ Rcpp::List computePdpLogLikelihood(SEXP sexp,
 							const double tau, const double tau0, const double tauInt, bool colSums) {
 	EnginePtr engine = parsePtr(sexp);
 
+#define PRINT_DIM
+#ifdef PRINT_DIM
+  std::cerr << "G = " << G << " and N = " << N << std::endl;
+  std::cerr << X.rows() << ":" << X.cols() << std::endl;
+  std::cerr << A.rows() << ":" << A.cols() << std::endl;
+  std::cerr << S.rows() << ":" << S.cols() << std::endl << std::endl;
+#endif // PRINT_DIM
+
 	return engine->computePdpLogLikelihood(k, X, A, S, G, N, tau, tau0, tauInt, colSums);
 }
 
 // [[Rcpp::export(.fastTabulate)]]
-Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K) {
+Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K,
+                                 bool includeZero = false) {
 	using namespace Rcpp;
 	IntegerVector count(K + 1);  // C uses 0-indexing
 
@@ -74,7 +83,11 @@ Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K) {
 		count[*it]++;
 	}
 
-	return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+	if (includeZero) {
+	  return count;
+	} else {
+	  return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+	}
 }
 
 // [[Rcpp::export(.fastTabulateVector)]]
@@ -101,43 +114,6 @@ Rcpp::NumericMatrix fastXtX(const Rcpp::NumericMatrix& rX) {
 	const Map<MatrixXd> X(as<Map<MatrixXd> >(rX));
 
 	return wrap(X.transpose() * X);
-}
-
-
-// for (gg in 0:parm$clust$K)
-// {flag.gg <- (new.s.k==gg)
-//   count.gg <- sum(flag.gg)
-//
-//   if (gg > 0)
-//   {parm$clust$n.vec[gg] <- parm$clust$n.vec.k.comp[gg] + count.gg
-//   }
-//
-//   if (gg == 0)
-//   {parm$clust$n0 <- parm$clust$n0.k.comp + count.gg
-//   }
-//
-//   if (count.gg > 0)
-//   {rho.prop <- rho.prop + log(parm$clust$post.k[gg+1])*count.gg
-//   }
-// }
-
-
-// [[Rcpp::export(.fastPrior)]]
-Rcpp::List fastPrior(const Rcpp::IntegerVector& Sk,
-                     const Rcpp::IntegerVector& Nk,
-                     const int N0,
-                     const Rcpp::NumericVector& Pk,
-                     const int K) {
-  using namespace Rcpp;
-
-  IntegerVector count(K + 1);  // C uses 0-indexing
-
-  double rho = 0.0;
-
-  return List::create(
-    _["count"] = count,
-    _["rho"] = rho
-  );
 }
 
 // [[Rcpp::export(.fastSumSafeLog)]]
