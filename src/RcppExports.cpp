@@ -87,15 +87,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // fastTabulate
-Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K, bool includeZero);
-RcppExport SEXP NPCluster_fastTabulate(SEXP matSEXP, SEXP KSEXP, SEXP includeZeroSEXP) {
+Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K);
+RcppExport SEXP NPCluster_fastTabulate(SEXP matSEXP, SEXP KSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type mat(matSEXP);
     Rcpp::traits::input_parameter< const int >::type K(KSEXP);
-    Rcpp::traits::input_parameter< bool >::type includeZero(includeZeroSEXP);
-    __result = Rcpp::wrap(fastTabulate(mat, K, includeZero));
+    __result = Rcpp::wrap(fastTabulate(mat, K));
     return __result;
 END_RCPP
 }
@@ -120,18 +119,6 @@ BEGIN_RCPP
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type rX(rXSEXP);
     __result = Rcpp::wrap(fastXtX(rX));
-    return __result;
-END_RCPP
-}
-// fastSumSafeLog
-double fastSumSafeLog(const Rcpp::NumericVector& prob, const Rcpp::IntegerVector& count);
-RcppExport SEXP NPCluster_fastSumSafeLog(SEXP probSEXP, SEXP countSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type prob(probSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type count(countSEXP);
-    __result = Rcpp::wrap(fastSumSafeLog(prob, count));
     return __result;
 END_RCPP
 }

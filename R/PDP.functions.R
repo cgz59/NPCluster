@@ -51,7 +51,7 @@ PDP_fn.swap.clusters <- function(parm, g1, g2)
 	parm$clust$c.v[ind2] <- g1
 
 	buffer <- parm$clust$s.mt[,g1]
-	parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2]
+	parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2] # HOT 3
 	parm$clust$s.mt[,g2] <- buffer
 
 	buffer <- parm$clust$beta.v[g1]
@@ -86,7 +86,7 @@ PDP_fn.swap.clusters <- function(parm, g1, g2)
 
 	# first swap columns
 	buffer <- parm$clust$tBB.mt[,(g1+1)]
-	parm$clust$tBB.mt[,(g1+1)] <- parm$clust$tBB.mt[,(g2+1)]
+	parm$clust$tBB.mt[,(g1+1)] <- parm$clust$tBB.mt[,(g2+1)] # HOT 3
 	parm$clust$tBB.mt[,(g2+1)] <- buffer
 	# then swap rows
 	buffer <- parm$clust$tBB.mt[(g1+1),]
@@ -172,6 +172,7 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 
 ###########################################################
 
+# Hi SG!
 
 PDP_fn.gibbs <- function(k, parm, data, computeMode)
 {	k <- parm$k
@@ -225,7 +226,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
   if (length(emptied.indx) >0)
   	{
-    	new.s.mt <- parm$clust$s.mt[,-emptied.indx]
+    	new.s.mt <- parm$clust$s.mt[,-emptied.indx] # HOT 3
 
     	if (computeMode$useR) {
     	  new.n.vec <- array(,parm$clust$K)
@@ -238,7 +239,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
     	emptied.s.indx <- which(new.n.vec==0)
     	new.K <- parm$clust$K-length(emptied.s.indx)
-   	 new.n0 <- sum(new.s.mt==0)
+   	 new.n0 <- sum(new.s.mt==0) # HOT 3
    	}
 
   if (length(emptied.indx) ==0)
@@ -262,7 +263,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
   marg.log.lik.v <- array(,length(x.mt))
   for (tt in 1:length(x.mt))
 	{
-    	tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
+    	tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
     	tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
    	marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
   	}
