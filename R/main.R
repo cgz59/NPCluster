@@ -79,17 +79,18 @@ profileExample <- function(n = 25,
 													 n.reps = 20,
 													 row.frac.probes = 0.05,
 													 col.frac.probes = 0.05,
-													 computeMode = createComputeMode()) {
+													 computeMode = createComputeMode(),
+													 filename = "Rprof.out") {
 	simulation <- simulateExample(n, p)
 
-	Rprof(line.profiling = TRUE, interval = 0.001)
-	fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
+	Rprof(filename = filename, line.profiling = TRUE, interval = 0.001)
+	posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
 	           row.frac.probes = row.frac.probes,
 	           col.frac.probes = col.frac.probes,
 	           computeMode = computeMode)
 	Rprof(NULL)
-
-	summaryRprof(lines = "show")$by.self
+	#summaryRprof(lines = "show")$by.self
+	return(posterior)
 }
 
 

@@ -1,9 +1,11 @@
 function() {
-	prof <- profileExample(n = 400, p = 500, n.burn = 10, n.reps = 20,
+	postscript() <- profileExample(n = 400, p = 500, n.burn = 10, n.reps = 20,
 	                       row.frac.probes = 0.25, col.frac.probes = 0.25,
 	                       computeMode = "C")
 
 	# rows <- grep("elementwise_DP.functions.R", row.names(prof))
+
+	prof <- summaryRprof(lines = "show")$by.self
 
 	expand_numbers <- function(names) {
 	  names <- sub("R#(\\d)$", "R#000\\1", names)
@@ -110,5 +112,38 @@ quick_profile <- function() {
 #   [1] 0.0057728
 #   > se_mean.taxicab
 #   [1] 1.814736e-06
+
+}
+
+big_profile <- function() {
+  n <- 100
+  p <- 1000
+
+  n.burn <- 1
+  n.reps <- 0
+
+  row.frac.probes <- 1
+  col.frac.probes <- 1
+
+  filename <- "Rprof_100_1000.out"
+
+  set.seed(666)
+  system.time(
+    posterior <- profileExample(n = n, p = p, n.burn = n.burn, n.reps = n.reps,
+                            row.frac.probes = row.frac.probes,
+                            col.frac.probes = col.frac.probes,
+                            filename = filename,
+                            computeMode = createComputeMode(language = "C",
+                                                            exactBitStream = FALSE,
+                                                            test1 = TRUE))
+
+  )
+  d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
+  mean.taxicab <- mean(posterior$mean.taxicab.v)
+  se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
+  d_credible.v
+  mean.taxicab
+  se_mean.taxicab
+
 
 }

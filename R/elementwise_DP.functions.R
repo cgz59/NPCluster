@@ -443,6 +443,8 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
   {
 	parm$clust$s.v[I.k] <- new.s.k
 
+	if (computeMode$useR) {
+
 	rho.prop <- 0
 	parm$clust$n.vec <- array(0, parm$clust$K)
 
@@ -463,6 +465,15 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 			}
 		}
 
+	} else {
+	  all.count <- .fastTabulateVector(new.s.k, parm$clust$K, TRUE)
+
+		parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
+	  parm$clust$n.vec <- parm$clust$n.vec.k.com + all.count[-1]
+
+	  rho.prop <- .fastSumSafeLog(parm$clust$post.k, all.count)
+
+	}
 	# sum(parm$clust$n.vec) + parm$clust$n0 == parm$N
 
 
