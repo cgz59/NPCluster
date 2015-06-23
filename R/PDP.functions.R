@@ -171,8 +171,7 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
 
 
 ###########################################################
-
-# Hi SG!
+ # Hi MS!
 
 PDP_fn.gibbs <- function(k, parm, data, computeMode)
 {	k <- parm$k
