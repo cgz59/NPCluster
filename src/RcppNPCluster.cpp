@@ -62,11 +62,20 @@ Rcpp::List computePdpLogLikelihood(SEXP sexp,
 							const double tau, const double tau0, const double tauInt, bool colSums) {
 	EnginePtr engine = parsePtr(sexp);
 
+// #define PRINT_DIM
+#ifdef PRINT_DIM
+  std::cerr << "G = " << G << " and N = " << N << std::endl;
+  std::cerr << X.rows() << ":" << X.cols() << std::endl;
+  std::cerr << A.rows() << ":" << A.cols() << std::endl;
+  std::cerr << S.rows() << ":" << S.cols() << std::endl << std::endl;
+#endif // PRINT_DIM
+
 	return engine->computePdpLogLikelihood(k, X, A, S, G, N, tau, tau0, tauInt, colSums);
 }
 
 // [[Rcpp::export(.fastTabulate)]]
-Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K) {
+Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K,
+                                 bool includeZero = false) {
 	using namespace Rcpp;
 	IntegerVector count(K + 1);  // C uses 0-indexing
 
@@ -74,7 +83,11 @@ Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K) {
 		count[*it]++;
 	}
 
-	return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+	if (includeZero) {
+	  return count;
+	} else {
+	  return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+	}
 }
 
 // [[Rcpp::export(.fastTabulateVector)]]
@@ -102,3 +115,16 @@ Rcpp::NumericMatrix fastXtX(const Rcpp::NumericMatrix& rX) {
 
 	return wrap(X.transpose() * X);
 }
+
+// [[Rcpp::export(.fastSumSafeLog)]]
+double fastSumSafeLog(const Rcpp::NumericVector& prob,
+                      const Rcpp::IntegerVector& count) {
+  double total = 0.0;
+  for (int i = 0; i < prob.length(); ++i) {
+    if (count[i] > 0) {
+      total += std::log(prob[i]) * count[i];
+    }
+  }
+  return total;
+}
+
