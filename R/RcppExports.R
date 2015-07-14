@@ -21,8 +21,8 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_computePdpLogLikelihood', PACKAGE = 'NPCluster', sexp, k, X, A, S, G, N, tau, tau0, tauInt, colSums)
 }
 
-.fastTabulate <- function(mat, K, includeZero = FALSE) {
-    .Call('NPCluster_fastTabulate', PACKAGE = 'NPCluster', mat, K, includeZero)
+.fastTabulate <- function(mat, K) {
+    .Call('NPCluster_fastTabulate', PACKAGE = 'NPCluster', mat, K)
 }
 
 .fastTabulateVector <- function(vec, K, includeZero) {
@@ -31,9 +31,5 @@ rcpp_hello_world <- function() {
 
 .fastXtX <- function(rX) {
     .Call('NPCluster_fastXtX', PACKAGE = 'NPCluster', rX)
-}
-
-.fastSumSafeLog <- function(prob, count) {
-    .Call('NPCluster_fastSumSafeLog', PACKAGE = 'NPCluster', prob, count)
 }
 

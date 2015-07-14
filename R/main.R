@@ -49,6 +49,7 @@ fitExample <- function(data,
 											 n.burn = 10,
 											 n.reps = 20,
 											 max.row.nbhd.size = 50, # should be small compared to n2 * G
+											 max.col.nbhd.size = 25, # should be small compared to p
 											 row.frac.probes = 0.05,
 											 col.frac.probes = 0.05,
 											 computeMode = createComputeMode()) {
@@ -67,7 +68,7 @@ fitExample <- function(data,
 
 	posterior <- fn.mcmc(text="CLUST ANALYZE...",
 											 data$X$true, data$X$data,
-											 n.burn, n.reps, max.row.nbhd.size, row.frac.probes, col.frac.probes,
+											 n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
 											 data$parm, computeMode)
 	return (posterior)
 }

@@ -133,9 +133,50 @@ element_fn.nbhd <- function(I, parm, max.row.nbhd.size)
 
 
 
-element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, computeMode)
+fast_element_fn.nbhd <- function(relative_I, parm, max.row.nbhd.size)
+{
+  if (length(relative_I)>1)
+{relative_k <- sample(relative_I, size=1)
+}
+if (length(relative_I)==1)
+{relative_k <- relative_I
+}
+
+post.prob.mt <- parm$clust$subset_post.prob.mt
+
+tmp1.mt <- matrix(post.prob.mt[,relative_I], ncol=length(relative_I))
+tmp2.v <- post.prob.mt[,relative_k]
+tmp3.mt <- sqrt(tmp1.mt * tmp2.v)
+H.v <-  2*(1-colSums(tmp3.mt))
+
+cutoff <- parm$row.delta
+flag.v <- which(H.v <= cutoff)
+relative_I.k <- relative_I[flag.v]
+
+if (length(relative_I.k) > max.row.nbhd.size)
+{cutoff <- quantile(H.v[flag.v], probs=max.row.nbhd.size/length(relative_I.k))
+ relative_I.k <- relative_I[which(H.v <= cutoff)]
+}
+
+relative_I.k <- sort(relative_I.k)
+
+relative_I <- sort(setdiff(relative_I, relative_I.k))
+relative_I <- sort(relative_I)
+
+list(relative_k, relative_I.k, relative_I)
+
+}
+
+
+
+fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, computeMode)
 
 	{
+
+  ######################################################################################
+  # SG: in light of MS's "HOT" comment, could possibly compute as follows
+  #     for a hopefully faster version
+  #######################################################################################
 
   if (computeMode$useR) {
 
@@ -147,7 +188,8 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, computeMode)
 	small <- 1e-3 # compared to 1
 	prior.prob.v[prior.prob.v < small] <- small
 
-	log.ss.mt <- array(,c(parm$clust$K, parm$N))
+	#log.ss.mt <- array(,c(parm$clust$K, parm$N))
+  subset_log.ss.mt <- array(,c(parm$clust$K, length(parm$row.subset.I)))
 
 	#
 	Y.v <- parm$Y[parm$row.subset.I]
@@ -157,56 +199,70 @@ element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, computeMode)
 	num.k.v <-  parm$clust$C.m.vec[g.v]
 
 	for (ss in 1:parm$clust$K)
-		{log.ss.mt[ss,parm$row.subset.I] <- element_fn.log.lik(mean=parm$clust$phi.v[ss], sd=parm$tau, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
+		{subset_log.ss.mt[ss,] <- element_fn.log.lik(mean=parm$clust$phi.v[ss], sd=parm$tau, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
+    #log.ss.mt[ss,parm$row.subset.I] <- element_fn.log.lik(mean=parm$clust$phi.v[ss], sd=parm$tau, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
 		}
 
 	## adding the row on top corresponding to s=0
-	tmp.v <- array(,parm$N)
-	tmp.v[parm$row.subset.I] <- element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
-	log.ss.mt <- rbind(tmp.v, log.ss.mt)
+	#tmp.v <- array(,parm$N)
+	#tmp.v[parm$row.subset.I] <- element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
+  subset_tmp.v <- array(,length(parm$row.subset.I))
+	subset_tmp.v <- element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
+	subset_log.ss.mt <- rbind(subset_tmp.v, subset_log.ss.mt)
 
-	log.ss.mt <- log.ss.mt + log(prior.prob.v)
+	subset_log.ss.mt <- subset_log.ss.mt + log(prior.prob.v)
 
-	dimnames(log.ss.mt) <- list(0:parm$clust$K, 1:parm$N)
+	#maxx.v <- apply(log.ss.mt, 2, max)    # HOT
+	subset_maxx.v <- apply(subset_log.ss.mt, 2, max)
 
-	maxx.v <- apply(log.ss.mt, 2, max)    # HOT
-	log.ss.mt <- t(t(log.ss.mt) - maxx.v)
-	ss.mt <- exp(log.ss.mt)
+	subset_log.ss.mt <- t(t(subset_log.ss.mt) - subset_maxx.v)
+	subset_ss.mt <- exp(subset_log.ss.mt)
 
-	col.sums.v <- colSums(ss.mt)
-	ss.mt <- t(t(ss.mt)/col.sums.v)
+	subset_col.sums.v <- colSums(subset_ss.mt)
+	subset_ss.mt <- t(t(subset_ss.mt)/subset_col.sums.v)
 
 	# TODO Ask GS if second normalization is really necessary
 
 	# replace zeros by "small"
 	small2 <- 1e-5
-	ss.mt[ss.mt < small2] <- small2
+	subset_ss.mt[subset_ss.mt < small2] <- small2
 
 	# again normalize
-	col.sums.v <- colSums(ss.mt)
-	ss.mt <- t(t(ss.mt)/col.sums.v)
+	subset_col.sums.v <- colSums(subset_ss.mt)
+	subset_ss.mt <- t(t(subset_ss.mt)/subset_col.sums.v)
 
-	parm$clust$post.prob.mt <- ss.mt
+	parm$clust$post.prob.mt <- array(,c((parm$clust$K+1), parm$N))
+	parm$clust$post.prob.mt[,parm$row.subset.I] <- subset_ss.mt
 
+	dimnames(parm$clust$post.prob.mt) <- list(0:parm$clust$K, 1:parm$N)
+
+  parm$clust$subset_post.prob.mt <- subset_ss.mt
+	dimnames(parm$clust$subset_post.prob.mt) <- list(0:parm$clust$K, 1:length(parm$row.subset.I))
 
 	#########################################
 	### now compute the delta-neighborhoods
 	#########################################
 
+	######################################################################################
+	# SG: in light of MS's "HOT" comment in element_fn.nbhd,
+  #     could possibly compute as follows (if it solves the problem)
+	#######################################################################################
+
   # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
 
-	I <- parm$row.subset.I
+	# I <- parm$row.subset.I
 	parm$clust$row.nbhd <- NULL
 	parm$clust$row.nbhd.k <- NULL
+  relative_I <- 1:length(parm$row.subset.I)
 
-	while (length(I)>=1)
-		{tmp <- element_fn.nbhd(I, parm, max.row.nbhd.size)
-		k <- tmp[[1]]
-		I.k <- tmp[[2]]
-		I <- tmp[[3]]
+	while (length(relative_I)>=1)
+		{tmp <- fast_element_fn.nbhd(relative_I, parm, max.row.nbhd.size)
+		relative_k <- tmp[[1]]
+		relative_I.k <- tmp[[2]]
+		relative_I <- tmp[[3]]
 		#
-		parm$clust$row.nbhd <- c(parm$clust$row.nbhd, list(I.k))
-		parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, k)
+		parm$clust$row.nbhd <- c(parm$clust$row.nbhd, list(parm$row.subset.I[relative_I.k]))
+		parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, parm$row.subset.I[relative_k])
 		}
 
   } else { # computeMode != "R"
@@ -620,8 +676,12 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes, compute
 	##########################
 	# compute delta-neighborhoods
 	#########################
+	######################################################################################
+	# SG: in light of MS's "HOT" comment in element_fn.post.prob.and.delta and its called functions,
+  #     could possibly compute as follows for a hopefully faster version
+	#######################################################################################
 
-	parm <- element_fn.post.prob.and.delta(parm, max.row.nbhd.size, computeMode)
+	parm <- fast_element_fn.post.prob.and.delta(parm, max.row.nbhd.size, computeMode)
 
 	err <- element_fn.consistency.check(parm)
 	if (err > 0)

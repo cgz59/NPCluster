@@ -277,7 +277,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	# For delta neighborhoods
 	############################
 
-	parm$col.delta <- .05
+	parm$col.delta <- .1
 
 	# delta-neighborhood threshold for elements
 	parm$row.delta <- .1
@@ -519,7 +519,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
                     computeMode)
 	{
-	parm <- PDP_fn.main(parm, data, col.frac.probes, computeMode)
+	parm <- fast_PDP_fn.main(parm, data, col.frac.probes, max.col.nbhd.size, computeMode)
 
 	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes, computeMode)
 
@@ -542,7 +542,7 @@ fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 
 
-fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
+fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
                     computeMode = "R")
 	{
 
@@ -556,7 +556,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 		}
 
 	for (cc in 1:n.burn)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "BURN = ",cc,date(),"***********"))
@@ -577,7 +577,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, row.fra
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
 	for (cc in 1:n.reps)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K
