@@ -516,7 +516,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 
 ########################################
 
-fn.iter <- function(data, parm, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
+fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
                     computeMode)
 	{
 	parm <- fast_PDP_fn.main(parm, data, col.frac.probes, max.col.nbhd.size, computeMode)
