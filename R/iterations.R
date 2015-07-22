@@ -277,7 +277,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	# For delta neighborhoods
 	############################
 
-	parm$col.delta <- .1
+	parm$col.delta <- .2
 
 	# delta-neighborhood threshold for elements
 	parm$row.delta <- .1

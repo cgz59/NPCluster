@@ -178,7 +178,7 @@ PDP_fn.nbhd <- function(relative_I, parm, max.col.nbhd.size)
   {relative_k <- relative_I
   }
 
-  post.prob.mt <- parm$clust$subset_post.prob.mt
+  post.prob.mt <- parm$clust$col_subset_post.prob.mt
 
   tmp1.mt <- matrix(post.prob.mt[,relative_I], ncol=length(relative_I))
   tmp2.v <- post.prob.mt[,relative_k]
@@ -243,13 +243,13 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
     col.sums.v <- colSums(subset_ss.mt)
     subset_ss.mt <- t(t(subset_ss.mt)/col.sums.v)
 
-    parm$clust$post.prob.mt <- array(,c((parm$clust$G+1), parm$p))
-    parm$clust$post.prob.mt[,parm$col.subset.I] <- subset_ss.mt
+    parm$clust$col_post.prob.mt <- array(,c((parm$clust$G+1), parm$p))
+    parm$clust$col_post.prob.mt[,parm$col.subset.I] <- subset_ss.mt
 
-    dimnames(parm$clust$post.prob.mt) <- list(0:parm$clust$G, 1:parm$p)
+    dimnames(parm$clust$col_post.prob.mt) <- list(0:parm$clust$G, 1:parm$p)
 
-    parm$clust$subset_post.prob.mt <- subset_ss.mt
-    dimnames(parm$clust$subset_post.prob.mt) <- list(0:parm$clust$G, 1:length(parm$col.subset.I))
+    parm$clust$col_subset_post.prob.mt <- subset_ss.mt
+    dimnames(parm$clust$col_subset_post.prob.mt) <- list(0:parm$clust$G, 1:length(parm$col.subset.I))
 
 
     #########################################
