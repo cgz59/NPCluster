@@ -29,9 +29,9 @@ fn.quality.check <- function(parm)
 	{err <- 0
 
 	if (!is.null(parm$clust$col.nbhd))
-		{if (sum(unlist(lapply(parm$clust$col.nbhd, length))) != length(parm$col.subset.I))
-			{err <- 1
-			}
+		{#if (sum(unlist(lapply(parm$clust$col.nbhd, length))) != length(parm$col.subset.I))
+			#{err <- 1
+			#}
 		}
 
 	if (sum(diag(parm$clust$tBB.mt) < 0) > 0)
@@ -62,7 +62,6 @@ fn.quality.check <- function(parm)
 		{err <- 8
 		}
 
-
 	err
 	}
 
@@ -70,6 +69,7 @@ fn.quality.check <- function(parm)
 
 fn.init.clusters <- function(parm)
 {
+
 	X.mt <- parm$X
 	num.centers <- parm$G.new
 
@@ -277,7 +277,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	# For delta neighborhoods
 	############################
 
-	parm$col.delta <- .2
+	parm$col.delta <- .1
 
 	# delta-neighborhood threshold for elements
 	parm$row.delta <- .1
@@ -288,7 +288,6 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 	parm$shift <- true$shift
 	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
-
 
 	parm <- fn.assign.priors(parm, data)
 
@@ -572,7 +571,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	#
 	All.Stuff$d.v <- All.Stuff$tau_0.v <- All.Stuff$tau.v <- All.Stuff$tau_int.v <- All.Stuff$G.v <- All.Stuff$K.v <- array(,n.reps)
 	All.Stuff$row.flip.v  <- array(0,n.reps)
-	All.Stuff$gibbs.new_col_clust.v  <- All.Stuff$col_flip.v  <- array(0,n.reps)
+	All.Stuff$nbhd_max <- All.Stuff$new_col_clust.v  <- All.Stuff$col_flip.v  <- array(0,n.reps)
 
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
@@ -591,7 +590,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 		All.Stuff$row.flip.v[cc]  <- parm$clust$row.flip
 
-		All.Stuff$gibbs.new_col_clust.v[cc]  <- parm$clust$gibbs.new.flag
+		All.Stuff$new_col_clust.v[cc]  <- parm$clust$col.new.flag
 
 		tmp.mat <- array(0,c(parm$p,parm$p))
 
@@ -601,6 +600,8 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 			}
 
 		All.Stuff$mean.taxicab.v[cc] <- mean(true_parm$clust$nbhd.matrix != tmp.mat)
+
+		All.Stuff$nbhd_max[cc] <- parm$clust$nbhd_max_dist
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "REPS = ",cc,date(),"***********"))

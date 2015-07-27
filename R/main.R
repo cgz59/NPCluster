@@ -51,7 +51,7 @@ fitExample <- function(data,
 											 max.row.nbhd.size = 50, # should be small compared to n2 * G
 											 max.col.nbhd.size = 25, # should be small compared to p
 											 row.frac.probes = 0.05,
-											 col.frac.probes = 0.05,
+											 col.frac.probes = .25,
 											 computeMode = createComputeMode()) {
 
 	if (!inherits(data, "NPClustSimulation")) {

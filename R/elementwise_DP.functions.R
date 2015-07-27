@@ -460,7 +460,6 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	############
 
 	log.prior.v <- log(c((parm$clust$M0+parm$clust$n0.k.comp), parm$clust$n.vec.k.comp))
-
 	#######################################################
 	# Buffering empty clusters with positive masses using Neal's method
 	# NECESSARY under MH algorithm otherwise reverse proposals are impossible
