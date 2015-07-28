@@ -137,7 +137,7 @@ PDP_fn.clip.clusters <- function(parm, keep)
 ###########################################################
 
 
-PDP_fn.log.lik <- function(gg, x.mt, parm, colSums)
+PDP_fn.log.lik <- function(gg, x.mt, parm, colSums=TRUE)
 	{
 	if (gg > 0)
 		{a2.v <- parm$clust$A.mt[,gg]
@@ -239,7 +239,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
     subset_log.ss.mt <- array(,c((parm$clust$G+1), length(col.subset)))
 
     for (gg in 0:parm$clust$G)
-    {subset_log.ss.mt[(gg+1),] <- PDP_fn.log.lik(gg, x.mt=parm$X[,col.subset], parm, colSums=TRUE)
+    {subset_log.ss.mt[(gg+1),] <- PDP_fn.log.lik(gg, x.mt=parm$X[,col.subset], parm)
     }
 
     subset_log.ss.mt <- subset_log.ss.mt + log(prior.prob.v)
@@ -334,7 +334,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 	if (computeMode$useR | computeMode$exactBitStream) {
 
 	# intercept cluster or any existing cluster
-	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE) # HOT
+	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
 
 
   } else { # computeMode
@@ -519,28 +519,26 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   # store so that we can revert to this state if MH propsal is rejected
   init.cc.parm <- parm
 
-  subset.c <- parm$clust$c.v[I.k]
+  old.c.k <- parm$clust$c.v[I.k]
 
   # Note to MS: I've ignored the branching conditions
   #             in "elementwise_DP.functions.R" based on computeMode$useR
 
   parm$clust$C.m.vec.k <- array(,parm$clust$G)
   for (gg in 1:parm$clust$G) {
-    parm$clust$C.m.vec.k[gg] <- sum(subset.c==gg)
+    parm$clust$C.m.vec.k[gg] <- sum(old.c.k==gg)
   }
-  parm$clust$C.m0.k <- sum(subset.c==0)
+  parm$clust$C.m0.k <- sum(old.c.k==0)
 
   parm$clust$C.m.vec.k.comp <- parm$clust$C.m.vec - parm$clust$C.m.vec.k
   parm$clust$C.m0.k.comp <- parm$clust$C.m0 - parm$clust$C.m0.k
-
-  old.c.k <- parm$clust$c.v[k]
 
   x.mt <- matrix(parm$X[,k], ncol=1)
 
   if (computeMode$useR | computeMode$exactBitStream) {
 
     # intercept cluster or any existing cluster
-    L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm, colSums=FALSE) # HOT
+    L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
 
 
   } else { # computeMode
@@ -559,11 +557,8 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   # 	  stop("bad compute")
   # 	}
 
-   #######################################################
-   ### emptied clusters are gone forever under Gibbs sampling
-   #######################################################
 
-   emptied.indx <- which(parm$clust$C.m.vec.comp==0)
+   emptied.indx <- which(parm$clust$C.m.vec.k.comp==0)
    new.G <- parm$clust$G - length(emptied.indx)
 
   if (length(emptied.indx) >0)
@@ -602,13 +597,17 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   P.aux <- P.aux/sum(P.aux)
 
   ## marginal likelihood of new cluster
-  marg.log.lik.v <- array(,length(x.mt))
+  marg.log.lik.v <- cand.s.v.k <- array(,length(x.mt))
   for (tt in 1:length(x.mt))
   {
     tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
     tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
-    marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
+    tmp.marg.v <- tmp.lik.v*P.aux
+    marg.log.lik.v[tt] <- log(sum(tmp.marg.v))
+    cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=tmp.marg.v)
   }
+
+  parm$cand$s.v.k <- cand.s.v.k
   marg.log.lik <- sum(marg.log.lik.v)
 
   L.v <- c(L.v, marg.log.lik)
@@ -625,7 +624,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
    }
 
    if (length(emptied.indx) ==0)
-   {log.prior.v <- log(c((parm$b0+parm$clust$C.m0), (parm$clust$C.m.vec-parm$d), spread.mass))
+   {log.prior.v <- log(c((parm$b0+parm$clust$C.m0.k.comp), (parm$clust$C.m.vec.k.comp-parm$d), spread.mass))
    }
 
    tmp2 <- log.prior.v + L.v
@@ -644,77 +643,137 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
    ########################################################################
 
    new.c.k <- sample(0:(parm$clust$G+1), size=length(I.k), replace=TRUE, prob=parm$clust$post.k)
-   parm$clust$c.v[I.k] <- new.c.k
 
-  exit <- (sum(new.s.k != old.s.k)==0)
-  flip <- 1
+  exit <- (sum(new.c.k != old.c.k)==0)
+  flip <- TRUE
+  new.flag <- FALSE
 
-   new.flag <- new.c.k == (parm$clust$G+1)
+  if (!exit) # CONTINUE W/O EXITING FUNCTION
+  {
 
-   #######################
+    parm$clust$c.v[I.k] <- new.c.k
 
-   count.0 <- sum(new.c.k==0)
-   parm$clust$C.m0 <- parm$clust$C.m0 + count.0
+      new.count <- sum(new.c.k == (parm$clust$G+1))
 
-   if ((count.0 == 0)&(!new.flag))
-   {parm$clust$C.m.vec[new.c.k] <- parm$clust$C.m.vec[new.c.k] + 1
-   }
+      #######################
 
-   if (new.flag)
-   {
-     ###generate the latent vector first, condition on the single kth column
-     cand.s.v.k <- array(,length(x.mt))
-     for (tt in 1:length(x.mt))
-     {
-       tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
-       tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
-       tmp.prob.v <- tmp.lik.v*P.aux
-       prob.gen.v <- tmp.prob.v/sum(tmp.prob.v)
-       cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v)
+      rho.prop <- 0
+
+      count.0 <- sum(new.c.k==0)
+      parm$clust$C.m0 <- parm$clust$C.m0.k.comp + count.0
+      rho.prop <- rho.prop + log(parm$clust$post.k[1])*count.0
+
+      for (gg in 1:parm$clust$G)
+      {count.gg <- sum(new.c.k==gg)
+       parm$clust$C.m.vec[gg] <- parm$clust$C.m.vec.k.comp[gg] + count.gg
+       rho.prop <- rho.prop + log(parm$clust$post.k[gg+1])*count.gg
+      }
+
+      rho.prop <- rho.prop + log(parm$clust$post.k[parm$clust$G+2])*new.count
+
+
+      if (new.count > 0)
+      {
+
+        parm$cand$n.vec.k <- array(,parm$clust$K)
+        for (ss in 1:parm$clust$K)
+        {parm$cand$n.vec.k[ss] <- sum(parm$cand$s.v.k==ss)
+        }
+        parm$cand$n0.k <- sum(parm$cand.s.v.k==0)
+
+        ##################
+        parm$clust$G <- parm$clust$G + 1
+
+        parm$clust$C.m.vec <- c(parm$clust$C.m.vec, 1)
+
+        parm$clust$beta.v <- c(parm$clust$beta.v, 0)
+        parm$clust$gamma.v <- c(parm$clust$gamma.v,0)
+
+        parm$clust$s.v <- c(parm$clust$s.v, parm$cand$s.v.k)
+
+        parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
+
+        parm$clust$n.vec <- parm$clust$n.vec + parm$cand$n.vec.k
+        parm$clust$n0 <- parm$clust$n0 + parm$cand$n0.k
+
+        parm$N <- sum(parm$clust$n.vec) + parm$clust$n0
+
+        tmp.a.v <- array(,parm$n2)
+        s.G.v <- parm$cand$s.v.k
+        indxx <- s.G.v==0
+        tmp.a.v[indxx] <- 0
+        tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
+        #
+        parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
+        parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
+
+        if (computeMode$useR) {
+          parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
+        } else {
+          parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
+        }
+
+      } # end  if (new.count > 0)
+
+    ######################
+
+    # sum(parm$clust$C.m.vec) + parm$clust$C.m0 == parm$p
+
+
+    ##########################################
+    ##########################################
+    ##### Computing proposal prob of reverse move
+    ##########################################
+    ##########################################
+
+    for (gg in 0:old.parm$clust$G)
+    {flag.gg <- (old.c.k==gg)
+     count.gg <- sum(flag.gg)
+
+     if (count.gg > 0)
+     {rho.prop <- rho.prop - log(old.parm$clust$post.k[gg+1])*count.gg
      }
-     parm$cand$s.v.k <- cand.s.v.k
+    }
 
-     parm$cand$n.vec.k <- array(,parm$clust$K)
-     for (gg in 1:parm$clust$K)
-     {parm$cand$n.vec.k[gg] <- sum(cand.s.v.k==gg)
-     }
-     parm$cand$n0.k <- sum(cand.s.v.k==0)
+    #######################################################
+    #######################################################
+    ########## computing true log-ratio: 2015
+    #######################################################
+    #######################################################
 
-     ##################
-     parm$clust$G <- parm$clust$G + 1
+    # formula on page 1 of 07/27/15 notes
 
-     parm$clust$C.m.vec <- c(parm$clust$C.m.vec, 1)
+    rho.tru <- fn.d(d=parm$d, parm) - fn.d(d=parm$d, init.cc.parm)
 
-     parm$clust$beta.v <- c(parm$clust$beta.v, 0)
-     parm$clust$gamma.v <- c(parm$clust$gamma.v,0)
+    new.log.lik <- 0
 
-     parm$clust$s.v <- c(parm$clust$s.v, parm$cand$s.v.k)
+    for (gg in new.c.k)
+    {indx.gg <- new.c.k==gg
+     x_gg.mt <- matrix(parm$X[,I.k[indx.gg]], ncol=sum(indx.gg))
+     new.log.lik <- new.log.lik + sum(PDP_fn.log.lik(gg, x.mt=x_gg.mt, parm))
+    }
 
-     parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
+    old.log.lik <- 0
+    for (gg in old.c.k)
+    {indx.gg <- old.c.k==gg
+     x_gg.mt <- matrix(parm$X[,I.k[indx.gg]], ncol=sum(indx.gg))
+      old.log.lik <- old.log.lik + sum(PDP_fn.log.lik(gg, x.mt=x_gg.mt, old.parm))
+    }
 
-     parm$clust$n.vec <- parm$clust$n.vec + parm$cand$n.vec.k
-     parm$clust$n0 <- parm$clust$n0 + parm$cand$n0.k
+    rho.tru <- rho.tru + new.log.lik - old.log.lik
 
-     parm$N <- sum(parm$clust$n.vec) + parm$clust$n0
+    ########## toss a coin #################
 
-     tmp.a.v <- array(,parm$n2)
-     s.G.v <- parm$cand$s.v.k
-     indxx <- s.G.v==0
-     tmp.a.v[indxx] <- 0
-     tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
-     #
-     parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
-     parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
+    prob <- exp(min((rho.tru-rho.prop),0))
 
-     if (computeMode$useR) {
-       parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
-     } else {
-       parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
-     }
-   } # end  if (new.flag)
+    flip <- as.logical(rbinom(n=1, size=1, prob=prob))
+    if (!flip) {parm <- init.cc.parm}
 
 
-   list(parm, new.flag)
+  } # end BIG if (!exit) loop
+
+
+   list(parm, new.flag, exit, flip)
 }
 
 
@@ -804,6 +863,7 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, max.col.nbhd.size, com
 
 
 	new.flag.v <- NULL
+  col.mh.flip.v <- col.mh.exit.v <- NULL
 
      for (cc in parm$subset_nbhd.indx)
 			{previous.parm <- parm
@@ -818,9 +878,11 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, max.col.nbhd.size, com
 
 			if (length(parm$clust$col.nbhd[[cc]])>1)
 			{
-			  #tmp <- PDP_fn.fast_col(cc, parm, data, computeMode)
-			  #parm <- tmp[[1]]
-			  #new.flag.v <- c(new.flag.v, tmp[[2]])
+			  tmp <- PDP_fn.fast_col(cc, parm, data, computeMode)
+			  parm <- tmp[[1]]
+			  new.flag.v <- c(new.flag.v, tmp[[2]])
+			  col.mh.exit.v <- c(col.mh.exit.v, tmp[[3]])
+			  col.mh.flip.v <- c(col.mh.flip.v, tmp[[4]])
 			}
 
 			}
@@ -831,6 +893,8 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, max.col.nbhd.size, com
 			}
 
 	parm$clust$col.new.flag <- mean(new.flag.v)
+  parm$clust$col.mh.flip <- mean(col.mh.flip.v)
+  parm$clust$col.mh.exit <- mean(col.mh.exit.v)
 
 	##########################################
 	## Drop empty group clusters:
