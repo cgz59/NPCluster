@@ -528,6 +528,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   for (gg in 1:parm$clust$G) {
     parm$clust$C.m.vec.k[gg] <- sum(old.c.k==gg)
   }
+
   parm$clust$C.m0.k <- sum(old.c.k==0)
 
   parm$clust$C.m.vec.k.comp <- parm$clust$C.m.vec - parm$clust$C.m.vec.k
@@ -657,23 +658,31 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
       #######################
 
-      rho.prop <- 0
+      new.prop <- 0
 
       count.0 <- sum(new.c.k==0)
       parm$clust$C.m0 <- parm$clust$C.m0.k.comp + count.0
-      rho.prop <- rho.prop + log(parm$clust$post.k[1])*count.0
+      if (count.0 >0)
+        {new.prop <- new.prop + log(parm$clust$post.k[1])*count.0
+        }
 
       for (gg in 1:parm$clust$G)
       {count.gg <- sum(new.c.k==gg)
        parm$clust$C.m.vec[gg] <- parm$clust$C.m.vec.k.comp[gg] + count.gg
-       rho.prop <- rho.prop + log(parm$clust$post.k[gg+1])*count.gg
+
+       if (count.gg > 0)
+          {new.prop <- new.prop + log(parm$clust$post.k[gg+1])*count.gg
+          }
       }
 
-      rho.prop <- rho.prop + log(parm$clust$post.k[parm$clust$G+2])*new.count
 
-
-      if (new.count > 0)
+    if (new.count > 0)
       {
+      parm$clust$G <- parm$clust$G + 1
+
+      parm$clust$C.m.vec <- c(parm$clust$C.m.vec, new.count)
+
+        new.prop <- new.prop + log(parm$clust$post.k[parm$clust$G+1])*new.count
 
         parm$cand$n.vec.k <- array(,parm$clust$K)
         for (ss in 1:parm$clust$K)
@@ -682,9 +691,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
         parm$cand$n0.k <- sum(parm$cand.s.v.k==0)
 
         ##################
-        parm$clust$G <- parm$clust$G + 1
 
-        parm$clust$C.m.vec <- c(parm$clust$C.m.vec, 1)
 
         parm$clust$beta.v <- c(parm$clust$beta.v, 0)
         parm$clust$gamma.v <- c(parm$clust$gamma.v,0)
@@ -720,20 +727,25 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     # sum(parm$clust$C.m.vec) + parm$clust$C.m0 == parm$p
 
 
+
     ##########################################
     ##########################################
     ##### Computing proposal prob of reverse move
     ##########################################
     ##########################################
 
+    old.prop <- 0
+
     for (gg in 0:old.parm$clust$G)
     {flag.gg <- (old.c.k==gg)
      count.gg <- sum(flag.gg)
 
      if (count.gg > 0)
-     {rho.prop <- rho.prop - log(old.parm$clust$post.k[gg+1])*count.gg
+     {old.prop <- old.prop + log(old.parm$clust$post.k[gg+1])*count.gg
      }
     }
+
+    rho.prop <- new.prop - old.prop
 
     #######################################################
     #######################################################
@@ -743,7 +755,21 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
     # formula on page 1 of 07/27/15 notes
 
-    rho.tru <- fn.d(d=parm$d, parm) - fn.d(d=parm$d, init.cc.parm)
+    # need to ensure there are no empty clusters in either
+    # init.cc.parm or parm, otherwise likelihood formula
+    # doesn't work (lgamma of negative values)
+
+    tmp.new.parm <- parm
+    indx.new <- parm$clust$C.m.vec > 0
+    tmp.new.parm$clust$G <- sum(indx.new)
+    tmp.new.parm$clust$C.m.vec <- parm$clust$C.m.vec[indx.new]
+    #
+    tmp.old.parm <- init.cc.parm
+    indx.old <- init.cc.parm$clust$C.m.vec > 0
+    tmp.old.parm$clust$G <- sum(indx.old)
+    tmp.old.parm$clust$C.m.vec <- init.cc.parm$clust$C.m.vec[indx.old]
+
+    rho.tru <- fn.d(d=parm$d, tmp.new.parm) - fn.d(d=parm$d, tmp.old.parm)
 
     new.log.lik <- 0
 
@@ -757,7 +783,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     for (gg in old.c.k)
     {indx.gg <- old.c.k==gg
      x_gg.mt <- matrix(parm$X[,I.k[indx.gg]], ncol=sum(indx.gg))
-      old.log.lik <- old.log.lik + sum(PDP_fn.log.lik(gg, x.mt=x_gg.mt, old.parm))
+     old.log.lik <- old.log.lik + sum(PDP_fn.log.lik(gg, x.mt=x_gg.mt, old.parm))
     }
 
     rho.tru <- rho.tru + new.log.lik - old.log.lik
@@ -766,8 +792,8 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
     prob <- exp(min((rho.tru-rho.prop),0))
 
-    flip <- as.logical(rbinom(n=1, size=1, prob=prob))
-    if (!flip) {parm <- init.cc.parm}
+
+if (!flip) {parm <- init.cc.parm}
 
 
   } # end BIG if (!exit) loop
@@ -835,7 +861,7 @@ PDP_fn.drop <- function(parm)
 
 
 
-fast_PDP_fn.main <- function(parm, data, col.frac.probes, max.col.nbhd.size, computeMode)
+fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd, max.col.nbhd.size, computeMode)
 {
   p <- parm$p
 
@@ -843,11 +869,10 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, max.col.nbhd.size, com
 	# compute delta-neighborhoods
 	#########################
 
-  # SG: Notice that col.frac.probes is probability of updating the
-  #     the delta neighborhoods. It is also used to pick the delta-nbhds to
-  #     update
+  # SG: prob.compute.col.nbhd is the probability of computing
+  # the neighborhoods, and col.frac.probes is the fraction of neighborhoods updated
 
-  col_flip <- as.logical(rbinom(n=1,size=1,prob=col.frac.probes))
+  col_flip <- as.logical(rbinom(n=1,size=1,prob=prob.compute.col.nbhd))
   if (is.null(parm$clust$col.nbhd.k) | col_flip){
     parm <- PDP_fn.post.prob.and.delta(parm, max.col.nbhd.size, computeMode)
   }
@@ -893,8 +918,14 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, max.col.nbhd.size, com
 			}
 
 	parm$clust$col.new.flag <- mean(new.flag.v)
-  parm$clust$col.mh.flip <- mean(col.mh.flip.v)
-  parm$clust$col.mh.exit <- mean(col.mh.exit.v)
+  if (!is.null(col.mh.flip.v))
+    {parm$clust$col.mh.flip <- mean(col.mh.flip.v)
+    parm$clust$col.mh.exit <- mean(col.mh.exit.v)
+    }
+  else
+    {parm$clust$col.mh.flip <- 1
+    parm$clust$col.mh.exit <- 1
+    }
 
 	##########################################
 	## Drop empty group clusters:

@@ -515,10 +515,10 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 
 ########################################
 
-fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
+fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm,
                     computeMode)
 	{
-	parm <- fast_PDP_fn.main(parm, data, col.frac.probes, max.col.nbhd.size, computeMode)
+	parm <- fast_PDP_fn.main(parm, data, col.frac.probes, prob.compute.col.nbhd, max.col.nbhd.size, computeMode)
 
 	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes, computeMode)
 
@@ -541,7 +541,7 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 
-fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm,
+fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm,
                     computeMode = "R")
 	{
 
@@ -555,7 +555,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		}
 
 	for (cc in 1:n.burn)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "BURN = ",cc,date(),"***********"))
@@ -571,12 +571,12 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	#
 	All.Stuff$d.v <- All.Stuff$tau_0.v <- All.Stuff$tau.v <- All.Stuff$tau_int.v <- All.Stuff$G.v <- All.Stuff$K.v <- array(,n.reps)
 	All.Stuff$row.flip.v  <- array(0,n.reps)
-	All.Stuff$nbhd_max <- All.Stuff$new_col_clust.v  <- All.Stuff$col_exit.v <- All.Stuff$col_flip.v  <- array(0,n.reps)
+	All.Stuff$nbhd_max <- All.Stuff$col_new_clust.v  <- All.Stuff$col_exit.v <- All.Stuff$col_flip.v  <- array(0,n.reps)
 
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
 	for (cc in 1:n.reps)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K
@@ -590,7 +590,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 		All.Stuff$row.flip.v[cc]  <- parm$clust$row.flip
 
-		All.Stuff$new_col_clust.v[cc]  <- parm$clust$col.new.flag
+		All.Stuff$col_new_clust.v[cc]  <- parm$clust$col.new.flag
 		All.Stuff$col_flip.v[cc]  <- parm$clust$col.mh.flip
 		All.Stuff$col_exit.v[cc]  <- parm$clust$col.mh.exit
 
@@ -603,7 +603,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 		All.Stuff$mean.taxicab.v[cc] <- mean(true_parm$clust$nbhd.matrix != tmp.mat)
 
-		All.Stuff$nbhd_max[cc] <- parm$clust$nbhd_max_dist
+		All.Stuff$nbhd_max[cc] <- round(parm$clust$nbhd_max_dist, dig=2)
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "REPS = ",cc,date(),"***********"))

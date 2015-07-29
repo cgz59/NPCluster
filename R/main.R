@@ -51,7 +51,8 @@ fitExample <- function(data,
 											 max.row.nbhd.size = 50, # should be small compared to n2 * G
 											 max.col.nbhd.size = 25, # should be small compared to p
 											 row.frac.probes = 0.05,
-											 col.frac.probes = .25,
+											 col.frac.probes = .1,
+                       prob.compute.col.nbhd=.2,
 											 computeMode = createComputeMode()) {
 
 	if (!inherits(data, "NPClustSimulation")) {
@@ -69,7 +70,7 @@ fitExample <- function(data,
 	posterior <- fn.mcmc(text="CLUST ANALYZE...",
 											 data$X$true, data$X$data,
 											 n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
-											 data$parm, computeMode)
+											 prob.compute.col.nbhd, data$parm, computeMode)
 	return (posterior)
 }
 
