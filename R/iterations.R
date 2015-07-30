@@ -603,7 +603,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 		All.Stuff$mean.taxicab.v[cc] <- mean(true_parm$clust$nbhd.matrix != tmp.mat)
 
-		All.Stuff$nbhd_max[cc] <- round(parm$clust$nbhd_max_dist, dig=2)
+		All.Stuff$nbhd_max[cc] <- round(parm$clust$nbhd_max_dist, digits = 2)
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "REPS = ",cc,date(),"***********"))
