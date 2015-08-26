@@ -196,18 +196,18 @@ PDP_fn.nbhd <- function(relative_I, parm, max.col.nbhd.size)
 
   post.prob.mt <- parm$clust$col_subset_post.prob.mt
 
-  tmp1.mt <- matrix(post.prob.mt[,relative_I], ncol=length(relative_I))
+  tmp1.mt <- matrix(post.prob.mt[,relative_I], ncol = length(relative_I)) ## HOT
   tmp2.v <- post.prob.mt[,relative_k]
   tmp3.mt <- sqrt(tmp1.mt * tmp2.v)
-  H.v <-  2*(1-colSums(tmp3.mt))
+  H.v <-  2 * (1 - colSums(tmp3.mt))
 
   cutoff <- parm$col.delta
   flag.v <- which(H.v <= cutoff)
   relative_I.k <- relative_I[flag.v]
 
-  if (length(relative_I.k) > max.col.nbhd.size)
-  {cutoff <- quantile(H.v[flag.v], probs=max.col.nbhd.size/length(relative_I.k))
-   relative_I.k <- relative_I[which(H.v <= cutoff)]
+  if (length(relative_I.k) > max.col.nbhd.size) {
+    cutoff <- quantile(H.v[flag.v], probs = max.col.nbhd.size/length(relative_I.k))
+    relative_I.k <- relative_I[which(H.v <= cutoff)]
   }
 
   relative_I.k <- sort(relative_I.k)
@@ -226,7 +226,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
 
   col.subset <- 1:parm$p
 
-  if (computeMode$useR) {
+  if (TRUE) { # computeMode$useR) {
 
     ################################################
     ### Compute pmf of cluster variables w_1,...,w_p
@@ -236,10 +236,10 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
     small <- 1e-3 # compared to 1
     prior.prob.v[prior.prob.v < small] <- small
 
-    subset_log.ss.mt <- array(,c((parm$clust$G+1), length(col.subset)))
+    subset_log.ss.mt <- array(, c((parm$clust$G + 1), length(col.subset)))
 
     for (gg in 0:parm$clust$G)
-    {subset_log.ss.mt[(gg+1),] <- PDP_fn.log.lik(gg, x.mt=parm$X[,col.subset], parm)
+    {subset_log.ss.mt[(gg+1),] <- PDP_fn.log.lik(gg, x.mt = parm$X[,col.subset], parm)
     }
 
     subset_log.ss.mt <- subset_log.ss.mt + log(prior.prob.v)
@@ -280,14 +280,14 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
     parm$clust$col.nbhd.k <- NULL
     relative_I <- 1:length(col.subset)
 
-    while (length(relative_I)>=1)
-    {tmp <- PDP_fn.nbhd(relative_I, parm, max.col.nbhd.size)
-     relative_k <- tmp[[1]]
-     relative_I.k <- tmp[[2]]
-     relative_I <- tmp[[3]]
-     #
-     parm$clust$col.nbhd <- c(parm$clust$col.nbhd, list(col.subset[relative_I.k]))
-     parm$clust$col.nbhd.k <- c(parm$clust$col.nbhd.k, col.subset[relative_k])
+    while (length(relative_I) >= 1) {
+      tmp <- PDP_fn.nbhd(relative_I, parm, max.col.nbhd.size) # HOT inside function
+      relative_k <- tmp[[1]]
+      relative_I.k <- tmp[[2]]
+      relative_I <- tmp[[3]]
+      #
+      parm$clust$col.nbhd <- c(parm$clust$col.nbhd, list(col.subset[relative_I.k]))
+      parm$clust$col.nbhd.k <- c(parm$clust$col.nbhd.k, col.subset[relative_k])
     }
 
   } else { # computeMode != "R"

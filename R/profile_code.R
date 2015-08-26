@@ -115,6 +115,46 @@ quick_profile <- function() {
 
 }
 
+
+play_profile <- function() {
+  n <- 100 # 100
+  p <- 1000 # 1000
+
+  n.burn <- 1
+  n.reps <- 0
+
+  row.frac.probes <- 0.1
+  col.frac.probes <- 0.1
+
+  filename <- "Rprof_100_1000.out"
+
+  set.seed(666)
+  system.time(
+    posterior <- profileExample(n = n, p = p, n.burn = n.burn, n.reps = n.reps,
+                                row.frac.probes = row.frac.probes,
+                                col.frac.probes = col.frac.probes,
+                                filename = filename,
+                                computeMode = createComputeMode(language = "C",
+                                                                exactBitStream = FALSE,
+                                                                test1 = TRUE)
+                                # computeMode = createComputeMode()
+                                )
+
+  )
+
+
+  d_credible.v <- quantile(posterior$d.v, prob = c(.025,.975))
+  mean.taxicab <- mean(posterior$mean.taxicab.v)
+  se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
+  d_credible.v
+  mean.taxicab
+  se_mean.taxicab
+
+
+}
+
+
+
 big_profile <- function() {
   n <- 100
   p <- 1000
@@ -138,6 +178,9 @@ big_profile <- function() {
                                                             test1 = TRUE))
 
   )
+
+  prof <- summaryRprof(filename = filename, lines = "show")$by.self
+
   d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
   se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
