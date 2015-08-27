@@ -38,6 +38,36 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// computeColumnsPmfAndNeighborhoods
+Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp, int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2, int K, int N, const Rcpp::NumericVector& Y, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const Rcpp::IntegerVector& rowSubsetI, const Rcpp::IntegerVector& CmVec, const int n2, const Rcpp::NumericVector& phiV, const double tau, const double tau0, const double tauInt, const int maxNeighborhoodSize, const double cutOff);
+RcppExport SEXP NPCluster_computeColumnsPmfAndNeighborhoods(SEXP sexpSEXP, SEXP n0SEXP, SEXP nVecSEXP, SEXP epsilonSEXP, SEXP epsilon2SEXP, SEXP KSEXP, SEXP NSEXP, SEXP YSEXP, SEXP XSEXP, SEXP ASEXP, SEXP SSEXP, SEXP rowSubsetISEXP, SEXP CmVecSEXP, SEXP n2SEXP, SEXP phiVSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP tauIntSEXP, SEXP maxNeighborhoodSizeSEXP, SEXP cutOffSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
+    Rcpp::traits::input_parameter< int >::type n0(n0SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type nVec(nVecSEXP);
+    Rcpp::traits::input_parameter< double >::type epsilon(epsilonSEXP);
+    Rcpp::traits::input_parameter< double >::type epsilon2(epsilon2SEXP);
+    Rcpp::traits::input_parameter< int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type S(SSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type rowSubsetI(rowSubsetISEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type CmVec(CmVecSEXP);
+    Rcpp::traits::input_parameter< const int >::type n2(n2SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type phiV(phiVSEXP);
+    Rcpp::traits::input_parameter< const double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< const double >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< const double >::type tauInt(tauIntSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxNeighborhoodSize(maxNeighborhoodSizeSEXP);
+    Rcpp::traits::input_parameter< const double >::type cutOff(cutOffSEXP);
+    __result = Rcpp::wrap(computeColumnsPmfAndNeighborhoods(sexp, n0, nVec, epsilon, epsilon2, K, N, Y, X, A, S, rowSubsetI, CmVec, n2, phiV, tau, tau0, tauInt, maxNeighborhoodSize, cutOff));
+    return __result;
+END_RCPP
+}
 // computePmfAndNeighborhoods
 Rcpp::List computePmfAndNeighborhoods(SEXP sexp, int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2, int K, int N, const Rcpp::NumericVector& Y, const Rcpp::NumericVector& Xsd, const Rcpp::IntegerVector& rowSubsetI, const Rcpp::IntegerVector& CmVec, const int n2, const Rcpp::NumericVector& phiV, const double tau, const double tau0, const int maxNeighborhoodSize, const double cutOff);
 RcppExport SEXP NPCluster_computePmfAndNeighborhoods(SEXP sexpSEXP, SEXP n0SEXP, SEXP nVecSEXP, SEXP epsilonSEXP, SEXP epsilon2SEXP, SEXP KSEXP, SEXP NSEXP, SEXP YSEXP, SEXP XsdSEXP, SEXP rowSubsetISEXP, SEXP CmVecSEXP, SEXP n2SEXP, SEXP phiVSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP maxNeighborhoodSizeSEXP, SEXP cutOffSEXP) {

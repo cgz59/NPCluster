@@ -142,11 +142,11 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums=TRUE)
 	if (gg > 0)
 		{a2.v <- parm$clust$A.mt[,gg]
 		z.g.v <- parm$clust$s.mt[,gg] > 0
-		log.lik.v <- rep(0,ncol(x.mt))
+		log.lik.v <- rep(0,ncol(x.mt)) ## HOT
 
 		if (sum(z.g.v) > 0)
 			{a2.1.v <- parm$clust$A.mt[z.g.v,gg]
-			small.X.1 <- matrix(x.mt[z.g.v,], ncol=ncol(x.mt))
+			small.X.1 <- matrix(x.mt[z.g.v,], ncol=ncol(x.mt)) # HOT
 			if (colSums)
 				{tmp <- colSums(-.5*(small.X.1 - a2.1.v)^2)
 				}
@@ -198,7 +198,7 @@ PDP_fn.nbhd <- function(relative_I, parm, max.col.nbhd.size)
 
   tmp1.mt <- matrix(post.prob.mt[,relative_I], ncol = length(relative_I)) ## HOT
   tmp2.v <- post.prob.mt[,relative_k]
-  tmp3.mt <- sqrt(tmp1.mt * tmp2.v)
+  tmp3.mt <- sqrt(tmp1.mt * tmp2.v) ## HOT
   H.v <-  2 * (1 - colSums(tmp3.mt))
 
   cutoff <- parm$col.delta
@@ -220,13 +220,11 @@ PDP_fn.nbhd <- function(relative_I, parm, max.col.nbhd.size)
 }
 
 
-PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
-
-{
+PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes, computeMode) {
 
   col.subset <- 1:parm$p
 
-  if (TRUE) { # computeMode$useR) {
+  # if (computeMode$useR) {
 
     ################################################
     ### Compute pmf of cluster variables w_1,...,w_p
@@ -245,6 +243,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
     subset_log.ss.mt <- subset_log.ss.mt + log(prior.prob.v)
 
     maxx.v <- apply(subset_log.ss.mt, 2, max)
+
     subset_log.ss.mt <- t(t(subset_log.ss.mt) - maxx.v)
     subset_ss.mt <- exp(subset_log.ss.mt)
 
@@ -269,12 +268,11 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
     parm$clust$col_subset_post.prob.mt <- subset_ss.mt
     dimnames(parm$clust$col_subset_post.prob.mt) <- list(0:parm$clust$G, 1:length(col.subset))
 
-
     #########################################
     ### now compute the delta-neighborhoods
     #########################################
 
-    # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
 
     parm$clust$col.nbhd <- NULL
     parm$clust$col.nbhd.k <- NULL
@@ -290,13 +288,43 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, computeMode)
       parm$clust$col.nbhd.k <- c(parm$clust$col.nbhd.k, col.subset[relative_k])
     }
 
-  } else { # computeMode != "R"
+  # } else { # computeMode != "R"
 
-  ############################################################################
-  ### SG did not copy MS's code copied from "element_fn.post.prob.and.delta" here
-  ############################################################################
+    .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
 
-  } # computeMode
+    #	engine <- createEngine(sort = TRUE)
+    test <- .computeColumnPmfAndNeighborhoods(computeMode$device$engine,
+                                        parm$clust$C.m0, parm$clust$C.m.vec, 1e-3, 1e-5,
+                                        parm$clust$G, parm$n2,
+                                        parm$Y, parm$X,
+                                        parm$clust$A.mt, parm$clust$s.mt,
+                                        col.subset,
+                                        parm$clust$C.m.vec, parm$p,
+                                        parm$clust$phi.v, parm$tau, parm$tau_0, parm$tau_int,
+                                        max.col.nbhd.size, parm$col.delta)
+
+    	if (!all(parm$clust$col.nbhd.k == test$index)) {
+    	  stop("Error in C++ draw")
+    	}
+
+    	if (!all(unlist(parm$clust$col.nbhd) == test$neighbor)) {
+    	  stop("Error in C++ draw")
+    	}
+
+    # Convert from simple flat format to list of int vectors
+    end <- test$offset[-1] - 1
+    begin <- test$offset
+    length(begin) <- length(begin) - 1
+
+    parm$clust$row.nbhd <- lapply(1:length(begin),
+                                  FUN = function(x) {
+                                    test$neighbor[begin[x]:end[x]]
+                                  })
+    parm$clust$row.nbhd.k <- test$index
+
+    cat("HERE\n")
+
+  # } # computeMode
 
   ## END
 
@@ -874,7 +902,7 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 
   col_flip <- as.logical(rbinom(n=1,size=1,prob=prob.compute.col.nbhd))
   if (is.null(parm$clust$col.nbhd.k) | col_flip){
-    parm <- PDP_fn.post.prob.and.delta(parm, max.col.nbhd.size, computeMode)
+    parm <- PDP_fn.post.prob.and.delta(parm, max.col.nbhd.size, col.frac.probes, computeMode)
   }
 
 

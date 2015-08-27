@@ -37,6 +37,29 @@ int accessEngine(SEXP sexp) {
   EnginePtr engine = parsePtr(sexp);
   return 1;
 }
+
+
+// [[Rcpp::export(.computeColumnPmfAndNeighborhoods)]]
+Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp,
+                               int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2,
+                               int K, int N,
+						  	   const Rcpp::NumericVector& Y, const Rcpp::NumericMatrix& X,
+						  	   const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
+                               const Rcpp::IntegerVector& rowSubsetI,
+                               const Rcpp::IntegerVector& CmVec, const int n2,
+                               const Rcpp::NumericVector& phiV, const double tau, const double tau0, const double tauInt,
+                               const int maxNeighborhoodSize,
+                               const double cutOff) {
+  EnginePtr engine = parsePtr(sexp);
+  return engine->computeColumnPmfAndNeighborhoods(n0, nVec, epsilon, epsilon2,
+                                     K, N,
+                                     Y, X, A, S, rowSubsetI,
+                                     CmVec, n2,
+                                     phiV, tau, tau0, tauInt,
+                                     maxNeighborhoodSize, cutOff);
+}
+
+
 // [[Rcpp::export(.computePmfAndNeighborhoods)]]
 Rcpp::List computePmfAndNeighborhoods(SEXP sexp,
                                int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2,

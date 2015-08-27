@@ -117,11 +117,11 @@ quick_profile <- function() {
 
 
 play_profile <- function() {
-  n <- 100 # 100
-  p <- 1000 # 1000
+  n <- 25 # 100
+  p <- 125 # 1000
 
-  n.burn <- 1
-  n.reps <- 0
+  n.burn <- 100
+  n.reps <- 100
 
   row.frac.probes <- 0.1
   col.frac.probes <- 0.1

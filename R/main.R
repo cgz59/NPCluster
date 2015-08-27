@@ -111,7 +111,7 @@ createComputeMode <- function(language = "R",
   useR <- (language == "R")
   device <- NULL
   if (!useR) {
-    doSort <- (exactBitStream | !extraSort)
+    doSort <- (exactBitStream | extraSort)
     device <- .createEngine(doSort)
   }
 

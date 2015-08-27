@@ -50,13 +50,21 @@ public:
 	// TODO X may be constant, so may consider making single, padded copy for vectorization
 
 	NumericVector logLikelihood(G + 1);
+	internalComputePdpLogLikelihood(&logLikelihood[0], k, X, A, S, G, N, tau, tau0, tauInt, colSums);
 
+	return Rcpp::List::create(
+		Rcpp::Named("logLikelihood") = logLikelihood
+	);
+  }
+
+  template <typename OutputPtr>
+  void internalComputePdpLogLikelihood(OutputPtr logLikelihood, const int k, const Rcpp::NumericMatrix& X,
+							const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
+							const int G, const int N,
+							const double tau, const double tau0, const double tauInt, bool colSums) {
+
+	// TODO X may be constant, so may consider making single, padded copy for vectorization
 	const auto Xmt = std::begin(X) + (k - 1) * N;
-
-// 	std::for_each(Xmt, Xmt + N, [](double x) {
-// 		std::cerr << " " << x;
-// 	});
-// 	std::cerr << std::endl;
 
 	// gg == 0 case
 
@@ -90,20 +98,7 @@ public:
 		}
 		logLikelihood[gg] = tmp;
 	}
-
-// 	for (auto x : logLikelihood) {
-// 		std::cerr << " " << x;
-// 	}
-// 	std::cerr << std::endl;
-
-	return Rcpp::List::create(
-		Rcpp::Named("logLikelihood") = logLikelihood
-	);
   }
-
-
-
-
 
   double logLikelihood(double mean, double sd, int num, double Y, double Xsd) {
   	return -num / 2.0 * std::log(2.0 * M_PI * sd * sd)
@@ -219,6 +214,123 @@ public:
 	);
 
   }
+
+  Rcpp::List computeColumnPmfAndNeighborhoods(int n0, const IntegerVector& nVec,
+  		const double epsilon, const double epsilon2,
+  		int K, int N,  // NB: K -> G for column-space
+  		const NumericVector& Y, const NumericMatrix& X,
+  		const NumericMatrix& A, const IntegerMatrix& S,
+  		const IntegerVector& rowSubsetI,
+  		const IntegerVector& CmVec, const int P,
+  		const NumericVector& phiV, const double tau, const double tau0, const double tauInt,
+  		const int maxNeighborhoodSize,
+  		const double cutOff) {
+
+	// TODO n2 is const throughout run
+
+	verify(K == nVec.size());
+	verify(K == phiV.size());
+
+    std::vector<double> priorProbV(K + 1); // TODO Reuse memory
+
+    priorProbV[0] = n0;
+    std::copy(std::begin(nVec), std::end(nVec), std::begin(priorProbV) + 1);
+    std::transform(std::begin(priorProbV), std::end(priorProbV), std::begin(priorProbV),
+    	[epsilon](double x) {
+    		if (x < epsilon) {
+    			x = epsilon;
+    		}
+    		return std::log(x);
+    	}
+    );
+
+// 	for (int i = 0; i < K + 1; ++i) {
+// 		std::cerr << " " << priorProbV[i];
+// 	}
+// 	std::cerr << std::endl;
+
+//     std::vector<double> phiVKp1(K + 1);
+//     phiVKp1[0] = 0.0;
+//     std::copy(std::begin(phiV), std::end(phiV), std::begin(phiVKp1) + 1);
+//
+//     std::vector<double> tauV(K + 1, tau); // TODO Remove, without switch in for-loop below
+//     tauV[0] = tau0;
+//
+	if ((K + 1) * N > logSsMt.size()) { // TODO Handle alignment, minor dimension == K
+		logSsMt.resize((K + 1) * N);
+	}
+
+	// TODO Parallelize
+	std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI),
+		[&CmVec,&Y,&X,&A,&S,&priorProbV,&rowSubsetI,tau,tau0,tauInt,P,K,epsilon2,N,this](const int x) {
+			const auto col = x - 1; //rowSubsetI[i] - 1;
+			// const auto gv = col / n2;
+
+			internalComputePdpLogLikelihood(&logSsMt[col * (K + 1)], col + 1, X, A, S, K, N, tau, tau0, tauInt, false);
+
+			// add prior and accumulate max entry
+			auto max = -std::numeric_limits<double>::max();
+			for (int j = 0; j < K + 1; ++j) {
+				const auto entry =
+					logSsMt[col * (K + 1) + j] // TODO Could compute here instead of above, one fewer write/read pair
+						+ priorProbV[j];
+				if (entry > max) {
+					max = entry;
+				}
+				// Store
+				logSsMt[col * (K + 1) + j] = entry;
+			}
+
+			// subtract off max, exponentiate and accumulate colSum1
+			auto colSum1 = 0.0;
+			for (int j = 0; j < K + 1; ++j) {
+				const auto entry = std::exp(logSsMt[col * (K + 1) + j] - max);
+				colSum1 += entry;
+				logSsMt[col * (K + 1) + j] = entry;
+			}
+
+			// first normalize, replace zeros by "small" and accumulate colSum2
+			auto colSum2 = 0.0;
+			for (int j = 0; j < K + 1; ++j) {
+				auto entry = logSsMt[col * (K + 1) + j] / colSum1;
+				if (entry < epsilon2) {
+					entry = epsilon2;
+				}
+				colSum2 += entry;
+				logSsMt[col * (K + 1) + j] = entry;
+			}
+
+			// again normalize TODO Is second normalization really necessary?
+			for (int j = 0; j < K + 1; ++j) {
+				logSsMt[col * (K + 1) + j] /= colSum2;
+			}
+
+// 			if (col == 1) {
+// 				for (int j = 0; j < K + 1; ++j) {
+// 					std::cerr << " " << logSsMt[col * (K + 1) + j];
+// 				}
+// 				std::cerr << std::endl;
+// 			}
+		}
+	);
+
+	// now compute the delta-neighborhoods
+	StdIntVector neighborhoodList;
+	StdIntVector neighborhoodOffset;
+	StdIntVector neighborhoodIndex;
+
+	computeDeltaNeighborhoods(rowSubsetI,
+		neighborhoodList, neighborhoodOffset, neighborhoodIndex,
+		cutOff, maxNeighborhoodSize, K);
+
+	return Rcpp::List::create(
+		Rcpp::Named("neighbor") = neighborhoodList,
+		Rcpp::Named("offset") = neighborhoodOffset,
+		Rcpp::Named("index") = neighborhoodIndex
+	);
+
+  }
+
 
 private:
 
