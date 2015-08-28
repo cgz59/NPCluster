@@ -96,6 +96,46 @@ Rcpp::List computePdpLogLikelihood(SEXP sexp,
 	return engine->computePdpLogLikelihood(k, X, A, S, G, N, tau, tau0, tauInt, colSums);
 }
 
+// [[Rcpp::export(.fastIndexedSetCopy)]]
+Rcpp::IntegerVector fastIndexedSetCopy(const Rcpp::IntegerVector inY,
+					const Rcpp::IntegerVector& indices,
+					const Rcpp::IntegerVector& x) {
+	using namespace Rcpp;
+
+	IntegerVector y(inY.size());
+	auto index = std::begin(indices);
+	auto value = std::begin(x);
+	const auto end = std::end(indices);
+
+	std::copy(std::begin(inY), std::end(inY), std::begin(y));
+
+	for (; index != end; ++index, ++value) {
+		y[*index - 1] = *value;
+	}
+
+	return y;
+}
+
+
+// [[Rcpp::export(.fastIndexedSetNoCopy)]]
+void fastIndexedSetNoCopy(Rcpp::IntegerVector& y,
+					const Rcpp::IntegerVector& indices,
+					const Rcpp::IntegerVector& x) {
+	using namespace Rcpp;
+
+//	IntegerVector y(inY.size());
+	auto index = std::begin(indices);
+	auto value = std::begin(x);
+	const auto end = std::end(indices);
+
+	for (; index != end; ++index, ++value) {
+		y[*index - 1] = *value;
+	}
+
+	//return y;
+}
+
+
 // [[Rcpp::export(.fastTabulate)]]
 Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K,
                                  bool includeZero = false) {

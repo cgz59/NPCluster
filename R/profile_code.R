@@ -83,6 +83,23 @@ quick_profile <- function() {
   system.time(
     posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
                             computeMode = createComputeMode(language = "C",
+                                                            extraSort = FALSE,
+                                                            exactBitStream = FALSE))
+
+  )
+  d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
+  mean.taxicab <- mean(posterior$mean.taxicab.v)
+  se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
+  d_credible.v
+  mean.taxicab
+  se_mean.taxicab
+
+
+  set.seed(666)
+  simulation <- simulateExample(n = n, p = p)
+  system.time(
+    posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
+                            computeMode = createComputeMode(language = "C",
                                                             exactBitStream = FALSE,
                                                             test1 = TRUE))
 
@@ -143,6 +160,7 @@ play_profile <- function() {
 
   )
 
+  prof <- summaryRprof(filename = filename, lines = "show")$by.self
 
   d_credible.v <- quantile(posterior$d.v, prob = c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)

@@ -117,6 +117,31 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// fastIndexedSetCopy
+Rcpp::IntegerVector fastIndexedSetCopy(const Rcpp::IntegerVector inY, const Rcpp::IntegerVector& indices, const Rcpp::IntegerVector& x);
+RcppExport SEXP NPCluster_fastIndexedSetCopy(SEXP inYSEXP, SEXP indicesSEXP, SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type inY(inYSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type x(xSEXP);
+    __result = Rcpp::wrap(fastIndexedSetCopy(inY, indices, x));
+    return __result;
+END_RCPP
+}
+// fastIndexedSetNoCopy
+void fastIndexedSetNoCopy(Rcpp::IntegerVector& y, const Rcpp::IntegerVector& indices, const Rcpp::IntegerVector& x);
+RcppExport SEXP NPCluster_fastIndexedSetNoCopy(SEXP ySEXP, SEXP indicesSEXP, SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type indices(indicesSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type x(xSEXP);
+    fastIndexedSetNoCopy(y, indices, x);
+    return R_NilValue;
+END_RCPP
+}
 // fastTabulate
 Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K, bool includeZero);
 RcppExport SEXP NPCluster_fastTabulate(SEXP matSEXP, SEXP KSEXP, SEXP includeZeroSEXP) {

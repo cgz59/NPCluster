@@ -25,6 +25,14 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_computePdpLogLikelihood', PACKAGE = 'NPCluster', sexp, k, X, A, S, G, N, tau, tau0, tauInt, colSums)
 }
 
+.fastIndexedSetCopy <- function(inY, indices, x) {
+    .Call('NPCluster_fastIndexedSetCopy', PACKAGE = 'NPCluster', inY, indices, x)
+}
+
+.fastIndexedSetNoCopy <- function(y, indices, x) {
+    invisible(.Call('NPCluster_fastIndexedSetNoCopy', PACKAGE = 'NPCluster', y, indices, x))
+}
+
 .fastTabulate <- function(mat, K, includeZero = FALSE) {
     .Call('NPCluster_fastTabulate', PACKAGE = 'NPCluster', mat, K, includeZero)
 }

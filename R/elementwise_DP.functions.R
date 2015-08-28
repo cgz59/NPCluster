@@ -496,34 +496,58 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
   if (!exit) # CONTINUE W/O EXITING FUNCTION
   {
-	parm$clust$s.v[I.k] <- new.s.k
 
 	if (computeMode$useR) {
 
-	rho.prop <- 0
-	parm$clust$n.vec <- array(0, parm$clust$K)
+	  parm$clust$s.v[I.k] <- new.s.k
 
-	for (gg in 0:parm$clust$K)
-		{flag.gg <- (new.s.k==gg)
-		 count.gg <- sum(flag.gg)
+	  rho.prop <- 0
+	  parm$clust$n.vec <- array(0, parm$clust$K)
 
-		if (gg > 0)
-			{parm$clust$n.vec[gg] <- parm$clust$n.vec.k.comp[gg] + count.gg
-			}
+	  for (gg in 0:parm$clust$K) {
+	    flag.gg <- (new.s.k == gg)
+	    count.gg <- sum(flag.gg)
 
-		if (gg == 0)
-			{parm$clust$n0 <- parm$clust$n0.k.comp + count.gg
-			}
+	    if (gg > 0) {
+	      parm$clust$n.vec[gg] <- parm$clust$n.vec.k.comp[gg] + count.gg
+	    }
 
-		 if (count.gg > 0)
-			{rho.prop <- rho.prop + log(parm$clust$post.k[gg+1])*count.gg
-			}
-		}
+	    if (gg == 0) {
+	      parm$clust$n0 <- parm$clust$n0.k.comp + count.gg
+	    }
+
+	    if (count.gg > 0) {
+	      rho.prop <- rho.prop + log(parm$clust$post.k[gg + 1]) * count.gg
+	    }
+	  }
 
 	} else {
+
+	  # parm$clust$s.v[I.k] <- new.s.k
+
+# 	  values <- parm$clust$s.v
+#
+# 	  oTotal <- sum(parm$clust$s.v)
+# 	  oDiff <- sum(parm$clust$s.v[I.k])
+# 	  nDiff <- sum(new.s.k)
+# 	  oAddress <- pryr::address(values)
+
+	  # parm$clust$s.v <- .fastIndexedSetCopy(parm$clust$s.v, I.k, new.s.k) # Same as: parm$clust$s.v[I.k] <- new.s.k
+	  .fastIndexedSetNoCopy(parm$clust$s.v, I.k, new.s.k) # Same as: parm$clust$s.v[I.k] <- new.s.k
+
+     #<- tmp
+
+# 	  if (sum(parm$clust$s.v) != oTotal - oDiff + nDiff) {
+# 	    stop("Error: incorrect value")
+# 	  }
+
+# 	 if (pryr::address(tmp) != oAddress) {
+# 	   stop("Error: address")
+# 	 }
+
 	  all.count <- .fastTabulateVector(new.s.k, parm$clust$K, TRUE)
 
-		parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
+	  parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
 	  parm$clust$n.vec <- parm$clust$n.vec.k.com + all.count[-1]
 
 	  rho.prop <- .fastSumSafeLog(parm$clust$post.k, all.count)
@@ -601,7 +625,16 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	prob <- exp(min((rho.tru-rho.prop),0))
 	flip <- as.logical(rbinom(n=1, size=1, prob=prob))
-	if (!flip) {parm <- init.cc.parm}
+	if (!flip) {
+	  parm <- init.cc.parm
+
+	  if (!computeMode$useR) {
+
+	    # C++ version does not make a deep copy (via copy-on-write), so values must be manually restored
+	    .fastIndexedSetNoCopy(parm$clust$s.v, I.k, old.s.k)
+	  }
+
+  }
 
  } # end BIG if (!exit) loop
 
