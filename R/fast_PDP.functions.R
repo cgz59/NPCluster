@@ -224,7 +224,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
 
   col.subset <- 1:parm$p
 
-  # if (computeMode$useR) {
+  if (computeMode$useR) {
 
     ################################################
     ### Compute pmf of cluster variables w_1,...,w_p
@@ -272,7 +272,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
     ### now compute the delta-neighborhoods
     #########################################
 
-    savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
 
     parm$clust$col.nbhd <- NULL
     parm$clust$col.nbhd.k <- NULL
@@ -288,9 +288,13 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
       parm$clust$col.nbhd.k <- c(parm$clust$col.nbhd.k, col.subset[relative_k])
     }
 
-  # } else { # computeMode != "R"
+    ### SG: how good are these nbhds?
 
-    .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+    parm <- PDP_fn.check.nbhd(parm)
+
+  } else { # computeMode != "R"
+
+    # .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
 
     #	engine <- createEngine(sort = TRUE)
     test <- .computeColumnPmfAndNeighborhoods(computeMode$device$engine,
@@ -301,36 +305,36 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
                                         col.subset,
                                         parm$clust$C.m.vec, parm$p,
                                         parm$clust$phi.v, parm$tau, parm$tau_0, parm$tau_int,
-                                        max.col.nbhd.size, parm$col.delta)
+                                        max.col.nbhd.size, parm$col.delta, TRUE)
 
-    	if (!all(parm$clust$col.nbhd.k == test$index)) {
-    	  stop("Error in C++ draw")
-    	}
-
-    	if (!all(unlist(parm$clust$col.nbhd) == test$neighbor)) {
-    	  stop("Error in C++ draw")
-    	}
+#     	if (!all(parm$clust$col.nbhd.k == test$index)) {
+#     	  stop("Error in C++ draw: index")
+#     	}
+#
+#     	if (!all(unlist(parm$clust$col.nbhd) == test$neighbor)) {
+#     	  stop("Error in C++ draw: neighbor")
+#     	}
+#
+#       if (abs(parm$clust$nbhd_max_dist - test$neighborhoodMax) > 1E-5) {
+#         stop("Error in C++ draw: neighborhoodMax")
+#       }
+#       cat("PASS")
 
     # Convert from simple flat format to list of int vectors
     end <- test$offset[-1] - 1
     begin <- test$offset
     length(begin) <- length(begin) - 1
 
-    parm$clust$row.nbhd <- lapply(1:length(begin),
+    parm$clust$col.nbhd <- lapply(1:length(begin),
                                   FUN = function(x) {
                                     test$neighbor[begin[x]:end[x]]
                                   })
-    parm$clust$row.nbhd.k <- test$index
+    parm$clust$col.nbhd.k <- test$index
+    parm$clust$nbhd_max_dist <- test$neighborhoodMax
 
-    cat("HERE\n")
-
-  # } # computeMode
+  } # computeMode
 
   ## END
-
-  ### SG: how good are these nbhds?
-
-  parm <- PDP_fn.check.nbhd(parm)
 
   parm
 }

@@ -29,7 +29,7 @@ class AbstractEngine {
 public:
 
 	typedef std::vector<int> StdIntVector;
-
+  typedef std::vector<double> StdNumericVector;
 
   AbstractEngine(bool sort = true) : extraSorting(sort) { }
   virtual ~AbstractEngine() { }
@@ -205,7 +205,7 @@ public:
 
 	computeDeltaNeighborhoods(rowSubsetI,
 		neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-		cutOff, maxNeighborhoodSize, K);
+		cutOff, maxNeighborhoodSize, K, nullptr);
 
 	return Rcpp::List::create(
 		Rcpp::Named("neighbor") = neighborhoodList,
@@ -224,7 +224,8 @@ public:
   		const IntegerVector& CmVec, const int P,
   		const NumericVector& phiV, const double tau, const double tau0, const double tauInt,
   		const int maxNeighborhoodSize,
-  		const double cutOff) {
+  		const double cutOff,
+  		const bool collectMax) {
 
 	// TODO n2 is const throughout run
 
@@ -244,18 +245,6 @@ public:
     	}
     );
 
-// 	for (int i = 0; i < K + 1; ++i) {
-// 		std::cerr << " " << priorProbV[i];
-// 	}
-// 	std::cerr << std::endl;
-
-//     std::vector<double> phiVKp1(K + 1);
-//     phiVKp1[0] = 0.0;
-//     std::copy(std::begin(phiV), std::end(phiV), std::begin(phiVKp1) + 1);
-//
-//     std::vector<double> tauV(K + 1, tau); // TODO Remove, without switch in for-loop below
-//     tauV[0] = tau0;
-//
 	if ((K + 1) * N > logSsMt.size()) { // TODO Handle alignment, minor dimension == K
 		logSsMt.resize((K + 1) * N);
 	}
@@ -304,13 +293,6 @@ public:
 			for (int j = 0; j < K + 1; ++j) {
 				logSsMt[col * (K + 1) + j] /= colSum2;
 			}
-
-// 			if (col == 1) {
-// 				for (int j = 0; j < K + 1; ++j) {
-// 					std::cerr << " " << logSsMt[col * (K + 1) + j];
-// 				}
-// 				std::cerr << std::endl;
-// 			}
 		}
 	);
 
@@ -319,18 +301,18 @@ public:
 	StdIntVector neighborhoodOffset;
 	StdIntVector neighborhoodIndex;
 
-	computeDeltaNeighborhoods(rowSubsetI,
+	const auto max = computeDeltaNeighborhoods(rowSubsetI,
 		neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-		cutOff, maxNeighborhoodSize, K);
+		cutOff, maxNeighborhoodSize, K, collectMax);
 
 	return Rcpp::List::create(
 		Rcpp::Named("neighbor") = neighborhoodList,
 		Rcpp::Named("offset") = neighborhoodOffset,
-		Rcpp::Named("index") = neighborhoodIndex
+		Rcpp::Named("index") = neighborhoodIndex,
+		Rcpp::Named("neighborhoodMax") = max
 	);
 
   }
-
 
 private:
 
@@ -343,33 +325,40 @@ private:
 	typedef NeighborhoodContainer::iterator NeighborhoodIterator;
 	typedef typename FastContainer::iterator FastIterator;
 
-
-
-
-	void computeDeltaNeighborhoods(const IntegerVector& rowSubsetI,
+	double computeDeltaNeighborhoods(const IntegerVector& rowSubsetI,
 		StdIntVector& list, StdIntVector& offset, StdIntVector& index,
 		const double cutOff,
-		const int maxSize, const int K) {
+		const int maxSize, const int K,
+		const bool returnMax) {
 
 	  	FastContainer I; // TODO Better to reuse?
 	  	fillInitialList(I, rowSubsetI);
 
 		list.clear(); offset.clear(); index.clear();
 
+		StdNumericVector maxList; // TODO Better to reuse?
+
 		FastIterator beginI = std::begin(I);
 		const FastIterator endI = std::end(I);
 
 	  	while (beginI != endI) {
-			drawNextNeighborhood(beginI, endI, list, offset, index,
-				cutOff, maxSize, K);
+			  drawNextNeighborhood(beginI, endI, list, offset, index,
+				  cutOff, maxSize, K, (returnMax ? &maxList : nullptr));
 	  	}
  	  	offset.push_back(list.size() + 1); // Inclusive counting
+
+    if (returnMax) {
+      return *std::max_element(std::begin(maxList), std::end(maxList));
+    } else {
+      return 0.0;
+    }
 	}
 
 	void drawNextNeighborhood(FastIterator& begin, const FastIterator& end,
 							  StdIntVector& list, StdIntVector& offset, StdIntVector& index,
 							  double cutOff,
-							  const int maxSize, const int K) {
+							  const int maxSize, const int K,
+							  StdNumericVector* collectionMax) {
 		offset.push_back(list.size() + 1); // Add next offset to a neighborhood
 		if (std::distance(begin, end) == 1) {
 			// Singleton
@@ -387,9 +376,10 @@ private:
 					return std::make_pair(measure, score.second);
 				}
 			);
-// 			std::cerr << "k = " << k.second << std::endl;
 
-//			return;
+// 			if (collectionMax) {
+// 				std::cerr << "k = " << k.second << std::endl;
+// 			}
 
 // 			std::cerr << "Current length: " << std::distance(begin,end) << std::endl;
 
@@ -407,10 +397,12 @@ private:
 				return score.first > cutOff;
 			});
 
-// 			std::for_each(begin,lastCut, [](Score score) {
-// 				std::cerr << " (" << score.first << ":" << score.second << ")";
-// 			});
-// 			std::cerr << std::endl;
+// 			if (collectionMax) {
+// 				std::for_each(begin,lastCut, [](Score score) {
+// 					std::cerr << " (" << score.first << ":" << score.second << ")";
+// 				});
+// 				std::cerr << std::endl;
+// 			}
 
 // 			std::cerr << "Cut length: " << std::distance(begin,lastCut) << std::endl;
 // 			std::cerr << "cutOff = " << cutOff << std::endl;
@@ -428,6 +420,11 @@ private:
 				list.push_back(begin->second);
 			}
 			index.push_back(k.second);
+
+			if (collectionMax) {
+// 				std::cerr << "k = " << k.second << " : " << (lastCut - 1)->second << " with " << (lastCut - 1)->first << std::endl;
+			  collectionMax->push_back((lastCut - 1)->first);
+			}
 
 			if (extraSorting) {
 				std::sort(std::end(list) - cutLength, std::end(list)); // TODO Ask SG: Do these need to be sorted?
@@ -458,11 +455,6 @@ private:
 						return std::sqrt(x * y);
 					}
 					));
-// 		return std::sqrt(
-// 			std::inner_product(
-//
-// 			)
-// 		);
 	}
 
 	void fillInitialList(FastContainer& container, const IntegerVector& rowSubsetI) {

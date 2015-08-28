@@ -136,6 +136,7 @@ play_profile <- function() {
                                 filename = filename,
                                 computeMode = createComputeMode(language = "C",
                                                                 exactBitStream = FALSE,
+                                                                extraSort = TRUE,
                                                                 test1 = TRUE)
                                 # computeMode = createComputeMode()
                                 )
@@ -175,6 +176,7 @@ big_profile <- function() {
                             filename = filename,
                             computeMode = createComputeMode(language = "C",
                                                             exactBitStream = FALSE,
+                                                            extraSort = TRUE,
                                                             test1 = TRUE))
 
   )

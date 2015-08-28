@@ -49,14 +49,14 @@ Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp,
                                const Rcpp::IntegerVector& CmVec, const int n2,
                                const Rcpp::NumericVector& phiV, const double tau, const double tau0, const double tauInt,
                                const int maxNeighborhoodSize,
-                               const double cutOff) {
+                               const double cutOff, const bool collectMax) {
   EnginePtr engine = parsePtr(sexp);
   return engine->computeColumnPmfAndNeighborhoods(n0, nVec, epsilon, epsilon2,
                                      K, N,
                                      Y, X, A, S, rowSubsetI,
                                      CmVec, n2,
                                      phiV, tau, tau0, tauInt,
-                                     maxNeighborhoodSize, cutOff);
+                                     maxNeighborhoodSize, cutOff, collectMax);
 }
 
 
