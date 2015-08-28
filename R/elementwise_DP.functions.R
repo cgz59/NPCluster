@@ -1,26 +1,33 @@
 
 
-element_fn.compact_consistency.check <- function(parm)
+element_fn.compact_consistency.check <- function(parm, computeMode)
 	{err <- 0
 
 	if (max(unique(parm$clust$s.v)) != parm$clust$K)
 		{err <- 1
 		}
 
-	err <- element_fn.consistency.check(parm)
+	err <- element_fn.consistency.check(parm, computeMode)
 
 	err
 	}
 
 
-element_fn.consistency.check <- function(parm)
+element_fn.consistency.check <- function(parm, computeMode)
 	{err <- 0
 
-	if (!is.null(parm$clust$row.nbhd))
-		{if (sum(unlist(lapply(parm$clust$row.nbhd, length))) != length(parm$row.subset.I))
-			{err <- 2
-			}
-		}
+	if (!is.null(parm$clust$row.nbhd)) {
+
+	  if (computeMode$useR) {
+
+	    if (sum(unlist(lapply(parm$clust$row.nbhd, length))) != length(parm$row.subset.I)) {
+	      err <- 2
+	    }
+	  } else {
+      if (parm$clust$row.nbhd.flat.length != length(parm$row.subset.I))
+        err <- 2
+	  }
+	}
 
 	if (sum(parm$clust$n.vec) + parm$clust$n0 != parm$N)
 		{err <- 4
@@ -70,7 +77,7 @@ element_fn.swap.clusters <- function(parm, g1, g2)
 
 
 element_fn.log.lik <- function(mean, sd, num, Y, X.sd)
-	{log.lik <- -num/2*log(2*pi*sd^2) - .5*num*(Y-mean)^2/sd^2 - .5*(num-1)*X.sd^2/sd^2  ## HOT
+	{log.lik <- -num/2*log(2*pi*sd^2) - .5*num*(Y-mean)^2/sd^2 - .5*(num-1)*X.sd^2/sd^2  ## HOT (15-08-28)
 
 	log.lik
 	}
@@ -198,7 +205,8 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	g.v <- (parm$row.subset.I-1) %/% parm$n2 + 1
 	num.k.v <-  parm$clust$C.m.vec[g.v]
 
-	for (ss in 1:parm$clust$K)
+
+	for (ss in 1:parm$clust$K)   # useR
 		{subset_log.ss.mt[ss,] <- element_fn.log.lik(mean=parm$clust$phi.v[ss], sd=parm$tau, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
     #log.ss.mt[ss,parm$row.subset.I] <- element_fn.log.lik(mean=parm$clust$phi.v[ss], sd=parm$tau, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
 		}
@@ -294,6 +302,7 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	begin <- test$offset
 	length(begin) <- length(begin) - 1
 
+	parm$clust$row.nbhd.flat.length <- length(test$neighbor)
 	parm$clust$row.nbhd <- lapply(1:length(begin),
 	                              FUN = function(x) {
 	                                test$neighbor[begin[x]:end[x]]
@@ -311,7 +320,7 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 
 ###########################################################
 
-element_fn.row.gibbs.DP <- function(parm)
+element_fn.row.gibbs.DP <- function(parm, computeMode)
 {
      k <- parm$k
 	I.k <- parm$I.k
@@ -319,7 +328,7 @@ element_fn.row.gibbs.DP <- function(parm)
 
 	###############
 
-	err <- element_fn.consistency.check(parm)
+	err <- element_fn.consistency.check(parm, computeMode)
 	if (err > 0)
 		{stop(paste("GIBBS STEP - 0: failed consistency check: err=",err))
 		}
@@ -348,7 +357,15 @@ element_fn.row.gibbs.DP <- function(parm)
 	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
-	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k)
+	if (computeMode$useR) {
+	  L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd = parm$tau, num = num.k, Y = Y.k, X.sd = X.sd.k)
+	} else { #
+	  L.v <- .vectorizedElementFnLogLik(computeMode$device$engine, parm$clust$phi.v, parm$tau, num.k, Y.k, X.sd.k)
+	}
+# 	  if (any(abs(L.v - L.v2) > 1e-10)) {
+# 	    stop("C++ error")
+# 	  }
+
 	# add possibility that s=0 in front
 	L.v <- c(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k, Y=Y.k, X.sd=X.sd.k), L.v)
 
@@ -393,7 +410,7 @@ element_fn.row.gibbs.DP <- function(parm)
 
 	# sum(parm$clust$n.vec) + parm$clust$n0 == parm$N
 
-	err <- element_fn.consistency.check(parm)
+	err <- element_fn.consistency.check(parm, computeMode)
 	if (err > 0)
 		{stop(paste("GIBBS STEP - 1: failed consistency check: err=",err))
 		}
@@ -411,7 +428,7 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	###############
 
-	err <- element_fn.consistency.check(parm)
+	err <- element_fn.consistency.check(parm, computeMode)
 	if (err > 0)
 		{stop(paste("FORWARD STEP - 0: failed consistency check: err=",err))
 		}
@@ -453,7 +470,16 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
-	L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd=parm$tau, num=num.k, Y=Y.k, X.sd=X.sd.k)
+	if (computeMode$useR) {
+	  L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd = parm$tau, num = num.k, Y = Y.k, X.sd = X.sd.k)
+	} else {
+	  L.v <- .vectorizedElementFnLogLik(computeMode$device$engine, parm$clust$phi.v, parm$tau, num.k, Y.k, X.sd.k)
+	}
+
+# 	  	  if (any(abs(L.v - L.v2) > 1e-10)) {
+# 	  	    stop("C++ error")
+# 	  	  }
+
 	# add possibility that s=0 in front
 	L.v <- c(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k, Y=Y.k, X.sd=X.sd.k), L.v)
 
@@ -605,17 +631,17 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	new.s.pos.indx <- new.s.k[new.s.k > 0]
 	old.s.pos.indx <- old.s.k[old.s.k > 0]
 
-	if (length(new.s.pos.indx) > 0)
+	if (length(new.s.pos.indx) > 0) ### TODO Can vectorize element_fn.log.lik below
 		{new.log.lik <- new.log.lik + sum(element_fn.log.lik(mean=parm$clust$phi.v[new.s.pos.indx], sd=parm$tau, num=num.k.v[new.s.k > 0], Y=Y.k.v[new.s.k > 0], X.sd=X.sd.k.v[new.s.k > 0]))
 		}
 	if (length(old.s.pos.indx) > 0)
 		{old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean=old.parm$clust$phi.v[old.s.pos.indx], sd=parm$tau, num=num.k.v[old.s.k > 0], Y=Y.k.v[old.s.k > 0], X.sd=X.sd.k.v[old.s.k > 0]))
 		}
 
-	if (sum(new.s.k == 0)>0)
+	if (sum(new.s.k == 0) > 0)
 		{new.log.lik <- new.log.lik + sum(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v[new.s.k == 0], Y=Y.k.v[new.s.k == 0], X.sd=X.sd.k.v[new.s.k == 0]))
 		}
-	if (sum(old.s.k == 0)>0)
+	if (sum(old.s.k == 0) > 0)
 		{old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v[old.s.k == 0], Y=Y.k.v[old.s.k == 0], X.sd=X.sd.k.v[old.s.k == 0]))
 		}
 
@@ -726,7 +752,7 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes, compute
 
 	parm <- fast_element_fn.post.prob.and.delta(parm, max.row.nbhd.size, computeMode)
 
-	err <- element_fn.consistency.check(parm)
+	err <- element_fn.consistency.check(parm, computeMode)
 	if (err > 0)
 		{stop(paste("ELEMENT_DP MAIN: failed consistency check: err=",err))
 		}
@@ -757,7 +783,7 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes, compute
 			}
 
 		if (length(parm$I.k) == 1)
-			{parm <- element_fn.row.gibbs.DP(parm)
+			{parm <- element_fn.row.gibbs.DP(parm, computeMode)
 			}
 		 #
 		}
@@ -796,7 +822,7 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes, compute
 		{parm$clust$phi.v[j] <- element_fn.gen.phi(parm, Y=Y.j.v[j], lik.sd=parm$tau/sqrt(num.j.v[j]))
 		}
 
-	err <- element_fn.compact_consistency.check(parm)
+	err <- element_fn.compact_consistency.check(parm, computeMode)
 	if (err > 0)
 		{stop(paste("ELEMENT_DP MAIN END: failed consistency check: err=",err))
 		}

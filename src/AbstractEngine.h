@@ -37,6 +37,19 @@ public:
   // virtual void computePmfAndNeighborhoods() = 0; // pure virtual
 
 
+  Rcpp::NumericVector vectorizedElementFnLogLik(const Rcpp::NumericVector& phi,
+  							const double sd, const int num, const double Y, const double Xsd) {
+    using namespace Rcpp;
+
+    NumericVector logLike(phi.size());
+	std::transform(std::begin(phi), std::end(phi), std::begin(logLike),
+		[sd,num,Y,Xsd](const double mean) {
+			return logLikelihood(mean, sd, num, Y, Xsd);
+		});
+
+    return logLike;
+  }
+
   Rcpp::List computePdpLogLikelihood(const int k, const Rcpp::NumericMatrix& X,
 							const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
 							const int G, const int N,
@@ -100,7 +113,7 @@ public:
 	}
   }
 
-  double logLikelihood(double mean, double sd, int num, double Y, double Xsd) {
+  static inline double logLikelihood(double mean, double sd, int num, double Y, double Xsd) {
   	return -num / 2.0 * std::log(2.0 * M_PI * sd * sd)
   		- 0.5 * num * (Y - mean) * (Y - mean) / (sd * sd)
   		- 0.5 * (num - 1) * Xsd * Xsd / (sd * sd);

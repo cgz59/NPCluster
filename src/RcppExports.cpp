@@ -38,6 +38,22 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// vectorizedElementFnLogLik
+Rcpp::NumericVector vectorizedElementFnLogLik(SEXP sexp, const Rcpp::NumericVector& phi, const double sd, const int num, const double Y, const double Xsd);
+RcppExport SEXP NPCluster_vectorizedElementFnLogLik(SEXP sexpSEXP, SEXP phiSEXP, SEXP sdSEXP, SEXP numSEXP, SEXP YSEXP, SEXP XsdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< const double >::type sd(sdSEXP);
+    Rcpp::traits::input_parameter< const int >::type num(numSEXP);
+    Rcpp::traits::input_parameter< const double >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< const double >::type Xsd(XsdSEXP);
+    __result = Rcpp::wrap(vectorizedElementFnLogLik(sexp, phi, sd, num, Y, Xsd));
+    return __result;
+END_RCPP
+}
 // computeColumnsPmfAndNeighborhoods
 Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp, int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2, int K, int N, const Rcpp::NumericVector& Y, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const Rcpp::IntegerVector& rowSubsetI, const Rcpp::IntegerVector& CmVec, const int n2, const Rcpp::NumericVector& phiV, const double tau, const double tau0, const double tauInt, const int maxNeighborhoodSize, const double cutOff, const bool collectMax);
 RcppExport SEXP NPCluster_computeColumnsPmfAndNeighborhoods(SEXP sexpSEXP, SEXP n0SEXP, SEXP nVecSEXP, SEXP epsilonSEXP, SEXP epsilon2SEXP, SEXP KSEXP, SEXP NSEXP, SEXP YSEXP, SEXP XSEXP, SEXP ASEXP, SEXP SSEXP, SEXP rowSubsetISEXP, SEXP CmVecSEXP, SEXP n2SEXP, SEXP phiVSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP tauIntSEXP, SEXP maxNeighborhoodSizeSEXP, SEXP cutOffSEXP, SEXP collectMaxSEXP) {

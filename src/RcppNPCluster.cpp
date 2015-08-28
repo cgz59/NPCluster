@@ -38,6 +38,12 @@ int accessEngine(SEXP sexp) {
   return 1;
 }
 
+// [[Rcpp::export(.vectorizedElementFnLogLik)]]
+Rcpp::NumericVector vectorizedElementFnLogLik(SEXP sexp,
+							const Rcpp::NumericVector& phi, const double sd, const int num, const double Y, const double Xsd) {
+	EnginePtr engine = parsePtr(sexp);
+	return engine->vectorizedElementFnLogLik(phi, sd, num, Y, Xsd);
+}
 
 // [[Rcpp::export(.computeColumnPmfAndNeighborhoods)]]
 Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp,
