@@ -556,12 +556,30 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   # Note to MS: I've ignored the branching conditions
   #             in "elementwise_DP.functions.R" based on computeMode$useR
 
-  parm$clust$C.m.vec.k <- array(,parm$clust$G)
-  for (gg in 1:parm$clust$G) {
-    parm$clust$C.m.vec.k[gg] <- sum(old.c.k==gg)
-  }
+  if (computeMode$useR) {
 
-  parm$clust$C.m0.k <- sum(old.c.k==0)
+    parm$clust$C.m.vec.k <- array(,parm$clust$G)
+    for (gg in 1:parm$clust$G) {
+      parm$clust$C.m.vec.k[gg] <- sum(old.c.k == gg)
+    }
+
+    parm$clust$C.m0.k <- sum(old.c.k == 0)
+
+  } else {
+
+    all.n.vec <- .fastTabulateVector(old.c.k, parm$clust$G, TRUE)
+    parm$clust$C.m0.k <- all.n.vec[1] # test1
+    parm$clust$C.m.vec.k <- all.n.vec[-1] # test2
+
+#     if (any(test1 != parm$clust$C.m0.k)) {
+#       stop("C++ error")
+#     }
+#
+#     if (any(test2 != parm$clust$C.m.vec.k)) {
+#       stop("C++ error")
+#     }
+
+  }
 
   parm$clust$C.m.vec.k.comp <- parm$clust$C.m.vec - parm$clust$C.m.vec.k
   parm$clust$C.m0.k.comp <- parm$clust$C.m0 - parm$clust$C.m0.k
