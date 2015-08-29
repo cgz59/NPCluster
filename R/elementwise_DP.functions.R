@@ -589,15 +589,30 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	##########################################
 	##########################################
 
-	for (gg in 0:parm$clust$K)
-		{flag.gg <- (old.s.k==gg)
-		 count.gg <- sum(flag.gg)
+#     save.rho <- rho.prop
 
-		 if (count.gg > 0)
-			{rho.prop <- rho.prop - log(old.parm$clust$post.k[gg+1])*count.gg
-			}
-		}
+  if (computeMode$useR) {
 
+    for (gg in 0:parm$clust$K) {
+      flag.gg <- (old.s.k == gg)
+      count.gg <- sum(flag.gg)
+
+      if (count.gg > 0) {
+        rho.prop <- rho.prop - log(old.parm$clust$post.k[gg + 1]) * count.gg
+      }
+    }
+
+  } else {
+    all.count <- .fastTabulateVector(old.s.k, parm$clust$K, TRUE)
+    rho.prop <- rho.prop - .fastSumSafeLog(old.parm$clust$post.k, all.count,
+                                        length(old.parm$clust$post.k))
+
+#     if (abs(rho.prop - test4) > 1e-10) {
+#       stop("C++ error")
+#     }
+
+    # rho.prop <- test4
+  }
 
 	#######################################################
 	#######################################################
