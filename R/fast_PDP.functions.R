@@ -710,6 +710,8 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
       new.prop <- 0
 
+      if (computeMode$useR) {
+
       count.0 <- sum(new.c.k==0)
       parm$clust$C.m0 <- parm$clust$C.m0.k.comp + count.0
       if (count.0 >0)
@@ -725,6 +727,25 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
           }
       }
 
+      } else {
+
+        all.count <- .fastTabulateVector(new.c.k, parm$clust$G + 1, TRUE)
+        test1 <- parm$clust$C.m0.k.comp + all.count[1] # test1
+        test2 <- parm$clust$C.m.vec.k.comp + all.count[2:(parm$clust$G + 1)] # test2
+        test3 <- .fastSumSafeLog(parm$clust$post.k, all.count, parm$clust$G + 1) # test3
+
+#         if (any(test1 != parm$clust$C.m0) |
+#             any(test2 != parm$clust$C.m.vec) |
+#             any(test3 != new.prop)) {
+#           stop("C++ error")
+#         }
+
+        parm$clust$C.m0 <- test1
+        parm$clust$C.m.vec <- test2
+        new.prop <- test3
+
+
+      }
 
     if (new.count > 0)
       {

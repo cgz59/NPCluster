@@ -152,10 +152,9 @@ play_profile <- function() {
                                 col.frac.probes = col.frac.probes,
                                 filename = filename,
                                 computeMode = createComputeMode(language = "C",
-                                                                exactBitStream = FALSE,
-                                                                extraSort = TRUE,
-                                                                test1 = TRUE)
-                                # computeMode = createComputeMode()
+                                                                exactBitStream = TRUE,
+                                                                extraSort = TRUE)
+                                 # computeMode = createComputeMode()
                                 )
 
   )

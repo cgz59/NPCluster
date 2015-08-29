@@ -576,7 +576,8 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	  parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
 	  parm$clust$n.vec <- parm$clust$n.vec.k.com + all.count[-1]
 
-	  rho.prop <- .fastSumSafeLog(parm$clust$post.k, all.count)
+	  rho.prop <- .fastSumSafeLog(parm$clust$post.k, all.count,
+	                              length(parm$clust$post.k))
 
 	}
 	# sum(parm$clust$n.vec) + parm$clust$n0 == parm$N

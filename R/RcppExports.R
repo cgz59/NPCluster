@@ -49,7 +49,7 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_fastXtX', PACKAGE = 'NPCluster', rX)
 }
 
-.fastSumSafeLog <- function(prob, count) {
-    .Call('NPCluster_fastSumSafeLog', PACKAGE = 'NPCluster', prob, count)
+.fastSumSafeLog <- function(prob, count, length) {
+    .Call('NPCluster_fastSumSafeLog', PACKAGE = 'NPCluster', prob, count, length)
 }
 

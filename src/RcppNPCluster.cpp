@@ -187,9 +187,11 @@ Rcpp::NumericMatrix fastXtX(const Rcpp::NumericMatrix& rX) {
 
 // [[Rcpp::export(.fastSumSafeLog)]]
 double fastSumSafeLog(const Rcpp::NumericVector& prob,
-                      const Rcpp::IntegerVector& count) {
+                      const Rcpp::IntegerVector& count,
+                      const int length) {
   double total = 0.0;
-  for (int i = 0; i < prob.length(); ++i) {
+
+  for (int i = 0; i < length; ++i) {
     if (count[i] > 0) {
       total += std::log(prob[i]) * count[i];
     }

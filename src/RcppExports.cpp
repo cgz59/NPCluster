@@ -196,14 +196,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // fastSumSafeLog
-double fastSumSafeLog(const Rcpp::NumericVector& prob, const Rcpp::IntegerVector& count);
-RcppExport SEXP NPCluster_fastSumSafeLog(SEXP probSEXP, SEXP countSEXP) {
+double fastSumSafeLog(const Rcpp::NumericVector& prob, const Rcpp::IntegerVector& count, const int length);
+RcppExport SEXP NPCluster_fastSumSafeLog(SEXP probSEXP, SEXP countSEXP, SEXP lengthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type prob(probSEXP);
     Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type count(countSEXP);
-    __result = Rcpp::wrap(fastSumSafeLog(prob, count));
+    Rcpp::traits::input_parameter< const int >::type length(lengthSEXP);
+    __result = Rcpp::wrap(fastSumSafeLog(prob, count, length));
     return __result;
 END_RCPP
 }
