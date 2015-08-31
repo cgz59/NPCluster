@@ -630,20 +630,35 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
   if (length(emptied.indx) >0)
   {
-    new.s.mt <- parm$clust$s.mt[,-emptied.indx] # HOT 3
-
     if (computeMode$useR) {
+      new.s.mt <- parm$clust$s.mt[,-emptied.indx] # HOT 3
       new.n.vec <- array(,parm$clust$K)
       for (pp in 1:parm$clust$K) {
         new.n.vec[pp] <- sum(new.s.mt==pp) # HOT
       }
+      new.n0 <- sum(new.s.mt == 0) # HOT 3
     } else { # computeMode
-      new.n.vec <- .fastTabulate(new.s.mt, parm$clust$K)
+      tab <- .fastTabulateExcludeEmptiedIndices(parm$clust$s.mt, emptied.indx, parm$clust$K, TRUE)
+
+      #     	  if (tab[1] != new.n0) {
+      #     	    print(tab[1])
+      #     	    print(new.n0)
+      #     	    stop("C++ error")
+      #     	  }
+      #
+      #     	  if (any(tab[-1] != new.n.vec)) {
+      #     	    print(tab[-1])
+      #     	    print(new.n.vec)
+      #     	    stop("C++ error")
+      #     	  }
+
+      new.n0 <- tab[1]
+      new.n.vec <- tab[-1]
+
     } # computeMode
 
-    emptied.s.indx <- which(new.n.vec==0)
-    new.K <- parm$clust$K-length(emptied.s.indx)
-    new.n0 <- sum(new.s.mt==0) # HOT 3
+    emptied.s.indx <- which(new.n.vec == 0)
+    new.K <- parm$clust$K - length(emptied.s.indx)
   }
 
   if (length(emptied.indx) ==0)
