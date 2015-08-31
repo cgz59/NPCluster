@@ -14,7 +14,7 @@ function() {
 	  names
 	}
 
-	filteredProf <- prof[prof$self.pct >= 1.00,]
+	filteredProf <- prof[prof$self.pct >= 0.1,]
 	orderedProf <- filteredProf[order(expand_numbers(row.names(filteredProf))),]
 
 

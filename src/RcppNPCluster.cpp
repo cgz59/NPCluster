@@ -45,6 +45,17 @@ Rcpp::NumericVector vectorizedElementFnLogLik(SEXP sexp,
 	return engine->vectorizedElementFnLogLik(phi, sd, num, Y, Xsd);
 }
 
+// [[Rcpp::export(.computeMarginalLikelihood)]]
+Rcpp::List computeMarginalLikelihood(SEXP sexp,
+                                     const Rcpp::NumericMatrix& X,
+                                     const Rcpp::NumericVector& phi,
+                                     const Rcpp::NumericVector& Paux,
+                                     const double tau, const double tau0,
+                                     const bool exactBitStream) {
+  EnginePtr engine = parsePtr(sexp);
+  return engine->computeMarginalLikelihood(X, phi, Paux, tau, tau0, exactBitStream);
+}
+
 // [[Rcpp::export(.computeColumnPmfAndNeighborhoods)]]
 Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp,
                                int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2,
@@ -149,7 +160,7 @@ Rcpp::IntegerVector fastTabulate(const Rcpp::IntegerMatrix& mat, const int K,
 	IntegerVector count(K + 1);  // C uses 0-indexing
 
 	for (auto it = std::begin(mat); it != std::end(mat); ++it) {
-		count[*it]++;
+		++count[*it];
 	}
 
 	if (includeZero) {
@@ -166,7 +177,7 @@ Rcpp::IntegerVector fastTabulateVector(const Rcpp::IntegerVector& vec, const int
   IntegerVector count(K + 1);  // C uses 0-indexing
 
   for (auto it = std::begin(vec); it != std::end(vec); ++it) {
-    count[*it]++;
+    ++count[*it];
   }
 
   if (includeZero) {
@@ -174,6 +185,30 @@ Rcpp::IntegerVector fastTabulateVector(const Rcpp::IntegerVector& vec, const int
   } else {
     return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
   }
+}
+
+// [[Rcpp::export(.fastTabulateExcludeEmptiedIndices)]]
+Rcpp::IntegerVector fastTabulateExcludeEmptiedIndices(const Rcpp::IntegerMatrix& mat, const Rcpp::IntegerVector& empty,
+								                       const int K, bool includeZero = false) {
+	using namespace Rcpp;
+	IntegerVector count(K + 1);  // C uses 0-indexing
+
+	for (auto it = std::begin(mat); it != std::end(mat); ++it) {
+		++count[*it];
+	}
+
+	for (auto it = std::begin(empty); it != std::end(empty); ++it) {
+		const auto& column = mat(_, *it - 1);
+		for (auto itEntry = std::begin(column); itEntry != std::end(column); ++itEntry) {
+			--count[*itEntry];
+		}
+	}
+
+	if (includeZero) {
+	  return count;
+	} else {
+	  return IntegerVector(std::begin(count) + 1, std::end(count)); // R uses 1-indexing
+	}
 }
 
 // [[Rcpp::export(.fastXtX)]]

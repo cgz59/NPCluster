@@ -17,6 +17,10 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_vectorizedElementFnLogLik', PACKAGE = 'NPCluster', sexp, phi, sd, num, Y, Xsd)
 }
 
+.computeMarginalLikelihood <- function(sexp, X, phi, Paux, tau, tau0, exactBitStream) {
+    .Call('NPCluster_computeMarginalLikelihood', PACKAGE = 'NPCluster', sexp, X, phi, Paux, tau, tau0, exactBitStream)
+}
+
 .computeColumnPmfAndNeighborhoods <- function(sexp, n0, nVec, epsilon, epsilon2, K, N, Y, X, A, S, rowSubsetI, CmVec, n2, phiV, tau, tau0, tauInt, maxNeighborhoodSize, cutOff, collectMax) {
     .Call('NPCluster_computeColumnsPmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, X, A, S, rowSubsetI, CmVec, n2, phiV, tau, tau0, tauInt, maxNeighborhoodSize, cutOff, collectMax)
 }
@@ -43,6 +47,10 @@ rcpp_hello_world <- function() {
 
 .fastTabulateVector <- function(vec, K, includeZero) {
     .Call('NPCluster_fastTabulateVector', PACKAGE = 'NPCluster', vec, K, includeZero)
+}
+
+.fastTabulateExcludeEmptiedIndices <- function(mat, empty, K, includeZero = FALSE) {
+    .Call('NPCluster_fastTabulateExcludeEmptiedIndices', PACKAGE = 'NPCluster', mat, empty, K, includeZero)
 }
 
 .fastXtX <- function(rX) {

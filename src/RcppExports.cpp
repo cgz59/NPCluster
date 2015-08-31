@@ -54,6 +54,23 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// computeMarginalLikelihood
+Rcpp::List computeMarginalLikelihood(SEXP sexp, const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& phi, const Rcpp::NumericVector& Paux, const double tau, const double tau0, const bool exactBitStream);
+RcppExport SEXP NPCluster_computeMarginalLikelihood(SEXP sexpSEXP, SEXP XSEXP, SEXP phiSEXP, SEXP PauxSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP exactBitStreamSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type Paux(PauxSEXP);
+    Rcpp::traits::input_parameter< const double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< const double >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< const bool >::type exactBitStream(exactBitStreamSEXP);
+    __result = Rcpp::wrap(computeMarginalLikelihood(sexp, X, phi, Paux, tau, tau0, exactBitStream));
+    return __result;
+END_RCPP
+}
 // computeColumnsPmfAndNeighborhoods
 Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp, int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2, int K, int N, const Rcpp::NumericVector& Y, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const Rcpp::IntegerVector& rowSubsetI, const Rcpp::IntegerVector& CmVec, const int n2, const Rcpp::NumericVector& phiV, const double tau, const double tau0, const double tauInt, const int maxNeighborhoodSize, const double cutOff, const bool collectMax);
 RcppExport SEXP NPCluster_computeColumnsPmfAndNeighborhoods(SEXP sexpSEXP, SEXP n0SEXP, SEXP nVecSEXP, SEXP epsilonSEXP, SEXP epsilon2SEXP, SEXP KSEXP, SEXP NSEXP, SEXP YSEXP, SEXP XSEXP, SEXP ASEXP, SEXP SSEXP, SEXP rowSubsetISEXP, SEXP CmVecSEXP, SEXP n2SEXP, SEXP phiVSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP tauIntSEXP, SEXP maxNeighborhoodSizeSEXP, SEXP cutOffSEXP, SEXP collectMaxSEXP) {
@@ -181,6 +198,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type K(KSEXP);
     Rcpp::traits::input_parameter< const bool >::type includeZero(includeZeroSEXP);
     __result = Rcpp::wrap(fastTabulateVector(vec, K, includeZero));
+    return __result;
+END_RCPP
+}
+// fastTabulateExcludeEmptiedIndices
+Rcpp::IntegerVector fastTabulateExcludeEmptiedIndices(const Rcpp::IntegerMatrix& mat, const Rcpp::IntegerVector& empty, const int K, bool includeZero);
+RcppExport SEXP NPCluster_fastTabulateExcludeEmptiedIndices(SEXP matSEXP, SEXP emptySEXP, SEXP KSEXP, SEXP includeZeroSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type empty(emptySEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< bool >::type includeZero(includeZeroSEXP);
+    __result = Rcpp::wrap(fastTabulateExcludeEmptiedIndices(mat, empty, K, includeZero));
     return __result;
 END_RCPP
 }

@@ -394,20 +394,36 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
   if (length(emptied.indx) >0)
   	{
-    	new.s.mt <- parm$clust$s.mt[,-emptied.indx] # HOT 3
-
     	if (computeMode$useR) {
+    	  new.s.mt <- parm$clust$s.mt[,-emptied.indx] # HOT 3
     	  new.n.vec <- array(,parm$clust$K)
     	  for (pp in 1:parm$clust$K) {
     	    new.n.vec[pp] <- sum(new.s.mt==pp) # HOT
     	  }
+    	  new.n0 <- sum(new.s.mt == 0) # HOT 3
     	} else { # computeMode
-    	  new.n.vec <- .fastTabulate(new.s.mt, parm$clust$K)
+    	  tab <- .fastTabulateExcludeEmptiedIndices(parm$clust$s.mt, emptied.indx, parm$clust$K, TRUE)
+
+#     	  if (tab[1] != new.n0) {
+#     	    print(tab[1])
+#     	    print(new.n0)
+#     	    stop("C++ error")
+#     	  }
+#
+#     	  if (any(tab[-1] != new.n.vec)) {
+#     	    print(tab[-1])
+#     	    print(new.n.vec)
+#     	    stop("C++ error")
+#     	  }
+
+    	  new.n0 <- tab[1]
+    	  new.n.vec <- tab[-1]
+
     	} # computeMode
 
-    	emptied.s.indx <- which(new.n.vec==0)
-    	new.K <- parm$clust$K-length(emptied.s.indx)
-   	 new.n0 <- sum(new.s.mt==0) # HOT 3
+    	emptied.s.indx <- which(new.n.vec == 0)
+    	new.K <- parm$clust$K - length(emptied.s.indx)
+
    	}
 
   if (length(emptied.indx) ==0)
@@ -647,10 +663,16 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   P.aux <- rgamma(parm$clust$K+1,c(parm$clust$M0+new.n0,tmp.alpha),1)
   P.aux <- P.aux/sum(P.aux)
 
+  # START
+
+  if (computeMode$useR) {
+
+  # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+
   ## marginal likelihood of new cluster
   marg.log.lik.v <- cand.s.v.k <- array(,length(x.mt))
   for (tt in 1:length(x.mt))
-  {
+  { # NEXT TARGET
     tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
     tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
     tmp.marg.v <- tmp.lik.v*P.aux
@@ -660,6 +682,37 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
   parm$cand$s.v.k <- cand.s.v.k
   marg.log.lik <- sum(marg.log.lik.v)
+
+  # SWTICH
+  } else {
+
+  # .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+
+  test <- .computeMarginalLikelihood(computeMode$device$engine,
+                                     x.mt,
+                                     parm$clust$phi.v,
+                                     P.aux,
+                                     parm$tau, parm$tau_0,
+                                     computeMode$exactBitStream)
+
+#   if (abs(test$logMarginalLikelihood - marg.log.lik) > 1E-10) {
+#     print(test$logMarginalLikelihood)
+#     print(marg.log.lik)
+#     stop("C++ error")
+#   }
+#
+#   if (any(cand.s.v.k != test$sVk)) {
+#     print(test$sVk)
+#     print(cand.s.v.k)
+#     stop("C++ error")
+#   }
+
+  parm$cand$s.v.k <- test$sVk
+  marg.log.lik <- test$logMarginalLikelihood
+
+  }
+
+  # END
 
   L.v <- c(L.v, marg.log.lik)
 

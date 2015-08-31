@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "Rmath.h"
 #include "Rcpp.h"
 
 #define MATCH_SG
@@ -18,6 +19,35 @@ void __verify(const char *msg, const char *file, int line) {
     char buffer[100];
     snprintf(buffer, 100, "Assert Failure: %s at %s line #%d", msg, file, line);
     throw std::invalid_argument(buffer);
+}
+
+
+static void ProbSampleReplace(int n, double *p, int *perm, int nans, int *ans)
+{
+    double rU;
+    int i, j;
+    int nm1 = n - 1;
+
+    /* record element identities */
+    for (i = 0; i < n; i++)
+	perm[i] = i + 1;
+
+    /* sort the probabilities into descending order */
+    revsort(p, perm, n);
+
+    /* compute cumulative probabilities */
+    for (i = 1 ; i < n; i++)
+	p[i] += p[i - 1];
+
+    /* compute the sample */
+    for (i = 0; i < nans; i++) {
+	rU = unif_rand();
+	for (j = 0; j < nm1; j++) {
+	    if (rU <= p[j])
+		break;
+	}
+	ans[i] = perm[j];
+    }
 }
 
 namespace np_cluster {
@@ -49,6 +79,89 @@ public:
 
     return logLike;
   }
+
+  Rcpp::List computeMarginalLikelihood(const Rcpp::NumericMatrix& X,
+                                       const Rcpp::NumericVector& phi,
+                                       const Rcpp::NumericVector& Paux,
+                                       const double tau, const double tau0,
+                                       const bool exactBitStream) {
+    using namespace Rcpp;
+
+    const int rows = X.rows();
+//     const int cols = X.cols();
+
+    const int len = phi.length();
+
+//     std::cerr << rows << ":" << cols << std::endl;
+//     std::cerr << len << std::endl;
+
+    std::vector<int> sample(rows);
+    std::vector<double> logLikelihood(rows);
+
+	std::vector<int> perm(len + 1);
+
+//     std::transform(std::begin(X), std::end(X),
+//     	boost::make_zip(std::begin(
+//     );
+//
+// 	auto itSample = std::begin(sample);
+// 	auto itX = std::begin(X);
+
+	std::vector<double> posterior(len + 1);
+
+    double logMarginalLikelihood = 0.0;
+	for (int i = 0; i < rows; ++i) {
+
+		const auto xMtTt = X[i];
+
+		// Handle 0 entry // TODO For vectorization, could turn tau, phi into len + 1 vectors
+		double sum = posterior[0] = Rf_dnorm4(xMtTt, 0.0, tau0, 0) * Paux[0];
+
+		// Handle remaining entries
+		for (int j = 1; j <= len; ++j) {
+			sum += posterior[j] = Rf_dnorm4(xMtTt, phi[j - 1], tau, 0) * Paux[j];
+		}
+
+#if 1
+		for (int j = 0; j <=len; ++j) {
+			posterior[j] /= sum;
+		}
+
+		int index;
+		ProbSampleReplace(len + 1, &posterior[0], &perm[0], 1, &index); // explicit R code
+		--index;
+#else
+		// Normalize posterior and sample
+		double draw = unif_rand() * sum;
+		int index = 0;
+		while (draw >= posterior[index] && index < len) {
+			draw -= posterior[index];
+			++index;
+		}
+#endif
+
+		// Store results
+		sample[i] = index;
+		logMarginalLikelihood += std::log(sum);
+	}
+
+
+// 	double logMarginalLikelihood = std::accumulate(
+// 		boost::make_zip(std::begin(X), std::begin(sample)),
+// 		boost::make_zip(std::end(X), std::end(sample)),
+// 		0.0,
+// 		[](std::pair<double,int>&
+// 	);
+
+
+
+    return Rcpp::List::create(
+      Rcpp::Named("sVk") = sample,
+      Rcpp::Named("logMarginalLikelihood") = logMarginalLikelihood,
+      Rcpp::Named("posterior") = posterior
+    );
+  }
+
 
   Rcpp::List computePdpLogLikelihood(const int k, const Rcpp::NumericMatrix& X,
 							const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
@@ -112,6 +225,11 @@ public:
 		logLikelihood[gg] = tmp;
 	}
   }
+
+//   static inline double dnorm(double x, double mean, double sd) {
+// 	  return -0.5 * std::log(2.0 * M_PI * sd * sd)
+// 	        - 0.5 * (x - mean) * (x - mean) / (sd * sd);
+//   }
 
   static inline double logLikelihood(double mean, double sd, int num, double Y, double Xsd) {
   	return -num / 2.0 * std::log(2.0 * M_PI * sd * sd)
