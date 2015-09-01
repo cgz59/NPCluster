@@ -65,3 +65,11 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_fastSumSafeLog', PACKAGE = 'NPCluster', prob, count, length)
 }
 
+.swap <- function(mat, index1, index2, swapRows) {
+    invisible(.Call('NPCluster_swap', PACKAGE = 'NPCluster', mat, index1, index2, swapRows))
+}
+
+.swapIntegerMatrix <- function(mat, index1, index2, swapRows) {
+    invisible(.Call('NPCluster_swapIntegerMatrix', PACKAGE = 'NPCluster', mat, index1, index2, swapRows))
+}
+

@@ -54,7 +54,7 @@ PDP_fn.consistency.check <- function(parm)
 	}
 
 
-PDP_fn.swap.clusters <- function(parm, g1, g2)
+PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	{
 
 	####################################################
@@ -66,9 +66,17 @@ PDP_fn.swap.clusters <- function(parm, g1, g2)
 	parm$clust$c.v[ind1] <- g2
 	parm$clust$c.v[ind2] <- g1
 
-	buffer <- parm$clust$s.mt[,g1]
-	parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2] # HOT 3
-	parm$clust$s.mt[,g2] <- buffer
+	if (computeMode$useR) {
+
+	  buffer <- parm$clust$s.mt[,g1]
+	  parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2] # HOT 3
+	  parm$clust$s.mt[,g2] <- buffer
+
+	} else {
+
+	  .swapIntegerMatrix(parm$clust$s.mt, g1, g2, FALSE)
+
+	}
 
 	buffer <- parm$clust$beta.v[g1]
 	parm$clust$beta.v[g1] <- parm$clust$beta.v[g2]
@@ -100,14 +108,22 @@ PDP_fn.swap.clusters <- function(parm, g1, g2)
 	parm$clust$B.mt[,(g1+1)] <- parm$clust$B.mt[,(g2+1)]
 	parm$clust$B.mt[,(g2+1)] <- buffer
 
-	# first swap columns
-	buffer <- parm$clust$tBB.mt[,(g1+1)]
-	parm$clust$tBB.mt[,(g1+1)] <- parm$clust$tBB.mt[,(g2+1)] # HOT 3
-	parm$clust$tBB.mt[,(g2+1)] <- buffer
-	# then swap rows
-	buffer <- parm$clust$tBB.mt[(g1+1),]
-	parm$clust$tBB.mt[(g1+1),] <- parm$clust$tBB.mt[(g2+1),]
-	parm$clust$tBB.mt[(g2+1),] <- buffer
+	if (computeMode$useR) {
+
+	  # first swap columns
+	  buffer <- parm$clust$tBB.mt[,(g1+1)]
+	  parm$clust$tBB.mt[,(g1+1)] <- parm$clust$tBB.mt[,(g2+1)] # HOT 3
+	  parm$clust$tBB.mt[,(g2+1)] <- buffer
+	  # then swap rows
+	  buffer <- parm$clust$tBB.mt[(g1+1),]
+	  parm$clust$tBB.mt[(g1+1),] <- parm$clust$tBB.mt[(g2+1),]
+	  parm$clust$tBB.mt[(g2+1),] <- buffer
+
+	} else {
+
+	  .swap(parm$clust$tBB.mt, g1 + 1, g2 + 2, TRUE)
+
+	}
 
 	parm
 	}
@@ -969,7 +985,7 @@ if (!flip) {parm <- init.cc.parm}
 #####################################
 
 
-PDP_fn.drop <- function(parm)
+PDP_fn.drop <- function(parm, computeMode)
  	{
 
 	##########################################
@@ -994,7 +1010,7 @@ PDP_fn.drop <- function(parm)
 		if (stopp)
 			{break
 			}
-		parm <- PDP_fn.swap.clusters(parm, g1=new.label, g2=old.label)
+		parm <- PDP_fn.swap.clusters(parm, g1 = new.label, g2 = old.label, computeMode)
  		}
 	}
 
@@ -1097,7 +1113,7 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 	## (ii) Retain only clusters  1,...,parm$clust$G
 	#########################################
 
-	parm <- PDP_fn.drop(parm)
+	parm <- PDP_fn.drop(parm, computeMode)
 
 	# now drop empty elementwise clusters
 

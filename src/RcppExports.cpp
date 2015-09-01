@@ -261,3 +261,29 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// swap
+void swap(Rcpp::NumericMatrix& mat, int index1, int index2, const bool swapRows);
+RcppExport SEXP NPCluster_swap(SEXP matSEXP, SEXP index1SEXP, SEXP index2SEXP, SEXP swapRowsSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix& >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< int >::type index1(index1SEXP);
+    Rcpp::traits::input_parameter< int >::type index2(index2SEXP);
+    Rcpp::traits::input_parameter< const bool >::type swapRows(swapRowsSEXP);
+    swap(mat, index1, index2, swapRows);
+    return R_NilValue;
+END_RCPP
+}
+// swapIntegerMatrix
+void swapIntegerMatrix(Rcpp::IntegerMatrix& mat, int index1, int index2, const bool swapRows);
+RcppExport SEXP NPCluster_swapIntegerMatrix(SEXP matSEXP, SEXP index1SEXP, SEXP index2SEXP, SEXP swapRowsSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix& >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< int >::type index1(index1SEXP);
+    Rcpp::traits::input_parameter< int >::type index2(index2SEXP);
+    Rcpp::traits::input_parameter< const bool >::type swapRows(swapRowsSEXP);
+    swapIntegerMatrix(mat, index1, index2, swapRows);
+    return R_NilValue;
+END_RCPP
+}

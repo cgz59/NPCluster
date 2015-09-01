@@ -247,3 +247,47 @@ double fastSumSafeLog(const Rcpp::NumericVector& prob,
   return total;
 }
 
+// [[Rcpp::export(.swap)]]
+void swap(Rcpp::NumericMatrix& mat, int index1, int index2, const bool swapRows) {
+
+	using namespace Rcpp;
+	--index1; // R uses 1-indexing
+	--index2;
+
+	for (int i = 0; i < mat.rows(); ++i) {
+		const auto entry = mat(i, index1);
+		mat(i, index1) = mat(i, index2);
+		mat(i, index2) = entry;
+	}
+
+	if (swapRows) {
+		for (int j = 0; j < mat.cols(); ++j) {
+			const auto entry = mat(index1, j);
+			mat(index1, j) = mat(index2, j);
+			mat(index2, j) = entry;
+		}
+	}
+}
+
+// [[Rcpp::export(.swapIntegerMatrix)]]
+void swapIntegerMatrix(Rcpp::IntegerMatrix& mat, int index1, int index2, const bool swapRows) {
+
+	using namespace Rcpp;
+	--index1; // R uses 1-indexing
+	--index2;
+
+	for (int i = 0; i < mat.rows(); ++i) {
+		const auto entry = mat(i, index1);
+		mat(i, index1) = mat(i, index2);
+		mat(i, index2) = entry;
+	}
+
+	if (swapRows) {
+		for (int j = 0; j < mat.cols(); ++j) {
+			const auto entry = mat(index1, j);
+			mat(index1, j) = mat(index2, j);
+			mat(index2, j) = entry;
+		}
+	}
+}
+
