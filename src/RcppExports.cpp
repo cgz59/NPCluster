@@ -71,6 +71,27 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// computeDPAcceptanceRatio
+Rcpp::List computeDPAcceptanceRatio(SEXP sexp, const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X, const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C, const Rcpp::NumericVector& phi, const Rcpp::IntegerVector& newS, const Rcpp::IntegerVector& oldS, const double tau, const double tau0, const int N);
+RcppExport SEXP NPCluster_computeDPAcceptanceRatio(SEXP sexpSEXP, SEXP YSEXP, SEXP XSEXP, SEXP ISEXP, SEXP CSEXP, SEXP phiSEXP, SEXP newSSEXP, SEXP oldSSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP NSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type I(ISEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type C(CSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type newS(newSSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type oldS(oldSSEXP);
+    Rcpp::traits::input_parameter< const double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< const double >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
+    __result = Rcpp::wrap(computeDPAcceptanceRatio(sexp, Y, X, I, C, phi, newS, oldS, tau, tau0, N));
+    return __result;
+END_RCPP
+}
 // computeColumnsPmfAndNeighborhoods
 Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp, int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2, int K, int N, const Rcpp::NumericVector& Y, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const Rcpp::IntegerVector& rowSubsetI, const Rcpp::IntegerVector& CmVec, const int n2, const Rcpp::NumericVector& phiV, const double tau, const double tau0, const double tauInt, const int maxNeighborhoodSize, const double cutOff, const bool collectMax);
 RcppExport SEXP NPCluster_computeColumnsPmfAndNeighborhoods(SEXP sexpSEXP, SEXP n0SEXP, SEXP nVecSEXP, SEXP epsilonSEXP, SEXP epsilon2SEXP, SEXP KSEXP, SEXP NSEXP, SEXP YSEXP, SEXP XSEXP, SEXP ASEXP, SEXP SSEXP, SEXP rowSubsetISEXP, SEXP CmVecSEXP, SEXP n2SEXP, SEXP phiVSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP tauIntSEXP, SEXP maxNeighborhoodSizeSEXP, SEXP cutOffSEXP, SEXP collectMaxSEXP) {

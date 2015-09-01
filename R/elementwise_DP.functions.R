@@ -549,28 +549,7 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	} else {
 
-	  # parm$clust$s.v[I.k] <- new.s.k
-
-# 	  values <- parm$clust$s.v
-#
-# 	  oTotal <- sum(parm$clust$s.v)
-# 	  oDiff <- sum(parm$clust$s.v[I.k])
-# 	  nDiff <- sum(new.s.k)
-# 	  oAddress <- pryr::address(values)
-
-	  # parm$clust$s.v <- .fastIndexedSetCopy(parm$clust$s.v, I.k, new.s.k) # Same as: parm$clust$s.v[I.k] <- new.s.k
 	  .fastIndexedSetNoCopy(parm$clust$s.v, I.k, new.s.k) # Same as: parm$clust$s.v[I.k] <- new.s.k
-
-     #<- tmp
-
-# 	  if (sum(parm$clust$s.v) != oTotal - oDiff + nDiff) {
-# 	    stop("Error: incorrect value")
-# 	  }
-
-# 	 if (pryr::address(tmp) != oAddress) {
-# 	   stop("Error: address")
-# 	 }
-
 	  all.count <- .fastTabulateVector(new.s.k, parm$clust$K, TRUE)
 
 	  parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
@@ -588,8 +567,6 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	##### Computing proposal prob of reverse move
 	##########################################
 	##########################################
-
-#     save.rho <- rho.prop
 
   if (computeMode$useR) {
 
@@ -622,8 +599,8 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	# formula on page 4 of 11/13/11 notes
 
-	new.indx <- which(parm$clust$n.vec>0)
-	old.indx <- which(old.parm$clust$n.vec>0)
+	new.indx <- which(parm$clust$n.vec > 0)
+	old.indx <- which(old.parm$clust$n.vec > 0)
 
 	new.K <- length(new.indx)
 	old.K <- length(old.indx)
@@ -636,30 +613,56 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	###################
 
-	Y.k.v <- parm$Y[I.k]
-	X.sd.k.v <- parm$X.sd[I.k]
-	## g.k.v also equals parm$g[I.k]
-	g.k.v <- (I.k-1) %/% parm$n2 + 1
-	num.k.v <-  parm$clust$C.m.vec[g.k.v]
+	if (computeMode$useR) { # START
 
-	new.log.lik <- old.log.lik <- 0
+	  Y.k.v <- parm$Y[I.k]
+	  X.sd.k.v <- parm$X.sd[I.k]
+	  ## g.k.v also equals parm$g[I.k]
+	  g.k.v <- (I.k - 1) %/% parm$n2 + 1
+	  num.k.v <-  parm$clust$C.m.vec[g.k.v]
 
-	new.s.pos.indx <- new.s.k[new.s.k > 0]
-	old.s.pos.indx <- old.s.k[old.s.k > 0]
+	  new.log.lik <- old.log.lik <- 0
 
-	if (length(new.s.pos.indx) > 0) ### TODO Can vectorize element_fn.log.lik below
-		{new.log.lik <- new.log.lik + sum(element_fn.log.lik(mean=parm$clust$phi.v[new.s.pos.indx], sd=parm$tau, num=num.k.v[new.s.k > 0], Y=Y.k.v[new.s.k > 0], X.sd=X.sd.k.v[new.s.k > 0]))
-		}
-	if (length(old.s.pos.indx) > 0)
-		{old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean=old.parm$clust$phi.v[old.s.pos.indx], sd=parm$tau, num=num.k.v[old.s.k > 0], Y=Y.k.v[old.s.k > 0], X.sd=X.sd.k.v[old.s.k > 0]))
-		}
+	  new.s.pos.indx <- new.s.k[new.s.k > 0]
+	  old.s.pos.indx <- old.s.k[old.s.k > 0]
 
-	if (sum(new.s.k == 0) > 0)
-		{new.log.lik <- new.log.lik + sum(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v[new.s.k == 0], Y=Y.k.v[new.s.k == 0], X.sd=X.sd.k.v[new.s.k == 0]))
-		}
-	if (sum(old.s.k == 0) > 0)
-		{old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k.v[old.s.k == 0], Y=Y.k.v[old.s.k == 0], X.sd=X.sd.k.v[old.s.k == 0]))
-		}
+	  if (length(new.s.pos.indx) > 0) ### TODO Can vectorize element_fn.log.lik below
+	  {new.log.lik <- new.log.lik + sum(element_fn.log.lik(mean = parm$clust$phi.v[new.s.pos.indx], sd = parm$tau, num = num.k.v[new.s.k > 0], Y = Y.k.v[new.s.k > 0], X.sd = X.sd.k.v[new.s.k > 0]))
+	  }
+	  if (length(old.s.pos.indx) > 0)
+	  {old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean = old.parm$clust$phi.v[old.s.pos.indx], sd = parm$tau, num = num.k.v[old.s.k > 0], Y = Y.k.v[old.s.k > 0], X.sd = X.sd.k.v[old.s.k > 0]))
+	  }
+
+	  if (sum(new.s.k == 0) > 0)
+	  {new.log.lik <- new.log.lik + sum(element_fn.log.lik(mean = 0, sd = parm$tau_0, num = num.k.v[new.s.k == 0], Y = Y.k.v[new.s.k == 0], X.sd = X.sd.k.v[new.s.k == 0]))
+	  }
+	  if (sum(old.s.k == 0) > 0)
+	  {old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean = 0, sd = parm$tau_0, num = num.k.v[old.s.k == 0], Y = Y.k.v[old.s.k == 0], X.sd = X.sd.k.v[old.s.k == 0]))
+	  }
+
+	} else {
+
+	  test <- .computeDPAcceptanceRatio(computeMode$device$engine,
+	                                    parm$Y, parm$X.sd, I.k, parm$clust$C.m.vec, parm$clust$phi.v,
+	                                    new.s.k, old.s.k,
+	                                    parm$tau, parm$tau_0, parm$n2)
+
+# 	  if (abs(test$new - new.log.lik) > 1e-10) {
+# 	    print(test$new)
+# 	    print(new.log.lik)
+# 	    stop("C++ error")
+# 	  }
+#
+# 	  if (abs(test$old - old.log.lik) > 1e-10) {
+# 	    print(test$old)
+# 	    print(old.log.lik)
+# 	    stop("C++ error")
+# 	  }
+
+	  new.log.lik <- test$new
+	  old.log.lik <- test$old
+
+	} # END
 
 	rho.tru <- rho.tru + new.log.lik - old.log.lik
 

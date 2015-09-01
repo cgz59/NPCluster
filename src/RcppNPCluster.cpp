@@ -56,6 +56,18 @@ Rcpp::List computeMarginalLikelihood(SEXP sexp,
   return engine->computeMarginalLikelihood(X, phi, Paux, tau, tau0, exactBitStream);
 }
 
+// [[Rcpp::export(.computeDPAcceptanceRatio)]]
+Rcpp::List computeDPAcceptanceRatio(SEXP sexp,
+							const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X,
+							const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C,
+							const Rcpp::NumericVector& phi,
+							const Rcpp::IntegerVector& newS, const Rcpp::IntegerVector& oldS,
+							const double tau, const double tau0,
+							const int N) {
+	EnginePtr engine = parsePtr(sexp);
+	return engine->computeDPAcceptanceRatio(Y, X, I, C, phi, newS, oldS, tau, tau0, N);
+}
+
 // [[Rcpp::export(.computeColumnPmfAndNeighborhoods)]]
 Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp,
                                int n0, const Rcpp::IntegerVector& nVec, double epsilon, double epsilon2,

@@ -80,6 +80,73 @@ public:
     return logLike;
   }
 
+
+Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X,
+							const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C,
+							const Rcpp::NumericVector& phiR,
+							const Rcpp::IntegerVector& newS, const Rcpp::IntegerVector& oldS,
+							const double tau, const double tau0,
+							const int N) {
+
+// 	double ratio = 0.0;
+
+	// TODO Make local copy to facilitate vectorization
+// 	std::vector<double> phi(phiR.length() + 1); // filled with zero
+// 	std::copy(std::begin(phiR). std::end(phiR), std::begin(phi) + 1);
+	// TODO Make local copy of tau to facilitate vectorization
+
+// 	ratio += std::accumulate(
+// 		std::begin(newS), std::end(newS),
+// 		[](const int sk) {
+// 			--sk; // R is 1-indexed
+// 			return logLikelihood(
+// 				(sk == -1) ? 0.0 : phiR[sk],
+// 				(sk == -1) ? tau0 : tau,
+//
+// 			);
+// 		}
+//   	);
+
+		double newRatio = 0.0;
+		double oldRatio = 0.0;
+
+		for (int k = 0; k < I.length(); ++k) {
+			const auto Ik = I[k] - 1; // R is 1-indexed
+			const auto newSk = newS[k];
+			const auto oldSk = oldS[k];
+			const auto gk = Ik / N;
+			const auto numK = C[gk];
+
+			newRatio += logLikelihood(
+							(newSk == 0) ? 0.0 : phiR[newSk - 1],
+							(newSk == 0) ? tau0 : tau,
+							numK,
+							Y[Ik],
+							X[Ik]
+						);
+
+			oldRatio += logLikelihood(
+							(oldSk == 0) ? 0.0 : phiR[oldSk - 1],
+							(oldSk == 0) ? tau0 : tau,
+							numK,
+							Y[Ik],
+							X[Ik]
+						);
+		}
+
+		double ratio = newRatio - oldRatio;
+
+
+
+    return Rcpp::List::create(
+      Rcpp::Named("ratio") = ratio,
+      Rcpp::Named("new") = newRatio,
+      Rcpp::Named("old") = oldRatio
+    );
+
+}
+
+
   Rcpp::List computeMarginalLikelihood(const Rcpp::NumericMatrix& X,
                                        const Rcpp::NumericVector& phi,
                                        const Rcpp::NumericVector& Paux,
