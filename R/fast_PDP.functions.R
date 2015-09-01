@@ -444,14 +444,37 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
   P.aux <- P.aux/sum(P.aux)
 
   ## marginal likelihood of new cluster
-  marg.log.lik.v <- array(,length(x.mt))
-  for (tt in 1:length(x.mt))
-	{
-    	tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
-    	tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
-   	marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
-  	}
-  marg.log.lik <- sum(marg.log.lik.v)
+
+  if (computeMode$useR) {
+
+    marg.log.lik.v <- array(,length(x.mt))
+    for (tt in 1:length(x.mt))
+    {
+      tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
+      tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+      marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
+    }
+    marg.log.lik <- sum(marg.log.lik.v)
+
+  } else {
+
+    test <- .computeMarginalLikelihood(computeMode$device$engine,
+                                       x.mt,
+                                       parm$clust$phi.v,
+                                       P.aux,
+                                       parm$tau, parm$tau_0,
+                                       FALSE, # no sampling
+                                       computeMode$exactBitStream)
+
+#     if (abs(test$logMarginalLikelihood - marg.log.lik) > 1e-10) {
+#       print(test$logMarginalLikelihood)
+#       print(marg.log.lik)
+#       stop("C++ error")
+#     }
+
+    marg.log.lik <- test$logMarginalLikelihood
+
+  }
 
   L.v <- c(L.v, marg.log.lik)
 
@@ -708,6 +731,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
                                      parm$clust$phi.v,
                                      P.aux,
                                      parm$tau, parm$tau_0,
+                                     TRUE, # do sampling
                                      computeMode$exactBitStream)
 
 #   if (abs(test$logMarginalLikelihood - marg.log.lik) > 1E-10) {

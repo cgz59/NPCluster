@@ -51,9 +51,10 @@ Rcpp::List computeMarginalLikelihood(SEXP sexp,
                                      const Rcpp::NumericVector& phi,
                                      const Rcpp::NumericVector& Paux,
                                      const double tau, const double tau0,
+                                     const bool sample,
                                      const bool exactBitStream) {
   EnginePtr engine = parsePtr(sexp);
-  return engine->computeMarginalLikelihood(X, phi, Paux, tau, tau0, exactBitStream);
+  return engine->computeMarginalLikelihood(X, phi, Paux, tau, tau0, sample, exactBitStream);
 }
 
 // [[Rcpp::export(.computeDPAcceptanceRatio)]]

@@ -17,8 +17,8 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_vectorizedElementFnLogLik', PACKAGE = 'NPCluster', sexp, phi, sd, num, Y, Xsd)
 }
 
-.computeMarginalLikelihood <- function(sexp, X, phi, Paux, tau, tau0, exactBitStream) {
-    .Call('NPCluster_computeMarginalLikelihood', PACKAGE = 'NPCluster', sexp, X, phi, Paux, tau, tau0, exactBitStream)
+.computeMarginalLikelihood <- function(sexp, X, phi, Paux, tau, tau0, sample, exactBitStream) {
+    .Call('NPCluster_computeMarginalLikelihood', PACKAGE = 'NPCluster', sexp, X, phi, Paux, tau, tau0, sample, exactBitStream)
 }
 
 .computeDPAcceptanceRatio <- function(sexp, Y, X, I, C, phi, newS, oldS, tau, tau0, N) {

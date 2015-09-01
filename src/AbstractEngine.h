@@ -151,29 +151,21 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
                                        const Rcpp::NumericVector& phi,
                                        const Rcpp::NumericVector& Paux,
                                        const double tau, const double tau0,
+                                       const bool doSample,
                                        const bool exactBitStream) {
     using namespace Rcpp;
 
+	// TODO if doSample == false, then no need to save to posterior[]
+
     const int rows = X.rows();
 //     const int cols = X.cols();
-
     const int len = phi.length();
 
-//     std::cerr << rows << ":" << cols << std::endl;
-//     std::cerr << len << std::endl;
 
-    std::vector<int> sample(rows);
-    std::vector<double> logLikelihood(rows);
+    std::vector<int> sample(rows); // TODO Only allocate if doSample == true
+//     std::vector<double> logLikelihood(rows);
 
 	std::vector<int> perm(len + 1);
-
-//     std::transform(std::begin(X), std::end(X),
-//     	boost::make_zip(std::begin(
-//     );
-//
-// 	auto itSample = std::begin(sample);
-// 	auto itX = std::begin(X);
-
 	std::vector<double> posterior(len + 1);
 
     double logMarginalLikelihood = 0.0;
@@ -189,26 +181,32 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 			sum += posterior[j] = Rf_dnorm4(xMtTt, phi[j - 1], tau, 0) * Paux[j];
 		}
 
-#if 1
-		for (int j = 0; j <=len; ++j) {
-			posterior[j] /= sum;
-		}
 
-		int index;
-		ProbSampleReplace(len + 1, &posterior[0], &perm[0], 1, &index); // explicit R code
-		--index;
+		if (doSample) {
+
+#if 1
+			for (int j = 0; j <=len; ++j) {
+				posterior[j] /= sum;
+			}
+
+			int index;
+			ProbSampleReplace(len + 1, &posterior[0], &perm[0], 1, &index); // explicit R code
+			--index;
 #else
-		// Normalize posterior and sample
-		double draw = unif_rand() * sum;
-		int index = 0;
-		while (draw >= posterior[index] && index < len) {
-			draw -= posterior[index];
-			++index;
-		}
+			// Normalize posterior and sample
+			double draw = unif_rand() * sum;
+			int index = 0;
+			while (draw >= posterior[index] && index < len) {
+				draw -= posterior[index];
+				++index;
+			}
 #endif
 
+			// Store results
+			sample[i] = index;
+		}
+
 		// Store results
-		sample[i] = index;
 		logMarginalLikelihood += std::log(sum);
 	}
 
@@ -219,8 +217,6 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 // 		0.0,
 // 		[](std::pair<double,int>&
 // 	);
-
-
 
     return Rcpp::List::create(
       Rcpp::Named("sVk") = sample,

@@ -55,8 +55,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // computeMarginalLikelihood
-Rcpp::List computeMarginalLikelihood(SEXP sexp, const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& phi, const Rcpp::NumericVector& Paux, const double tau, const double tau0, const bool exactBitStream);
-RcppExport SEXP NPCluster_computeMarginalLikelihood(SEXP sexpSEXP, SEXP XSEXP, SEXP phiSEXP, SEXP PauxSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP exactBitStreamSEXP) {
+Rcpp::List computeMarginalLikelihood(SEXP sexp, const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& phi, const Rcpp::NumericVector& Paux, const double tau, const double tau0, const bool sample, const bool exactBitStream);
+RcppExport SEXP NPCluster_computeMarginalLikelihood(SEXP sexpSEXP, SEXP XSEXP, SEXP phiSEXP, SEXP PauxSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP sampleSEXP, SEXP exactBitStreamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -66,8 +66,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type Paux(PauxSEXP);
     Rcpp::traits::input_parameter< const double >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< const double >::type tau0(tau0SEXP);
+    Rcpp::traits::input_parameter< const bool >::type sample(sampleSEXP);
     Rcpp::traits::input_parameter< const bool >::type exactBitStream(exactBitStreamSEXP);
-    __result = Rcpp::wrap(computeMarginalLikelihood(sexp, X, phi, Paux, tau, tau0, exactBitStream));
+    __result = Rcpp::wrap(computeMarginalLikelihood(sexp, X, phi, Paux, tau, tau0, sample, exactBitStream));
     return __result;
 END_RCPP
 }
