@@ -779,7 +779,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
    if (length(emptied.indx) >0)
    {
     log.prior.v[-(emptied.indx+1)] <- log(c((parm$b0+parm$clust$C.m0), (parm$clust$C.m.vec[-emptied.indx]-parm$d), spread.mass))
-    log.prior.v[emptied.indx+1] <- spread.mass
+    log.prior.v[emptied.indx+1] <- log(spread.mass)
    }
 
    if (length(emptied.indx) ==0)
@@ -970,7 +970,8 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     ########## toss a coin #################
 
     prob <- exp(min((rho.tru-rho.prop),0))
-
+	
+    flip<-as.logical(rbinom(n=1,size=1,prob=prob))
 
 if (!flip) {parm <- init.cc.parm}
 
