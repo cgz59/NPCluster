@@ -544,7 +544,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
       	tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
       	tmp.prob.v <- tmp.lik.v*P.aux
       	prob.gen.v <- tmp.prob.v/sum(tmp.prob.v)
-      	cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v)
+      	cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v) # HOT
         }
     parm$cand$s.v.k <- cand.s.v.k
 
@@ -578,7 +578,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
 		#
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
-		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
+		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v) # HOT
 
 		if (computeMode$useR) {
 		  parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
@@ -1029,7 +1029,7 @@ PDP_fn.drop <- function(parm, computeMode)
 	parm$clust$n0 <- sum(parm$clust$s.v==0)
 	parm$clust$n.vec <- array(,parm$clust$K)
 	for (ss in 1:parm$clust$K)
-		{parm$clust$n.vec[ss] <- sum(parm$clust$s.v==ss)
+		{parm$clust$n.vec[ss] <- sum(parm$clust$s.v==ss)  # HOT
 		}
 
   }

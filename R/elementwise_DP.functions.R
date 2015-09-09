@@ -485,7 +485,7 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	############
 
-	log.prior.v <- log(c((parm$clust$M0+parm$clust$n0.k.comp), parm$clust$n.vec.k.comp))
+	log.prior.v <- log(c((parm$clust$M0 + parm$clust$n0.k.comp), parm$clust$n.vec.k.comp))
 	#######################################################
 	# Buffering empty clusters with positive masses using Neal's method
 	# NECESSARY under MH algorithm otherwise reverse proposals are impossible
@@ -496,7 +496,7 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	# possibly overwrite some 0's
 	if (length(newly.empty.indx) > 0)
-		{log.prior.v[newly.empty.indx] <- log(parm$clust$M/length(newly.empty.indx))
+		{log.prior.v[newly.empty.indx] <- log(parm$clust$M / length(newly.empty.indx))
 		}
 
 	tmp2 <- log.prior.v + L.v
@@ -514,10 +514,10 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	########################################################################
 
-	new.s.k <- sample(0:parm$clust$K, size=length(I.k), replace=TRUE, prob=parm$clust$post.k)
+	new.s.k <- sample(0:parm$clust$K, size = length(I.k), replace = TRUE, prob = parm$clust$post.k)
 	old.s.k <- old.parm$clust$s.v[I.k]
 
-	exit <- (sum(new.s.k != old.s.k)==0)
+	exit <- (sum(new.s.k != old.s.k) == 0)
 	flip <- 1
 
   if (!exit) # CONTINUE W/O EXITING FUNCTION

@@ -1,5 +1,5 @@
 function() {
-	postscript() <- profileExample(n = 400, p = 500, n.burn = 10, n.reps = 20,
+	posterior <- profileExample(n = 400, p = 500, n.burn = 10, n.reps = 20,
 	                       row.frac.probes = 0.25, col.frac.probes = 0.25,
 	                       computeMode = "C")
 
@@ -174,7 +174,7 @@ play_profile <- function() {
 
 
 big_profile <- function() {
-  n <- 100
+  n <- 200
   p <- 1000
 
   n.burn <- 1
