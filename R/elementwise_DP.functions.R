@@ -262,20 +262,25 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	  }
 
 	# I <- parm$row.subset.I
-	parm$clust$row.nbhd <- NULL
-	parm$clust$row.nbhd.k <- NULL
   relative_I <- 1:length(parm$row.subset.I)
 
+  first <- TRUE
 	while (length(relative_I)>=1)
 		{tmp <- fast_element_fn.nbhd(relative_I, parm, max.row.nbhd.size)
 		relative_k <- tmp[[1]]
 		relative_I.k <- tmp[[2]]
 		relative_I <- tmp[[3]]
 		#
-		parm$clust$row.nbhd <- c(parm$clust$row.nbhd, list(parm$row.subset.I[relative_I.k]))
-		parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, parm$row.subset.I[relative_k])
+		if (first) {
+		  parm$clust$row.nbhd <- list(parm$row.subset.I[relative_I.k])
+		  parm$clust$row.nbhd.k <- parm$row.subset.I[relative_k]
+		  first <- FALSE
+		} else {
+		  parm$clust$row.nbhd <- c(parm$clust$row.nbhd, list(parm$row.subset.I[relative_I.k]))
+		  parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, parm$row.subset.I[relative_k])
 		}
 
+		}
   }
 
   if (computeMode$computeC) {

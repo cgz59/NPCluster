@@ -1,4 +1,5 @@
 function() {
+  set.seed(666)
 	posterior <- profileExample(n = 10, p = 50, n.burn = 10, n.reps = 20,
 	                       row.frac.probes = 0.25, col.frac.probes = 0.25,
 	                       computeMode = createComputeMode(language = "C",

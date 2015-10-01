@@ -136,10 +136,10 @@ createComputeMode <- function(language = "R",
 #' @interal
 assertEqual <- function(x, y, tolerance = 0) {
   if (length(x) != length(y)) {
-    stop(cat("C++ error", length(x), length(y)))
+    stop(cat("C++ error -- length:", length(x), length(y)))
   }
   if (any(abs(x - y) > tolerance)) {
-    stop("C++ error")
+    stop(cat("C++ error -- value:", x, y, tolerance, sep = "\n"))
   }
 }
 
