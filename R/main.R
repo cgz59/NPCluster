@@ -101,6 +101,8 @@ profileExample <- function(n = 25,
 createComputeMode <- function(language = "R",
                               exactBitStream = FALSE,
                               extraSort = TRUE,
+                              completeTest = FALSE,
+                              tolerance = 1E-10,
                               test1 = FALSE,
                               test2 = FALSE,
                               test3 = FALSE) {
@@ -116,10 +118,12 @@ createComputeMode <- function(language = "R",
   }
 
   object <- list(
-    useR = (language == "R"),
+    computeR = (language == "R" | completeTest),
+    computeC = (language == "C"),
     device = device,
     exactBitStream = exactBitStream,
     extraSort = extraSort,
+    tolerance = tolerance,
     test1 = test1,
     test2 = test2,
     test3 = test3
@@ -128,6 +132,15 @@ createComputeMode <- function(language = "R",
   return(object)
 }
 
-
+#' assertEqual
+#' @interal
+assertEqual <- function(x, y, tolerance = 0) {
+  if (length(x) != length(y)) {
+    stop(cat("C++ error", length(x), length(y)))
+  }
+  if (any(abs(x - y) > tolerance)) {
+    stop("C++ error")
+  }
+}
 
 

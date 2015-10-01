@@ -18,12 +18,13 @@ element_fn.consistency.check <- function(parm, computeMode)
 
 	if (!is.null(parm$clust$row.nbhd)) {
 
-	  if (computeMode$useR) {
-
+	  if (computeMode$computeR) {
 	    if (sum(unlist(lapply(parm$clust$row.nbhd, length))) != length(parm$row.subset.I)) {
 	      err <- 2
 	    }
-	  } else {
+	  }
+
+	  if (computeMode$computeC) {
       if (parm$clust$row.nbhd.flat.length != length(parm$row.subset.I))
         err <- 2
 	  }
@@ -185,7 +186,7 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
   #     for a hopefully faster version
   #######################################################################################
 
-  if (computeMode$useR) {
+  if (computeMode$computeR) {
 
 	################################################
 	### Compute pmf of cluster variables w_1,...,w_n
@@ -206,7 +207,7 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	num.k.v <-  parm$clust$C.m.vec[g.v]
 
 
-	for (ss in 1:parm$clust$K)   # useR
+	for (ss in 1:parm$clust$K)
 		{subset_log.ss.mt[ss,] <- element_fn.log.lik(mean=parm$clust$phi.v[ss], sd=parm$tau, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
     #log.ss.mt[ss,parm$row.subset.I] <- element_fn.log.lik(mean=parm$clust$phi.v[ss], sd=parm$tau, num=num.k.v, Y=Y.v, X.sd=X.sd.v)
 		}
@@ -256,7 +257,9 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
   #     could possibly compute as follows (if it solves the problem)
 	#######################################################################################
 
-  # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+	  if (computeMode$computeC) { # debugging
+      savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+	  }
 
 	# I <- parm$row.subset.I
 	parm$clust$row.nbhd <- NULL
@@ -273,13 +276,14 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 		parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, parm$row.subset.I[relative_k])
 		}
 
-  } else { # computeMode != "R"
+  }
 
+  if (computeMode$computeC) {
 
-	# START
-	# .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+	  if (computeMode$computeR) { # debugging
+	    .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+	  }
 
-#	engine <- createEngine(sort = TRUE)
 	test <- .computePmfAndNeighborhoods(computeMode$device$engine,
 	                            parm$clust$n0, parm$clust$n.vec, 1e-3, 1e-5,
 	                            parm$clust$K, parm$N,
@@ -288,14 +292,10 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	                            parm$clust$phi.v, parm$tau, parm$tau_0,
 	                            max.row.nbhd.size, parm$row.delta)
 
-# 	if (!all(parm$clust$row.nbhd.k == test$index)) {
-# 	  stop("Error in C++ draw")
-# 	}
-#
-# 	if (!all(unlist(parm$clust$row.nbhd) == test$neighbor)) {
-# 	  stop("Error in C++ draw")
-# 	}
-
+	if (computeMode$computeR) { # debugging
+	  assertEqual(parm$clust$row.nbhd.k, test$index)
+	  assertEqual(unlist(parm$clust$row.nbhd), test$neighbor)
+	}
 
 	# Convert from simple flat format to list of int vectors
 	end <- test$offset[-1] - 1
@@ -357,14 +357,19 @@ element_fn.row.gibbs.DP <- function(parm, computeMode)
 	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
-	if (computeMode$useR) {
+	if (computeMode$computeR) {
 	  L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd = parm$tau, num = num.k, Y = Y.k, X.sd = X.sd.k)
-	} else { #
-	  L.v <- .vectorizedElementFnLogLik(computeMode$device$engine, parm$clust$phi.v, parm$tau, num.k, Y.k, X.sd.k)
 	}
-# 	  if (any(abs(L.v - L.v2) > 1e-10)) {
-# 	    stop("C++ error")
-# 	  }
+
+	if (computeMode$computeC) {
+	  L.v.C <- .vectorizedElementFnLogLik(computeMode$device$engine, parm$clust$phi.v, parm$tau, num.k, Y.k, X.sd.k)
+
+	  if (computeMode$computeR) { # debugging
+	    assertEqual(L.v.C, L.v, computeMode$tolerance)
+	  }
+
+	  L.v <- L.v.C
+	}
 
 	# add possibility that s=0 in front
 	L.v <- c(element_fn.log.lik(mean=0, sd=parm$tau_0, num=num.k, Y=Y.k, X.sd=X.sd.k), L.v)
@@ -440,21 +445,27 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	subset.s <- parm$clust$s.v[I.k]
 
-	if (computeMode$useR | !computeMode$test1) {
+	if (computeMode$computeR) {
 
 	  parm$clust$n.vec.k <- array(,parm$clust$K)
 	  for (gg in 1:parm$clust$K) {
 	    parm$clust$n.vec.k[gg] <- sum(subset.s==gg)
 		}
 	  parm$clust$n0.k <- sum(subset.s==0)
+	}
 
-	} else {
+	if (computeMode$computeC) {
 
 	  # If this gets hot again, could write a fast subsettedTabulate
 	  all.n.vec <- .fastTabulateVector(subset.s, parm$clust$K, TRUE)
+
+	  if (computeMode$computeR) { # debugging
+	    assertEqual(parm$clust$n0.k, all.n.vec[1])
+	    assertEqual(parm$clust$n.vec.k, all.n.vec[-1])
+	  }
+
 	  parm$clust$n0.k <- all.n.vec[1]
 	  parm$clust$n.vec.k <- all.n.vec[-1]
-
 	}
 
 	parm$clust$n.vec.k.comp <- parm$clust$n.vec - parm$clust$n.vec.k
@@ -470,10 +481,18 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	g.k <- (k-1) %/% parm$n2 + 1
 	num.k <-  parm$clust$C.m.vec[g.k]
 
-	if (computeMode$useR) {
+	if (computeMode$computeR) {
 	  L.v <- sapply(parm$clust$phi.v, element_fn.log.lik, sd = parm$tau, num = num.k, Y = Y.k, X.sd = X.sd.k)
-	} else {
-	  L.v <- .vectorizedElementFnLogLik(computeMode$device$engine, parm$clust$phi.v, parm$tau, num.k, Y.k, X.sd.k)
+	}
+
+	if (computeMode$computeC) {
+	  L.v.C <- .vectorizedElementFnLogLik(computeMode$device$engine, parm$clust$phi.v, parm$tau, num.k, Y.k, X.sd.k)
+
+	  if (computeMode$computeR) { # debugging
+	    assertEqual(L.v.C, L.v, computeMode$tolerance)
+	  }
+
+	  L.v <- L.v.C
 	}
 
 # 	  	  if (any(abs(L.v - L.v2) > 1e-10)) {
@@ -523,7 +542,7 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
   if (!exit) # CONTINUE W/O EXITING FUNCTION
   {
 
-	if (computeMode$useR) {
+	if (computeMode$computeR) {
 
 	  parm$clust$s.v[I.k] <- new.s.k
 
@@ -547,17 +566,24 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	    }
 	  }
 
-	} else {
+	}
+
+  if (computeMode$computeC) {
 
 	  .fastIndexedSetNoCopy(parm$clust$s.v, I.k, new.s.k) # Same as: parm$clust$s.v[I.k] <- new.s.k
 	  all.count <- .fastTabulateVector(new.s.k, parm$clust$K, TRUE)
+	  rho.prop.C <- .fastSumSafeLog(parm$clust$post.k, all.count,
+	                                length(parm$clust$post.k))
+
+	  if (computeMode$computeR) { # debugging
+	    assertEqual(parm$clust$n0.k.comp + all.count[1], parm$clust$n0)
+	    assertEqual(parm$clust$n.vec.k.com + all.count[-1], parm$clust$n.vec)
+	    assertEqual(rho.prop.C, rho.prop, computeMode$tolerance)
+	  }
 
 	  parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
 	  parm$clust$n.vec <- parm$clust$n.vec.k.com + all.count[-1]
-
-	  rho.prop <- .fastSumSafeLog(parm$clust$post.k, all.count,
-	                              length(parm$clust$post.k))
-
+    rho.prop <- rho.prop.C
 	}
 	# sum(parm$clust$n.vec) + parm$clust$n0 == parm$N
 
@@ -568,7 +594,9 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	##########################################
 	##########################################
 
-  if (computeMode$useR) {
+  initial.rho.prop <- rho.prop
+
+  if (computeMode$computeR) {
 
     for (gg in 0:parm$clust$K) {
       flag.gg <- (old.s.k == gg)
@@ -579,16 +607,18 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
       }
     }
 
-  } else {
+  }
+
+  if (computeMode$computeC) {
     all.count <- .fastTabulateVector(old.s.k, parm$clust$K, TRUE)
-    rho.prop <- rho.prop - .fastSumSafeLog(old.parm$clust$post.k, all.count,
+    rho.prop.C <- initial.rho.prop - .fastSumSafeLog(old.parm$clust$post.k, all.count,
                                         length(old.parm$clust$post.k))
 
-#     if (abs(rho.prop - test4) > 1e-10) {
-#       stop("C++ error")
-#     }
+    if (computeMode$computeR) { # debugging
+      assertEqual(rho.prop.C, rho.prop, computeMode$tolerance)
+    }
 
-    # rho.prop <- test4
+    rho.prop <- rho.prop.C
   }
 
 	#######################################################
@@ -613,7 +643,7 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	###################
 
-	if (computeMode$useR) { # START
+	if (computeMode$computeR) { # START
 
 	  Y.k.v <- parm$Y[I.k]
 	  X.sd.k.v <- parm$X.sd[I.k]
@@ -640,27 +670,22 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	  {old.log.lik <- old.log.lik + sum(element_fn.log.lik(mean = 0, sd = parm$tau_0, num = num.k.v[old.s.k == 0], Y = Y.k.v[old.s.k == 0], X.sd = X.sd.k.v[old.s.k == 0]))
 	  }
 
-	} else {
+	}
 
-	  test <- .computeDPAcceptanceRatio(computeMode$device$engine,
+	if (computeMode$computeC) {
+
+	  result <- .computeDPAcceptanceRatio(computeMode$device$engine,
 	                                    parm$Y, parm$X.sd, I.k, parm$clust$C.m.vec, parm$clust$phi.v,
 	                                    new.s.k, old.s.k,
 	                                    parm$tau, parm$tau_0, parm$n2)
 
-# 	  if (abs(test$new - new.log.lik) > 1e-10) {
-# 	    print(test$new)
-# 	    print(new.log.lik)
-# 	    stop("C++ error")
-# 	  }
-#
-# 	  if (abs(test$old - old.log.lik) > 1e-10) {
-# 	    print(test$old)
-# 	    print(old.log.lik)
-# 	    stop("C++ error")
-# 	  }
+	  if (computeMode$computeR) { # debugging
+	    assertEqual(result$new, new.log.lik, computeMode$tolerance)
+	    assertEqual(result$old, old.log.lik, computeMode$tolerance)
+	  }
 
-	  new.log.lik <- test$new
-	  old.log.lik <- test$old
+	  new.log.lik <- result$new
+	  old.log.lik <- result$old
 
 	} # END
 
@@ -668,13 +693,12 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 
 	########## toss a coin #################
 
-	prob <- exp(min((rho.tru-rho.prop),0))
-	flip <- as.logical(rbinom(n=1, size=1, prob=prob))
+	prob <- exp(min((rho.tru - rho.prop),0))
+	flip <- as.logical(rbinom(n = 1, size = 1, prob = prob))
 	if (!flip) {
 	  parm <- init.cc.parm
 
-	  if (!computeMode$useR) {
-
+	  if (computeMode$computeC) {
 	    # C++ version does not make a deep copy (via copy-on-write), so values must be manually restored
 	    .fastIndexedSetNoCopy(parm$clust$s.v, I.k, old.s.k)
 	  }

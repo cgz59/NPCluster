@@ -1,7 +1,9 @@
 function() {
-	posterior <- profileExample(n = 400, p = 500, n.burn = 10, n.reps = 20,
+	posterior <- profileExample(n = 10, p = 50, n.burn = 10, n.reps = 20,
 	                       row.frac.probes = 0.25, col.frac.probes = 0.25,
-	                       computeMode = "C")
+	                       computeMode = createComputeMode(language = "C",
+	                                                       completeTest = TRUE,
+	                                                       exactBitStream = TRUE))
 
 	# rows <- grep("elementwise_DP.functions.R", row.names(prof))
 

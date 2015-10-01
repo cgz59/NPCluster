@@ -66,16 +66,12 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	parm$clust$c.v[ind1] <- g2
 	parm$clust$c.v[ind2] <- g1
 
-	if (computeMode$useR) {
-
+	if (computeMode$computeR) {
 	  buffer <- parm$clust$s.mt[,g1]
 	  parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2] # HOT 3
 	  parm$clust$s.mt[,g2] <- buffer
-
 	} else {
-
 	  .swapIntegerMatrix(parm$clust$s.mt, g1, g2, FALSE)
-
 	}
 
 	buffer <- parm$clust$beta.v[g1]
@@ -108,7 +104,7 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	parm$clust$B.mt[,(g1+1)] <- parm$clust$B.mt[,(g2+1)]
 	parm$clust$B.mt[,(g2+1)] <- buffer
 
-	if (computeMode$useR) {
+	if (computeMode$computeR) {
 
 	  # first swap columns
 	  buffer <- parm$clust$tBB.mt[,(g1+1)]
@@ -120,9 +116,7 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	  parm$clust$tBB.mt[(g2+1),] <- buffer
 
 	} else {
-
 	  .swap(parm$clust$tBB.mt, g1 + 1, g2 + 2, TRUE)
-
 	}
 
 	parm
@@ -240,7 +234,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
 
   col.subset <- 1:parm$p
 
-  if (computeMode$useR) {
+  if (computeMode$computeR) {
 
     ################################################
     ### Compute pmf of cluster variables w_1,...,w_p
@@ -288,7 +282,9 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
     ### now compute the delta-neighborhoods
     #########################################
 
-    # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    if (computeMode$computeC) { # debugging
+      savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    }
 
     parm$clust$col.nbhd <- NULL
     parm$clust$col.nbhd.k <- NULL
@@ -308,11 +304,14 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
 
     parm <- PDP_fn.check.nbhd(parm)
 
-  } else { # computeMode != "R"
+  }
 
-    # .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+  if (computeMode$computeC) {
 
-    #	engine <- createEngine(sort = TRUE)
+    if (computeMode$computeR) { # debugging
+      .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+    }
+
     test <- .computeColumnPmfAndNeighborhoods(computeMode$device$engine,
                                         parm$clust$C.m0, parm$clust$C.m.vec, 1e-3, 1e-5,
                                         parm$clust$G, parm$n2,
@@ -323,18 +322,11 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
                                         parm$clust$phi.v, parm$tau, parm$tau_0, parm$tau_int,
                                         max.col.nbhd.size, parm$col.delta, TRUE)
 
-#     	if (!all(parm$clust$col.nbhd.k == test$index)) {
-#     	  stop("Error in C++ draw: index")
-#     	}
-#
-#     	if (!all(unlist(parm$clust$col.nbhd) == test$neighbor)) {
-#     	  stop("Error in C++ draw: neighbor")
-#     	}
-#
-#       if (abs(parm$clust$nbhd_max_dist - test$neighborhoodMax) > 1E-5) {
-#         stop("Error in C++ draw: neighborhoodMax")
-#       }
-#       cat("PASS")
+    if (computeMode$computeR) { # debugging
+      assertEqual(test$index, parm$clust$col.nbhd.k)
+      assertEqual(test$neighbor, unlist(parm$clust$col.nbhd))
+      assertEqual(test$neighborhoodMax, parm$clust$nbhd_max_dist, computeMode$tolerance)
+    }
 
     # Convert from simple flat format to list of int vectors
     end <- test$offset[-1] - 1
@@ -379,27 +371,28 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
 	x.mt <- matrix(parm$X[,k], ncol=1)
 
-	if (computeMode$useR | computeMode$exactBitStream) {
+	if (computeMode$computeR) {
 
 	# intercept cluster or any existing cluster
 	L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
 
 
-  } else { # computeMode
-    # engine <- createEngine(sort = TRUE)
+  }
+
+	if (computeMode$computeC) {
+
     test <- .computePdpLogLikelihood(computeMode$device$engine, k, parm$X,
                                      parm$clust$A.mt, parm$clust$s.mt,
                                      parm$clust$G, parm$n2,
                                      parm$tau, parm$tau_0, parm$tau_int, FALSE)
+
+    if (computeMode$computeR) { # debugging
+      assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
+    }
+
     L.v <- test$logLikehood
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
-
-# 	abs <- abs(L.v - test$logLikelihood)
-# 	pass <- all(abs < 1e-14)
-# 	if(!pass) {
-# 	  stop("bad compute")
-# 	}
 
 	#######################################################
 	### emptied clusters are gone forever under Gibbs sampling
@@ -410,27 +403,23 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
   if (length(emptied.indx) >0)
   	{
-    	if (computeMode$useR) {
+    	if (computeMode$computeR) {
     	  new.s.mt <- parm$clust$s.mt[,-emptied.indx] # HOT 3
     	  new.n.vec <- array(,parm$clust$K)
     	  for (pp in 1:parm$clust$K) {
     	    new.n.vec[pp] <- sum(new.s.mt==pp) # HOT
     	  }
     	  new.n0 <- sum(new.s.mt == 0) # HOT 3
-    	} else { # computeMode
+    	}
+
+      if (computeMode$computeC) {
+
     	  tab <- .fastTabulateExcludeEmptiedIndices(parm$clust$s.mt, emptied.indx, parm$clust$K, TRUE)
 
-#     	  if (tab[1] != new.n0) {
-#     	    print(tab[1])
-#     	    print(new.n0)
-#     	    stop("C++ error")
-#     	  }
-#
-#     	  if (any(tab[-1] != new.n.vec)) {
-#     	    print(tab[-1])
-#     	    print(new.n.vec)
-#     	    stop("C++ error")
-#     	  }
+    	  if (computeMode$computeR) { # debugging
+    	    assertEqual(tab[1], new.n0)
+          assertEqual(tab[-1], new.n.vec)
+    	  }
 
     	  new.n0 <- tab[1]
     	  new.n.vec <- tab[-1]
@@ -461,7 +450,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
   ## marginal likelihood of new cluster
 
-  if (computeMode$useR) {
+  if (computeMode$computeR) {
 
     marg.log.lik.v <- array(,length(x.mt))
     for (tt in 1:length(x.mt))
@@ -472,7 +461,9 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
     }
     marg.log.lik <- sum(marg.log.lik.v)
 
-  } else {
+  }
+
+  if (computeMode$computeC) {
 
     test <- .computeMarginalLikelihood(computeMode$device$engine,
                                        x.mt,
@@ -482,11 +473,9 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
                                        FALSE, # no sampling
                                        computeMode$exactBitStream)
 
-#     if (abs(test$logMarginalLikelihood - marg.log.lik) > 1e-10) {
-#       print(test$logMarginalLikelihood)
-#       print(marg.log.lik)
-#       stop("C++ error")
-#     }
+    if (computeMode$computeR) { # debugging
+      assertEqual(test$logMarginalLikelihood, marg.log.lik, computeMode$tolerance)
+    }
 
     marg.log.lik <- test$logMarginalLikelihood
 
@@ -580,7 +569,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v) # HOT
 
-		if (computeMode$useR) {
+		if (computeMode$computeR) {
 		  parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
 		} else {
 		  parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
@@ -611,7 +600,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   # Note to MS: I've ignored the branching conditions
   #             in "elementwise_DP.functions.R" based on computeMode$useR
 
-  if (computeMode$useR) {
+  if (computeMode$computeR) {
 
     parm$clust$C.m.vec.k <- array(,parm$clust$G)
     for (gg in 1:parm$clust$G) {
@@ -619,21 +608,19 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     }
 
     parm$clust$C.m0.k <- sum(old.c.k == 0)
+  }
 
-  } else {
+  if (computeMode$computeC) {
 
     all.n.vec <- .fastTabulateVector(old.c.k, parm$clust$G, TRUE)
+
+    if (computeMode$computeR) { # debugging
+      assertEqual(all.n.vec[1], parm$clust$C.m0.k)
+      assertEqual(all.n.vec[-1], parm$clust$C.m.vec.k)
+    }
+
     parm$clust$C.m0.k <- all.n.vec[1] # test1
     parm$clust$C.m.vec.k <- all.n.vec[-1] # test2
-
-#     if (any(test1 != parm$clust$C.m0.k)) {
-#       stop("C++ error")
-#     }
-#
-#     if (any(test2 != parm$clust$C.m.vec.k)) {
-#       stop("C++ error")
-#     }
-
   }
 
   parm$clust$C.m.vec.k.comp <- parm$clust$C.m.vec - parm$clust$C.m.vec.k
@@ -641,55 +628,47 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
   x.mt <- matrix(parm$X[,k], ncol=1)
 
-  if (computeMode$useR | computeMode$exactBitStream) {
+  if (computeMode$computeR) {
 
     # intercept cluster or any existing cluster
     L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
+  }
 
-
-  } else { # computeMode
-    # engine <- createEngine(sort = TRUE)
+  if (computeMode$computeC) {
     test <- .computePdpLogLikelihood(computeMode$device$engine, k, parm$X,
                                      parm$clust$A.mt, parm$clust$s.mt,
                                      parm$clust$G, parm$n2,
                                      parm$tau, parm$tau_0, parm$tau_int, FALSE)
+
+    if (computeMode$computeR) { # debugging
+      assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
+    }
+
     L.v <- test$logLikehood
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
-
-  #   abs <- abs(L.v - test$logLikelihood)
-  # 	pass <- all(abs < 1e-14)
-  # 	if(!pass) {
-  # 	  stop("bad compute")
-  # 	}
-
 
    emptied.indx <- which(parm$clust$C.m.vec.k.comp==0)
    new.G <- parm$clust$G - length(emptied.indx)
 
   if (length(emptied.indx) >0)
   {
-    if (computeMode$useR) {
+    if (computeMode$computeR) {
       new.s.mt <- parm$clust$s.mt[,-emptied.indx] # HOT 3
       new.n.vec <- array(,parm$clust$K)
       for (pp in 1:parm$clust$K) {
         new.n.vec[pp] <- sum(new.s.mt==pp) # HOT
       }
       new.n0 <- sum(new.s.mt == 0) # HOT 3
-    } else { # computeMode
+    }
+
+    if (computeMode$computeC) { # computeMode
       tab <- .fastTabulateExcludeEmptiedIndices(parm$clust$s.mt, emptied.indx, parm$clust$K, TRUE)
 
-      #     	  if (tab[1] != new.n0) {
-      #     	    print(tab[1])
-      #     	    print(new.n0)
-      #     	    stop("C++ error")
-      #     	  }
-      #
-      #     	  if (any(tab[-1] != new.n.vec)) {
-      #     	    print(tab[-1])
-      #     	    print(new.n.vec)
-      #     	    stop("C++ error")
-      #     	  }
+      if (computeMode$computeR) { # debugging
+        assertEqual(tab[1], new.n0)
+        assertEqual(tab[-1], new.n.vec)
+      }
 
       new.n0 <- tab[1]
       new.n.vec <- tab[-1]
@@ -719,9 +698,11 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
   # START
 
-  if (computeMode$useR) {
+  if (computeMode$computeR) {
 
-  # savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    if (computeMode$computeC) { # debugging
+      savedSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    }
 
   ## marginal likelihood of new cluster
   marg.log.lik.v <- cand.s.v.k <- array(,length(x.mt))
@@ -738,9 +719,13 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   marg.log.lik <- sum(marg.log.lik.v)
 
   # SWTICH
-  } else {
+  }
 
-  # .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+  if (computeMode$computeC) {
+
+    if (computeMode$computeR) { # debugging
+      .GlobalEnv$.Random.seed <- savedSeed # Roll back PRNG
+    }
 
   test <- .computeMarginalLikelihood(computeMode$device$engine,
                                      x.mt,
@@ -750,17 +735,10 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
                                      TRUE, # do sampling
                                      computeMode$exactBitStream)
 
-#   if (abs(test$logMarginalLikelihood - marg.log.lik) > 1E-10) {
-#     print(test$logMarginalLikelihood)
-#     print(marg.log.lik)
-#     stop("C++ error")
-#   }
-#
-#   if (any(cand.s.v.k != test$sVk)) {
-#     print(test$sVk)
-#     print(cand.s.v.k)
-#     stop("C++ error")
-#   }
+    if (computeMode$computeR) { # debugging
+      assertEqual(test$logMarginalLikelihood, marg.log.lik, computeMode$toleranace)
+      assertEqual(test$sVk, cand.s.v.k)
+    }
 
   parm$cand$s.v.k <- test$sVk
   marg.log.lik <- test$logMarginalLikelihood
@@ -818,7 +796,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
       new.prop <- 0
 
-      if (computeMode$useR) {
+      if (computeMode$computeR) {
 
       count.0 <- sum(new.c.k==0)
       parm$clust$C.m0 <- parm$clust$C.m0.k.comp + count.0
@@ -835,18 +813,20 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
           }
       }
 
-      } else {
+      }
+
+      if (computeMode$computeC) {
 
         all.count <- .fastTabulateVector(new.c.k, parm$clust$G + 1, TRUE)
         test1 <- parm$clust$C.m0.k.comp + all.count[1] # test1
         test2 <- parm$clust$C.m.vec.k.comp + all.count[2:(parm$clust$G + 1)] # test2
         test3 <- .fastSumSafeLog(parm$clust$post.k, all.count, parm$clust$G + 1) # test3
 
-#         if (any(test1 != parm$clust$C.m0) |
-#             any(test2 != parm$clust$C.m.vec) |
-#             any(test3 != new.prop)) {
-#           stop("C++ error")
-#         }
+        if (computeMode$computeR) { # debugging
+          assertEqual(test1, parm$clust$C.m0)
+          assertEqual(test2, parm$clust$C.m.vec)
+          assertEqual(test3, new.prop)
+        }
 
         parm$clust$C.m0 <- test1
         parm$clust$C.m.vec <- test2
@@ -893,7 +873,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
         parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
         parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
 
-        if (computeMode$useR) {
+        if (computeMode$computeR) {
           parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
         } else {
           parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
@@ -970,7 +950,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     ########## toss a coin #################
 
     prob <- exp(min((rho.tru-rho.prop),0))
-	
+
     flip<-as.logical(rbinom(n=1,size=1,prob=prob))
 
 if (!flip) {parm <- init.cc.parm}

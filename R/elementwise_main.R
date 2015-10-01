@@ -19,23 +19,27 @@ fn1.update.element.objects <- function(parm, computeMode)
 
 	parm$clust$theta.v <- as.vector(parm$clust$A.mt)
 
-	if (computeMode$useR | !computeMode$test1) {
+	if (computeMode$computeR) {
 
 	  parm$clust$n.vec <- array(,parm$clust$K)
 	  for (s in 1:parm$clust$K)
-		  {parm$clust$n.vec[s] <- sum(parm$clust$s.v==s)
+		  {parm$clust$n.vec[s] <- sum(parm$clust$s.v == s)
 	  }
-	  parm$clust$n0 <- sum(parm$clust$s.v==0)
+	  parm$clust$n0 <- sum(parm$clust$s.v == 0)
+	}
 
-	} else {
+	if (computeMode$computeC) {
 
 	  all.n.vec <- .fastTabulateVector(parm$clust$s.v, parm$clust$K, TRUE)
+
+	  if (computeMode$computeR) {
+      assertEqual(parm$clust$n0, all.n.vec[1])
+	    assertEqual(parm$clust$n.vec, all.n.vec[-1])
+	  }
+
 	  parm$clust$n0 <- all.n.vec[1]
-	  parm$clust$ n.vec <- all.n.vec[-1]
-
-  }
-
-
+	  parm$clust$n.vec <- all.n.vec[-1]
+	}
 
 	parm
 	}
