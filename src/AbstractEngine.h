@@ -73,7 +73,7 @@ public:
 
     NumericVector logLike(phi.size());
 	std::transform(std::begin(phi), std::end(phi), std::begin(logLike),
-		[sd,num,Y,Xsd](const double mean) {
+		[this,sd,num,Y,Xsd](const double mean) {
 			return logLikelihood(mean, sd, num, Y, Xsd);
 		});
 
