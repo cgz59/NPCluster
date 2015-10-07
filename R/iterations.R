@@ -541,7 +541,7 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 
-fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl=FALSE,
+fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl.flag=FALSE,
                     computeMode = "R")
 	{
 
