@@ -5,10 +5,6 @@ fn.dahl <- function(All.Stuff, data, parm, max.row.nbhd.size, max.col.nbhd.size,
 
   All.Stuff$dahl$min <- Inf
 
-  c.matrix <- array(0,c(n.reps,parm$p))
-
-  G.matrix <- posterior$pi.mt
-
   for (cc in 1:n.reps)
     {
     ### Dahl calculations
@@ -16,11 +12,11 @@ fn.dahl <- function(All.Stuff, data, parm, max.row.nbhd.size, max.col.nbhd.size,
     tmp.mat <- array(0,c(p,p))
 
     for (jj in 0:All.Stuff$G.v[cc])
-      {indx.jj <- which(c.matrix[cc,]==jj)
+      {indx.jj <- which(All.Stuff$c.matrix[cc,]==jj)
       tmp.mat[indx.jj,indx.jj] <- 1
       }
 
-    dahl.dist <- sum((G.matrix - tmp.mat)^2)
+    dahl.dist <- sum((All.Stuff$pi.mt - tmp.mat)^2)
 
     if (dahl.dist < All.Stuff$dahl$min)
       {All.Stuff$dahl$min <- dahl.dist
@@ -55,6 +51,9 @@ fn.dahl <- function(All.Stuff, data, parm, max.row.nbhd.size, max.col.nbhd.size,
   All.Stuff.2$row.flip.v  <- array(0,new.n.reps)
 
   All.Stuff.2$merge.flip.v  <- All.Stuff.2$split.changed.v <- array(0,new.n.reps)
+
+  parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
+  init.parm <- parm
 
   parm <- fn.init(true, data, zero.hemming, entropy.prop, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, col.DP.flag=FALSE, dahl=All.Stuff$dahl, d=mean(All.Stuff$d.v), max.d=max.d)
   init.parm <- parm

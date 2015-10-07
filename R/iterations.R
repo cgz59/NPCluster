@@ -238,6 +238,17 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode = "R")
 	{
 
+
+  ###########################################
+  # Missing X values
+  ###########################################
+
+  data$num.X.miss <- sum(is.na(data$X))
+  tmp <- which(is.na(data$X), arr=TRUE)
+  data$X.missing.x <- tmp[,1]
+  data$X.missing.y <- tmp[,2]
+
+
 #	parm <- true_parm
 
 	parm <- NULL
@@ -294,6 +305,34 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm
 
 	}
+
+
+fn.gen.X <- function(data, parm)
+{
+  # impute missing X cvalues
+
+  X.mt <- data$X
+
+  if (data$num.X.miss > 0)
+  {
+    for (cc in 1:data$num.X.miss)
+    {i.cc <- data$X.missing.x[cc]
+    j.cc <- data$X.missing.y[cc]
+    c.cc <- parm$clust$c.v[j.cc]
+    if (c.cc != 0)
+    {mean.cc <- parm$clust$A.mt[i.cc, c.cc]
+    }
+    if (c.cc == 0)
+    {mean.cc <- 1
+    }
+    X.mt[i.cc, j.cc] <- rnorm(n=1, mean=mean.cc, sd=parm$tau)
+    }
+  }
+  parm$X <- X.mt
+
+  parm
+}
+
 
 
 fn.assign.priors <- function(parm, data)
@@ -526,6 +565,11 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 	parm <- fn.hyperparameters(data, parm)
 
+	flip <- rbinom(n=1, size=1, prob=.1)
+	if (flip==1)
+	  {parm <- fn.gen.X(data, parm)
+	  }
+
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
 
@@ -631,6 +675,10 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	All.Stuff$init.parm <- init.parm
 
 	###
+
+	if (dahl.flag)
+	{#update this loop later
+	 }
 
 	All.Stuff
 	}
