@@ -11,46 +11,41 @@ fn.dahl <- function(posterior, data, n.burn, n.reps, max.row.nbhd.size, max.col.
   G.matrix <- posterior$pi.mt
 
   for (cc in 1:n.reps)
-  {
-  ### Dahl calculations
+    {
+    ### Dahl calculations
 
-   tmp.mat <- array(0,c(p,p))
+    tmp.mat <- array(0,c(p,p))
 
     for (jj in 0:All.Stuff$G.v[cc])
-    {indx.jj <- which(c.matrix[cc,]==jj)
+      {indx.jj <- which(c.matrix[cc,]==jj)
       tmp.mat[indx.jj,indx.jj] <- 1
+      }
+
+    dahl.dist <- sum((G.matrix - tmp.mat)^2)
+
+    if (dahl.dist < All.Stuff$dahl$min)
+      {All.Stuff$dahl$min <- dahl.dist
+    All.Stuff$dahl$G.clust <- c.matrix[cc,]
+    All.Stuff$dahl$G <- All.Stuff$G.v[cc]
     }
 
-  dahl.dist <- sum((G.matrix - tmp.mat)^2)
-  if (dahl.dist < All.Stuff$dahl$min)
-  {All.Stuff$dahl$min <- dahl.dist
-  All.Stuff$dahl$G.clust <- c.matrix[cc,]
-  All.Stuff$dahl$G <- All.Stuff$G.v[cc]
-  }
-
-} # end for loop in cc
+  } # end for loop in cc
 
 
 
-##########################################
-## THEN get an estimated elementwise (K-cluster)
-## run fewer iterations because takes longer to do Dahl calculations
-##########################################
+  ##########################################
+  ## THEN get an estimated elementwise (K-cluster)
+  ## run fewer iterations because takes longer to do Dahl calculations
+  ##########################################
 
-All.Stuff.1 <- All.Stuff
+  All.Stuff.1 <- All.Stuff
 
-} # END huge just.dahl loop
+  ###########
 
-###########
+  All.Stuff <- All.Stuff.1
+  All.Stuff.2 <- NULL
 
-All.Stuff <- All.Stuff.1
-All.Stuff.2 <- NULL
-
-###########
-
-
-if (do.dahl)
-{
+  ###########
 
   new.n.reps <- n.reps/2
   new.n.burn <- n.burn/2
@@ -67,8 +62,8 @@ if (do.dahl)
 
   err <- fn.quality.check(parm)
   if (err > 0)
-  {stop(paste("failed QC at fn.init: err=",err))
-  }
+    {stop(paste("failed QC at fn.init: err=",err))
+    }
 
 
   flip.count <- 0
@@ -85,45 +80,45 @@ if (do.dahl)
 
 
     if (cc %% 10 == 0)
-    {print(paste(new.text, "BURN = ",cc,date(),"***********"))
+      {print(paste(new.text, "BURN = ",cc,date(),"***********"))
+      }
+      }
     }
-    }
-  }
 
 
   for (cc in 1:new.n.reps)
-  {parm <- fn.iter(data, parm, zero.hemming, entropy.prop, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, col.DP.flag=FALSE, split.merge.flag, max.d)
+    {parm <- fn.iter(data, parm, zero.hemming, entropy.prop, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, col.DP.flag=FALSE, split.merge.flag, max.d)
 
-  All.Stuff.2$G.v[cc] <- parm$clust$G
-  All.Stuff.2$K.v[cc] <- parm$clust$K
-  All.Stuff.2$tau.v[cc] <- parm$tau
-  All.Stuff.2$tau_0.v[cc] <- parm$tau_0
-  All.Stuff.2$tau_int.v[cc] <- parm$tau_int
+    All.Stuff.2$G.v[cc] <- parm$clust$G
+    All.Stuff.2$K.v[cc] <- parm$clust$K
+    All.Stuff.2$tau.v[cc] <- parm$tau
+    All.Stuff.2$tau_0.v[cc] <- parm$tau_0
+    All.Stuff.2$tau_int.v[cc] <- parm$tau_int
 
-  # summarizing elementwise DP in "fn.groupwise.updates"
+    # summarizing elementwise DP in "fn.groupwise.updates"
 
-  All.Stuff.2$row.flip.v[cc]  <- parm$clust$row.flip
+    All.Stuff.2$row.flip.v[cc]  <- parm$clust$row.flip
 
-  r.matrix[cc,] <- parm$clust$s.v
+    r.matrix[cc,] <- parm$clust$s.v
 
-  ### exact Dahl calculations: too expensive
-  if (FALSE)
-  {
+    ### exact Dahl calculations: too expensive
+    if (FALSE)
+    {
     tmp.mat <- array(0,c(parm$N,parm$N))
 
     for (jj in 0:parm$clust$K)
-    {indx.jj <- which(parm$clust$s.v==jj)
-    tmp.mat[indx.jj,indx.jj] <- 1
-    }
+      {indx.jj <- which(parm$clust$s.v==jj)
+      tmp.mat[indx.jj,indx.jj] <- 1
+      }
 
     K.matrix <- K.matrix + tmp.mat
-  }
+    }
 
-  if (cc %% 10 == 0)
-  {print(paste(new.text, "REPS = ",cc,date(),"***********"))
-  }
+    if (cc %% 10 == 0)
+      {print(paste(new.text, "REPS = ",cc,date(),"***********"))
+    }
 
-  } # end for loop in cc
+    } # end for loop in cc
 
 
   All.Stuff.2$parm <- parm
@@ -192,11 +187,10 @@ if (do.dahl)
 
   } # end for loop in cc
 
-} # END massive if (do.dahl)
 
-# just for the record, although All.Stuff.1 and All.Stuff.2
-# have $d fixed at mean
-All.Stuff.1$d.v <- All.Stuff.2$d.v <- All.Stuff$d.v
+  # just for the record, although All.Stuff.1 and All.Stuff.2
+  # have $d fixed at mean
+  All.Stuff.1$d.v <- All.Stuff.2$d.v <- All.Stuff$d.v
 
-list(All.Stuff.1, All.Stuff.2)
-}
+  list(All.Stuff.1, All.Stuff.2)
+  }
