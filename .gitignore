@@ -6,3 +6,4 @@ src/*.so
 src/*.dll
 Rprof.out
 .DS*
+ignore
