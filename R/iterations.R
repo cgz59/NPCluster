@@ -577,7 +577,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
 	if (dahl.flag)
-	  {All.Stuff$c.matrix <- array(0,c(n.reps,p))
+	  {All.Stuff$c.matrix <- array(0,c(n.reps,parm$p))
 	  }
 
 
