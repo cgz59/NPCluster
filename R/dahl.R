@@ -1,20 +1,25 @@
 
-fn.dahl <- function(posterior)
+fn.dahl <- function(posterior, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode = "R")
 
-{}
+  {All.Stuff <- posterior
+    parm <- posterior$parm
 
-All.Stuff$dahl$min <- Inf
+  All.Stuff$dahl$min <- Inf
 
-for (cc in 1:n.reps)
-{
+  c.matrix <- array(0,c(n.reps,parm$p))
+
+  G.matrix <- posterior$pi.mt
+
+  for (cc in 1:n.reps)
+  {
   ### Dahl calculations
 
-  tmp.mat <- array(0,c(p,p))
+   tmp.mat <- array(0,c(p,p))
 
-  for (jj in 0:All.Stuff$G.v[cc])
-  {indx.jj <- which(c.matrix[cc,]==jj)
-  tmp.mat[indx.jj,indx.jj] <- 1
-  }
+    for (jj in 0:All.Stuff$G.v[cc])
+    {indx.jj <- which(c.matrix[cc,]==jj)
+      tmp.mat[indx.jj,indx.jj] <- 1
+    }
 
   dahl.dist <- sum((G.matrix - tmp.mat)^2)
   if (dahl.dist < All.Stuff$dahl$min)
