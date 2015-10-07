@@ -239,19 +239,21 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	{
 
 
-  ###########################################
-  # Missing X values
-  ###########################################
-
-  parm$num.X.miss <- sum(is.na(data$X))
-  tmp <- which(is.na(data$X), arr=TRUE)
-  parm$X.missing.x <- tmp[,1]
-  parm$X.missing.y <- tmp[,2]
 
 
 #	parm <- true_parm
 
 	parm <- NULL
+
+	###########################################
+	# Missing X values
+	###########################################
+
+	parm$num.X.miss <- sum(is.na(data$X))
+	tmp <- which(is.na(data$X), arr=TRUE)
+	parm$X.missing.x <- tmp[,1]
+	parm$X.missing.y <- tmp[,2]
+
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
