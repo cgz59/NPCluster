@@ -1,8 +1,8 @@
 
-fn.dahl <- function(posterior, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode = "R")
+fn.dahl <- function(All.Stuff, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode = "R")
 
-  {All.Stuff <- posterior
-    parm <- posterior$parm
+  {
+    parm <- All.Stuff$parm
 
   All.Stuff$dahl$min <- Inf
 

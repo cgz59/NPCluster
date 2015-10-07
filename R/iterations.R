@@ -576,6 +576,11 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	All.Stuff$pi.mt <- array(0,c(parm$p,parm$p))
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
+	if (dahl.flag)
+	  {All.Stuff$c.matrix <- array(0,c(n.reps,p))
+	  }
+
+
 	for (cc in 1:n.reps)
 		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
 
@@ -586,6 +591,11 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		All.Stuff$tau_int.v[cc] <- parm$tau_int
 
 		All.Stuff$d.v[cc] <- parm$d
+
+		if (dahl.flag)
+		{All.Stuff$c.matrix[cc,] <- parm$clust$c.v
+		}
+
 
 		# summarizing elementwise DP in "fn.groupwise.updates"
 
