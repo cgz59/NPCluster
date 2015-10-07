@@ -243,10 +243,10 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
   # Missing X values
   ###########################################
 
-  data$num.X.miss <- sum(is.na(data$X))
+  parm$num.X.miss <- sum(is.na(data$X))
   tmp <- which(is.na(data$X), arr=TRUE)
-  data$X.missing.x <- tmp[,1]
-  data$X.missing.y <- tmp[,2]
+  parm$X.missing.x <- tmp[,1]
+  parm$X.missing.y <- tmp[,2]
 
 
 #	parm <- true_parm
@@ -313,11 +313,11 @@ fn.gen.X <- function(data, parm)
 
   X.mt <- data$X
 
-  if (data$num.X.miss > 0)
+  if (parm$num.X.miss > 0)
   {
-    for (cc in 1:data$num.X.miss)
-    {i.cc <- data$X.missing.x[cc]
-    j.cc <- data$X.missing.y[cc]
+    for (cc in 1:parm$num.X.miss)
+    {i.cc <- parm$X.missing.x[cc]
+    j.cc <- parm$X.missing.y[cc]
     c.cc <- parm$clust$c.v[j.cc]
     if (c.cc != 0)
     {mean.cc <- parm$clust$A.mt[i.cc, c.cc]
