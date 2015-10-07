@@ -573,6 +573,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	All.Stuff$row.flip.v  <- array(0,n.reps)
 	All.Stuff$nbhd_max <- All.Stuff$col_new_clust.v  <- All.Stuff$col_exit.v <- All.Stuff$col_flip.v  <- array(0,n.reps)
 
+	All.Stuff$pi.mt <- array(0,c(parm$p,parm$p))
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
 	for (cc in 1:n.reps)
@@ -599,7 +600,9 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		for (jj in 1:parm$clust$G)
 			{indx.jj <- which(parm$clust$c.v==jj)
 			tmp.mat[indx.jj,indx.jj] <- 1
-			}
+		}
+
+		All.Stuff$pi.mt <- All.Stuff$pi.mt + tmp.mat
 
 		All.Stuff$mean.taxicab.v[cc] <- mean(true_parm$clust$nbhd.matrix != tmp.mat)
 
@@ -611,6 +614,8 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 		} # end for loop in cc
 
+
+	All.Stuff$pi.mt <- All.Stuff$pi.mt/n.reps
 
 	All.Stuff$parm <- parm
 	All.Stuff$init.parm <- init.parm
