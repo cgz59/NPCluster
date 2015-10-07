@@ -1,6 +1,5 @@
 
-fn.dahl <- function(All.Stuff, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode = "R")
-
+fn.dahl <- function(All.Stuff, data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
   {
     parm <- All.Stuff$parm
 
