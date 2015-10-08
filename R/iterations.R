@@ -239,8 +239,6 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	{
 
 
-
-
 #	parm <- true_parm
 
 	parm <- NULL
@@ -331,6 +329,14 @@ fn.gen.X <- function(data, parm)
     }
   }
   parm$X <- X.mt
+
+  ####
+  ## STANDARDIZE X columsn to unit variance and zero mean
+  #####
+
+  mean.v <- colMeans(parm$X)
+  sd.v <- apply(parm$X, 2, sd)
+  parm$X <- t((t(parm$X) - mean.v)/sd.v)
 
   parm
 }
