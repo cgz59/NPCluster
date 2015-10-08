@@ -2,7 +2,7 @@
 #' @import MASS
 #' @import mvtnorm
 #' @export
-simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
+simulateExample <- function(n = 25, p = 250, prop.X.miss=0, tau = 0.5, tau_0 = 1.25) {
 
 	###################
 	# generate covariates adding random noise of specified level
@@ -14,7 +14,7 @@ simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
 	true_parm$tau <- tau
 	true_parm$tau_0 <- tau_0
 
-	sim.X <- gen.X(n, p, true_parm)
+	sim.X <- gen.X(n, p, prop.X.miss, true_parm)
 
 	simulation <- list(X = sim.X, parm = true_parm)
 	class(simulation) <- "NPClustSimulation"
