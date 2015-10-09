@@ -371,7 +371,7 @@ fn.standardize_orient.X <- function(parm)
   ## ORIENT X
   ####
 
-  parm$X <- t(t(parm$X) * parm$orient.v)
+  parm$X <- t(t(parm$X) * parm$clust$orient.v)
 
   parm
 }
