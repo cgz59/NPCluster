@@ -274,6 +274,10 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
 
+	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
+	### IN INITIALIZATION
+	parm$clust$orient.v <- rep(1,parm$p)
+
 	# mass parameter of elementwise(s) groups
 	# stored later in parm$clust$M
 	parm$a.R <- true$a.R
@@ -317,10 +321,6 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 	parm$shift <- true$shift
 	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
-
-	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
-	### IN INITIALIZATION
-	parm$clust$orient.v <- rep(1,parm$p)
 
 	parm <- fn.assign.priors(parm, data)
 
