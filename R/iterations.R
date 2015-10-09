@@ -270,9 +270,6 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm$tBB_flag <- tBB_flag
 
 	parm$standardize.X <- standardize.X
-	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
-	### IN INITIALIZATION
-	pamr$clust$orient.v <- array(1,parm$clust$G)
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
@@ -321,6 +318,9 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm$shift <- true$shift
 	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 
+	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
+	### IN INITIALIZATION
+	pamr$clust$orient.v <- array(1,parm$clust$G)
 
 	parm <- fn.assign.priors(parm, data)
 
