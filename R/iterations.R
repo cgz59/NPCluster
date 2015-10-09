@@ -206,17 +206,31 @@ fn.eda <- function(parm, data, computeMode)
 fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 	{
 
-	# first, impute missing X values by their column-specific means
+  ###########################################
+  # Missing X values
+  ###########################################
+
+  parm$X <- data$X
+  parm$num.X.miss <- sum(is.na(parm$X))
+  tmp <- which(is.na(parm$X), arr=TRUE)
+  parm$X.missing.x <- tmp[,1]
+  parm$X.missing.y <- tmp[,2]
+
+	# Impute any missing X values by their column-specific means
 	# + a small error term to guarantee non-tied values
- 	parm$X <- data$X
- 	tmp.mean.v <- apply(data$X, 2, median, na.rm=TRUE)
-	tmp.sd.v <- apply(data$X, 2, sd, na.rm=TRUE)
- 	for (j in 1:parm$p)
-		{indx.j <- is.na(data$X[,j])
-		if (sum(indx.j) > 0)
-			{parm$X[indx.j,j] <- tmp.mean.v[j] + rnorm(n=sum(indx.j), sd=tmp.sd.v[j]/5)
-			}
-		}
+
+ 	tmp.mean.v <- apply(parm$X, 2, median, na.rm=TRUE)
+	tmp.sd.v <- apply(parm$X, 2, sd, na.rm=TRUE)
+	if (parm$num.X.miss>0)
+	  { 	for (j in 1:parm$p)
+		      {indx.j <- is.na(parm$X[,j])
+		      if (sum(indx.j) > 0)
+			      {parm$X[indx.j,j] <- tmp.mean.v[j] + rnorm(n=sum(indx.j), sd=tmp.sd.v[j]/5)
+		      }
+	  }
+	}
+
+	##################
 
 	parm$G.new <- data$G.max
 	tmp <- fn.eda(parm, data, computeMode)
@@ -242,15 +256,6 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 #	parm <- true_parm
 
 	parm <- NULL
-
-	###########################################
-	# Missing X values
-	###########################################
-
-	parm$num.X.miss <- sum(is.na(data$X))
-	tmp <- which(is.na(data$X), arr=TRUE)
-	parm$X.missing.x <- tmp[,1]
-	parm$X.missing.y <- tmp[,2]
 
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
@@ -307,7 +312,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	}
 
 
-fn.gen.X <- function(data, parm)
+fn.gen.missing.X <- function(data, parm)
 {
   # impute missing X values
 
@@ -581,7 +586,7 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 	flip <- rbinom(n=1, size=1, prob=.1)
 	if (flip==1)
-	  {parm <- fn.gen.X(data, parm)
+	  {parm <- fn.gen.missing.X(data, parm)
 	}
 
 	if (standardize.X)

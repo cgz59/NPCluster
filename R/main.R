@@ -72,7 +72,7 @@ fitExample <- function(data,
 	posterior <- fn.mcmc(text="CLUST ANALYZE...",
 											 data$X$true, data$X$data,
 											 n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
-											 prob.compute.col.nbhd, data$parm, dahl.flag=dahl.flag, computeMode)
+											 prob.compute.col.nbhd, data$parm, dahl.flag=dahl.flag, standardize.X, computeMode)
 	return (posterior)
 }
 
