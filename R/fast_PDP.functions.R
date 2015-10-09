@@ -104,6 +104,8 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	parm$clust$B.mt[,(g1+1)] <- parm$clust$B.mt[,(g2+1)]
 	parm$clust$B.mt[,(g2+1)] <- buffer
 
+	if (parm$tBB_flag)
+	{
 	if (computeMode$computeR) {
 
 	  # first swap columns
@@ -118,6 +120,7 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	} else {
 	  .swap(parm$clust$tBB.mt, g1 + 1, g2 + 2, TRUE)
 	}
+	} # end if (parm$tBB_flag)
 
 	parm
 	}
@@ -137,7 +140,10 @@ PDP_fn.clip.clusters <- function(parm, keep)
 
 	indx2 <- c(1,(keep+1))
 	parm$clust$B.mt <- parm$clust$B.mt[,indx2]
-	parm$clust$tBB.mt <- parm$clust$tBB.mt[indx2,indx2]
+
+	if(parm$tBB_flag)
+	{parm$clust$tBB.mt <- parm$clust$tBB.mt[indx2,indx2]
+	}
 
 	parm
 	}
@@ -569,11 +575,15 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v) # HOT
 
+		if (parm$tBB_flag)
+		{
 		if (computeMode$computeR) {
 		  parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
 		} else {
 		  parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
 		}
+		}
+
   } # end  if (new.flag)
 
 
@@ -873,10 +883,13 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
         parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
         parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
 
+        if (parm$tBB_flag)
+        {
         if (computeMode$computeR) {
           parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
         } else {
           parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
+        }
         }
 
       } # end  if (new.count > 0)
@@ -1024,6 +1037,9 @@ PDP_fn.drop <- function(parm, computeMode)
 fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd, max.col.nbhd.size, computeMode)
 {
   p <- parm$p
+
+  if (parm$standardize.X)
+  {parm <- fn.standardize_orient.X(parm)}
 
 	##########################
 	# compute delta-neighborhoods

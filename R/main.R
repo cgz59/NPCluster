@@ -2,7 +2,7 @@
 #' @import MASS
 #' @import mvtnorm
 #' @export
-simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
+simulateExample <- function(n = 25, p = 250, prop.X.miss=0, tau = 0.5, tau_0 = 1.25) {
 
 	###################
 	# generate covariates adding random noise of specified level
@@ -14,7 +14,7 @@ simulateExample <- function(n = 25, p = 250, tau = 0.5, tau_0 = 1.25) {
 	true_parm$tau <- tau
 	true_parm$tau_0 <- tau_0
 
-	sim.X <- gen.X(n, p, true_parm)
+	sim.X <- gen.X(n, p, prop.X.miss, true_parm)
 
 	simulation <- list(X = sim.X, parm = true_parm)
 	class(simulation) <- "NPClustSimulation"
@@ -54,6 +54,9 @@ fitExample <- function(data,
 											 row.frac.probes = 0.05,
 											 col.frac.probes = .1,
                        prob.compute.col.nbhd=.2,
+											 dahl.flag=FALSE,
+											 standardize.X=FALSE,
+											 tBB_flag=FALSE,
 											 computeMode = createComputeMode()) {
 
 	if (!inherits(data, "NPClustSimulation")) {
@@ -71,7 +74,7 @@ fitExample <- function(data,
 	posterior <- fn.mcmc(text="CLUST ANALYZE...",
 											 data$X$true, data$X$data,
 											 n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
-											 prob.compute.col.nbhd, data$parm, computeMode)
+											 prob.compute.col.nbhd, data$parm, dahl.flag=dahl.flag, standardize.X, tBB_flag, computeMode)
 	return (posterior)
 }
 

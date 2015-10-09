@@ -34,9 +34,12 @@ fn.quality.check <- function(parm)
 			#}
 		}
 
-	if (sum(diag(parm$clust$tBB.mt) < 0) > 0)
-		{err <- 2
-		}
+	if (parm$tBB_flag)
+	  {
+	  if (sum(diag(parm$clust$tBB.mt) < 0) > 0)
+		  {err <- 2
+	    }
+	  }
 
 	if (ncol(parm$clust$A.mt) != parm$clust$G)
 		{err <- 3
@@ -193,7 +196,10 @@ fn.eda <- function(parm, data, computeMode)
 
 	## objects of full size (based on all n2 cases)
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
-	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+
+	if (parm$tBB_flag)
+	  {parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	  }
 
 	parm <- fn.assign.priors(parm, data)
 
@@ -206,17 +212,32 @@ fn.eda <- function(parm, data, computeMode)
 fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 	{
 
-	# first, impute missing X values by their column-specific means
+
+  ###########################################
+  # Missing X values
+  ###########################################
+
+  parm$X <- data$X
+  parm$num.X.miss <- sum(is.na(parm$X))
+  tmp <- which(is.na(parm$X), arr=TRUE)
+  parm$X.missing.x <- tmp[,1]
+  parm$X.missing.y <- tmp[,2]
+
+	# Impute any missing X values by their column-specific means
 	# + a small error term to guarantee non-tied values
- 	parm$X <- data$X
- 	tmp.mean.v <- apply(data$X, 2, median, na.rm=TRUE)
-	tmp.sd.v <- apply(data$X, 2, sd, na.rm=TRUE)
- 	for (j in 1:parm$p)
-		{indx.j <- is.na(data$X[,j])
-		if (sum(indx.j) > 0)
-			{parm$X[indx.j,j] <- tmp.mean.v[j] + rnorm(n=sum(indx.j), sd=tmp.sd.v[j]/5)
-			}
-		}
+
+ 	tmp.mean.v <- apply(parm$X, 2, median, na.rm=TRUE)
+	tmp.sd.v <- apply(parm$X, 2, sd, na.rm=TRUE)
+	if (parm$num.X.miss>0)
+	  { 	for (j in 1:parm$p)
+		      {indx.j <- is.na(parm$X[,j])
+		      if (sum(indx.j) > 0)
+			      {parm$X[indx.j,j] <- tmp.mean.v[j] + rnorm(n=sum(indx.j), sd=tmp.sd.v[j]/5)
+		      }
+	  }
+	}
+
+	##################
 
 	parm$G.new <- data$G.max
 	tmp <- fn.eda(parm, data, computeMode)
@@ -229,18 +250,26 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes=1, computeMode)
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
-	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+
+	if (parm$tBB_flag)
+	  {parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	  }
 
 	parm
 
 	}
 
-fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode = "R")
+fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode = "R")
 	{
+
 
 #	parm <- true_parm
 
 	parm <- NULL
+
+	parm$tBB_flag <- tBB_flag
+
+	parm$standardize.X <- standardize.X
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
@@ -289,11 +318,63 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm$shift <- true$shift
 	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 
+	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
+	### IN INITIALIZATION
+	parm$clust$orient.v <- rep(1,parm$p)
+
 	parm <- fn.assign.priors(parm, data)
 
 	parm
 
 	}
+
+
+fn.gen.missing.X <- function(data, parm)
+{
+  # impute missing X values
+
+  X.mt <- data$X
+
+  if (parm$num.X.miss > 0)
+  {
+    for (cc in 1:parm$num.X.miss)
+    {i.cc <- parm$X.missing.x[cc]
+    j.cc <- parm$X.missing.y[cc]
+    c.cc <- parm$clust$c.v[j.cc]
+    if (c.cc != 0)
+    {mean.cc <- parm$clust$A.mt[i.cc, c.cc]
+    }
+    if (c.cc == 0)
+    {mean.cc <- 1
+    }
+    X.mt[i.cc, j.cc] <- rnorm(n=1, mean=mean.cc, sd=parm$tau)
+    }
+  }
+  parm$X <- X.mt
+
+  parm
+}
+
+
+fn.standardize_orient.X <- function(parm)
+{
+
+  ####
+  ## STANDARDIZE X columns to unit variance and zero mean
+  #####
+
+  mean.v <- colMeans(parm$X)
+  sd.v <- apply(parm$X, 2, sd)
+  parm$X <- t((t(parm$X) - mean.v)/sd.v)
+
+  ####
+  ## ORIENT X
+  ####
+
+  parm$X <- t(t(parm$X) * parm$clust$orient.v)
+
+  parm
+}
 
 
 fn.assign.priors <- function(parm, data)
@@ -526,8 +607,18 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 	parm <- fn.hyperparameters(data, parm)
 
+	flip <- rbinom(n=1, size=1, prob=.1)
+	if (flip==1)
+	  {parm <- fn.gen.missing.X(data, parm)
+	}
+
+	if (parm$standardize.X)
+	  {parm <- fn.standardize_orient.X(parm)}
+
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
-	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	if (parm$tBB_flag)
+	  {parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	  }
 
 	err <- fn.quality.check(parm)
 	if (err > 0)
@@ -541,12 +632,12 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 
-fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm,
-                    computeMode = "R")
+fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl.flag=FALSE,
+                    standardize.X=FALSE, tBB_flag=FALSE, computeMode = "R")
 	{
 
 	# initialize
-	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
+	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode)
 	init.parm <- parm
 
 	err <- fn.quality.check(parm)
@@ -576,6 +667,11 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	All.Stuff$pi.mt <- array(0,c(parm$p,parm$p))
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
+	if (dahl.flag)
+	  {All.Stuff$c.matrix <- array(0,c(n.reps,parm$p))
+	  }
+
+
 	for (cc in 1:n.reps)
 		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
 
@@ -586,6 +682,11 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		All.Stuff$tau_int.v[cc] <- parm$tau_int
 
 		All.Stuff$d.v[cc] <- parm$d
+
+		if (dahl.flag)
+		{All.Stuff$c.matrix[cc,] <- parm$clust$c.v
+		}
+
 
 		# summarizing elementwise DP in "fn.groupwise.updates"
 
@@ -621,6 +722,10 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	All.Stuff$init.parm <- init.parm
 
 	###
+
+	if (dahl.flag)
+	{#update this loop later
+	 }
 
 	All.Stuff
 	}
