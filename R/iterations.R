@@ -259,7 +259,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 
 	}
 
-fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode = "R")
+fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, flip.sign, computeMode = "R")
 	{
 
 
@@ -268,8 +268,8 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm <- NULL
 
 	parm$tBB_flag <- tBB_flag
-
 	parm$standardize.X <- standardize.X
+	parm$flip.sign <- flip.sign
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
@@ -633,11 +633,11 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl.flag=FALSE,
-                    standardize.X=FALSE, tBB_flag=FALSE, computeMode = "R")
+                    standardize.X=FALSE, flip.sign=FALSE, tBB_flag=FALSE, computeMode = "R")
 	{
 
 	# initialize
-	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode)
+	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, flip.sign, computeMode)
 	init.parm <- parm
 
 	err <- fn.quality.check(parm)

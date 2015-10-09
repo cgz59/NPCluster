@@ -55,6 +55,7 @@ fitExample <- function(data,
                        prob.compute.col.nbhd=.2,
 											 dahl.flag=FALSE,
 											 standardize.X=FALSE,
+											 flip.sign=FALSE,
 											 tBB_flag=FALSE,
 											 computeMode = createComputeMode()) {
 
@@ -73,7 +74,7 @@ fitExample <- function(data,
 	posterior <- fn.mcmc(text="CLUST ANALYZE...",
 											 data$X$true, data$X$data,
 											 n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
-											 prob.compute.col.nbhd, data$parm, dahl.flag=dahl.flag, standardize.X, tBB_flag, computeMode)
+											 prob.compute.col.nbhd, data$parm, dahl.flag=dahl.flag, standardize.X, flip.sign, tBB_flag, computeMode)
 	return (posterior)
 }
 
