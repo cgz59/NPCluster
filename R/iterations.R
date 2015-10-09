@@ -320,7 +320,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
 	### IN INITIALIZATION
-	parm$clust$orient.v <- array(1,parm$p)
+	parm$clust$orient.v <- rep(1,parm$p)
 
 	parm <- fn.assign.priors(parm, data)
 
