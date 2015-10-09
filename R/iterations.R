@@ -34,9 +34,12 @@ fn.quality.check <- function(parm)
 			#}
 		}
 
-	if (sum(diag(parm$clust$tBB.mt) < 0) > 0)
-		{err <- 2
-		}
+	if (parm$tBB_flag)
+	  {
+	  if (sum(diag(parm$clust$tBB.mt) < 0) > 0)
+		  {err <- 2
+	    }
+	  }
 
 	if (ncol(parm$clust$A.mt) != parm$clust$G)
 		{err <- 3
@@ -193,7 +196,10 @@ fn.eda <- function(parm, data, computeMode)
 
 	## objects of full size (based on all n2 cases)
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
-	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+
+	if (parm$tBB_flag)
+	  {parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	  }
 
 	parm <- fn.assign.priors(parm, data)
 
@@ -205,6 +211,7 @@ fn.eda <- function(parm, data, computeMode)
 
 fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 	{
+
 
   ###########################################
   # Missing X values
@@ -243,13 +250,16 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 	parm <- fn.element.DP(data, parm, max.row.nbhd.size, row.frac.probes=1, computeMode)
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
-	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+
+	if (parm$tBB_flag)
+	  {parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	  }
 
 	parm
 
 	}
 
-fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode = "R")
+fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, computeMode = "R")
 	{
 
 
@@ -257,6 +267,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 	parm <- NULL
 
+	parm$tBB_flag <- tBB_flag
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
@@ -593,7 +604,9 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 	  {parm <- fn.standardize.X(parm)}
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
-	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	if (parm$tBB_flag)
+	  {parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
+	  }
 
 	err <- fn.quality.check(parm)
 	if (err > 0)
@@ -608,11 +621,11 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl.flag=FALSE,
-                    standardize.X=FALSE, computeMode = "R")
+                    standardize.X=FALSE, tBB_flag=FALSE, computeMode = "R")
 	{
 
 	# initialize
-	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, computeMode)
+	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, computeMode)
 	init.parm <- parm
 
 	err <- fn.quality.check(parm)
