@@ -91,6 +91,10 @@ fn2.update.element.objects <- function(parm, computeMode)
 fn.element.DP <- function(data, parm, max.row.nbhd.size, row.frac.probes,
                           computeMode)
 {
+
+  if (parm$standardize.X)
+  {parm <- fn.standardize_orient.X(parm)}
+
 	# essentially, a Bush-Mac move: given groups, the parm$N=n2XG number of
 	# invidividual elements (summaries of microarray elements) belonging to group g>0
 	# are updated for s (phi) and z

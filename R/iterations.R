@@ -259,7 +259,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 
 	}
 
-fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, computeMode = "R")
+fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode = "R")
 	{
 
 
@@ -268,6 +268,11 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm <- NULL
 
 	parm$tBB_flag <- tBB_flag
+
+	parm$standardize.X <- standardize.X
+	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
+	### IN INITIALIZATION
+	pamr$clust$orient.v <- array(1,parm$clust$G)
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
@@ -316,6 +321,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm$shift <- true$shift
 	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 
+
 	parm <- fn.assign.priors(parm, data)
 
 	parm
@@ -350,7 +356,7 @@ fn.gen.missing.X <- function(data, parm)
 }
 
 
-fn.standardize.X <- function(parm)
+fn.standardize_orient.X <- function(parm)
 {
 
   ####
@@ -360,6 +366,12 @@ fn.standardize.X <- function(parm)
   mean.v <- colMeans(parm$X)
   sd.v <- apply(parm$X, 2, sd)
   parm$X <- t((t(parm$X) - mean.v)/sd.v)
+
+  ####
+  ## ORIENT X
+  ####
+
+  parm$X <- t(t(parm$X) * parm$orient.v)
 
   parm
 }
@@ -585,7 +597,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 ########################################
 
 fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm,
-                    standardize.X=FALSE, computeMode)
+                    computeMode)
 	{
 	parm <- fast_PDP_fn.main(parm, data, col.frac.probes, prob.compute.col.nbhd, max.col.nbhd.size, computeMode)
 
@@ -600,8 +612,8 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 	  {parm <- fn.gen.missing.X(data, parm)
 	}
 
-	if (standardize.X)
-	  {parm <- fn.standardize.X(parm)}
+	if (parm$standardize.X)
+	  {parm <- fn.standardize_orient.X(parm)}
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	if (parm$tBB_flag)
@@ -625,7 +637,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	{
 
 	# initialize
-	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, computeMode)
+	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode)
 	init.parm <- parm
 
 	err <- fn.quality.check(parm)
@@ -634,7 +646,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		}
 
 	for (cc in 1:n.burn)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, standardize.X, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "BURN = ",cc,date(),"***********"))
@@ -661,7 +673,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 
 	for (cc in 1:n.reps)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, standardize.X, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K
