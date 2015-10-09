@@ -54,6 +54,7 @@ fitExample <- function(data,
 											 col.frac.probes = .1,
                        prob.compute.col.nbhd=.2,
 											 dahl.flag=FALSE,
+											 standardize.X=FALSE,
 											 computeMode = createComputeMode()) {
 
 	if (!inherits(data, "NPClustSimulation")) {

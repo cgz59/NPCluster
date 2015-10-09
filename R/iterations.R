@@ -309,7 +309,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 
 fn.gen.X <- function(data, parm)
 {
-  # impute missing X cvalues
+  # impute missing X values
 
   X.mt <- data$X
 
@@ -330,8 +330,15 @@ fn.gen.X <- function(data, parm)
   }
   parm$X <- X.mt
 
+  parm
+}
+
+
+fn.standardize.X <- function(parm)
+{
+
   ####
-  ## STANDARDIZE X columsn to unit variance and zero mean
+  ## STANDARDIZE X columns to unit variance and zero mean
   #####
 
   mean.v <- colMeans(parm$X)
@@ -340,7 +347,6 @@ fn.gen.X <- function(data, parm)
 
   parm
 }
-
 
 
 fn.assign.priors <- function(parm, data)
@@ -563,7 +569,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 ########################################
 
 fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm,
-                    computeMode)
+                    standardize.X=FALSE, computeMode)
 	{
 	parm <- fast_PDP_fn.main(parm, data, col.frac.probes, prob.compute.col.nbhd, max.col.nbhd.size, computeMode)
 
@@ -576,7 +582,10 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 	flip <- rbinom(n=1, size=1, prob=.1)
 	if (flip==1)
 	  {parm <- fn.gen.X(data, parm)
-	  }
+	}
+
+	if (standardize.X)
+	  {parm <- fn.standardize.X(parm)}
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt
@@ -594,7 +603,7 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl.flag=FALSE,
-                    computeMode = "R")
+                    standardize.X=FALSE, computeMode = "R")
 	{
 
 	# initialize
@@ -607,7 +616,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		}
 
 	for (cc in 1:n.burn)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, standardize.X, computeMode)
 
 		if (cc %% 10 == 0)
 			{print(paste(text, "BURN = ",cc,date(),"***********"))
@@ -634,7 +643,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 
 	for (cc in 1:n.reps)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
+		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, standardize.X, computeMode)
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K
