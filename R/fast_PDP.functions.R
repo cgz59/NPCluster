@@ -495,8 +495,15 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
     marg.log.lik.v <- array(,length(x.mt))
     for (tt in 1:length(x.mt))
     {
-      tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
-      tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+      if (!parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
+        tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+        }
+      if (parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) + dnorm(-x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)# HOT 3
+        tmp.lik.v <- c((dnorm(x.mt[tt],mean=0, sd=parm$tau_0)+dnorm(-x.mt[tt],mean=0, sd=parm$tau_0)),tmp.lik.v)
+        }
+
       marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
     }
     marg.log.lik <- sum(marg.log.lik.v)
@@ -567,14 +574,23 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
   {
     ###generate the latent vector first, condition on the single kth column
     cand.s.v.k <- array(,length(x.mt))
+
     for (tt in 1:length(x.mt))
-	{
-      	tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
+	  {
+      if (!parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
       	tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
-      	tmp.prob.v <- tmp.lik.v*P.aux
-      	prob.gen.v <- tmp.prob.v/sum(tmp.prob.v)
-      	cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v) # HOT
         }
+      if (parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) + dnorm(-x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)# HOT 3
+        tmp.lik.v <- c((dnorm(x.mt[tt],mean=0, sd=parm$tau_0)+dnorm(-x.mt[tt],mean=0, sd=parm$tau_0)),tmp.lik.v)
+        }
+
+      tmp.prob.v <- tmp.lik.v*P.aux
+      prob.gen.v <- tmp.prob.v/sum(tmp.prob.v)
+      cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v) # HOT
+    } # end for loop
+
     parm$cand$s.v.k <- cand.s.v.k
 
     parm$cand$n.vec.k <- array(,parm$clust$K)
