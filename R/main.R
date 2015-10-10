@@ -67,6 +67,11 @@ fitExample <- function(data,
     stop("Wrong compute mode")
   }
 
+  if (!standardize.X & flip.sign) {
+    stop("Input parameter flip.sign cannot be TRUE when standardize.X is FALSE")
+  }
+
+
 	###################
 	# Detect clusters
 	###################
