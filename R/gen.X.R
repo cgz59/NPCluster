@@ -1,14 +1,8 @@
 
-gen.X <- function(n, p, prop.X.miss, true_parm, standardize.X=FALSE, flip.sign=FALSE) {
+gen.X <- function(n, p, prop.X.miss, true_parm) {
 
 	data <- NULL
 	data$X <- array(,c(n,p))
-
-	data$standardize.X <_ standardize.X
-	data$flip.sign <- flip.sign
-
-	if (data$standardize.X)
-	  {true_parm$location.v <- rnorm(n=p, mean=, sd=6*true_parm$tau)
 
 	for (xx in 1:p)
 	{s.v <- true_parm$clust$s.mt[,true_parm$clust$c.v[xx]]
