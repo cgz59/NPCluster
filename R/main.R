@@ -68,7 +68,7 @@ fitExample <- function(data,
   }
 
   if (!standardize.X & flip.sign) {
-    stop("Input parameter flip.sign cannot be TRUE when standardize.X is FALSE")
+    stop("Invalid input parameters-- flip.sign cannot be TRUE when standardize.X is FALSE")
   }
 
 
