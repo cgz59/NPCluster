@@ -1073,7 +1073,8 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
   p <- parm$p
 
   if (parm$standardize.X)
-  {parm <- fn.standardize_orient.X(parm)}
+    {parm <- fn.standardize_orient.X(parm)
+    }
 
 	##########################
 	# compute delta-neighborhoods
