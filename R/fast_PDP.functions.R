@@ -767,9 +767,16 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   ## marginal likelihood of new cluster
   marg.log.lik.v <- cand.s.v.k <- array(,length(x.mt))
   for (tt in 1:length(x.mt))
-  { # NEXT TARGET
-    tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
-    tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+  {
+    if (!parm$flip.sign)
+      {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
+      tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+      }
+    if (parm$flip.sign)
+      {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) + dnorm(-x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)# HOT 3
+      tmp.lik.v <- c((dnorm(x.mt[tt],mean=0, sd=parm$tau_0)+dnorm(-x.mt[tt],mean=0, sd=parm$tau_0)),tmp.lik.v)
+      }
+
     tmp.marg.v <- tmp.lik.v*P.aux
     marg.log.lik.v[tt] <- log(sum(tmp.marg.v))
     cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=tmp.marg.v)
@@ -1137,12 +1144,22 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 			  col.mh.flip.v <- c(col.mh.flip.v, tmp[[4]])
 			}
 
-			}
+			############
+			## Update sign
+			############
+
+      # to be added here
+
+			} # end
 
 	err <- PDP_fn.consistency.check(parm)
 	if (err > 0)
 			{stop(paste("LOOP: failed consistency check: err=",err))
-			}
+	}
+
+
+
+
 
 	parm$clust$col.new.flag <- mean(new.flag.v)
   if (!is.null(col.mh.flip.v))
