@@ -1088,17 +1088,17 @@ PDP_fn.drop <- function(parm, computeMode)
 	}
 
 
-PDP_fn.orientation <- function(parm, col_subset)
+PDP_fn.orientation <- function(parm, cc_subset)
   {
-  X.mt <- matrix(parm$X[,col_subset], ncol=length(col_subset))
-  c.v <- parm$clust$c.v[col.subset]
-  orient.v <- parm$clust$orient.v[col.subset]
+  X.mt <- matrix(parm$X[,cc_subset], ncol=length(cc_subset))
+  c.v <- parm$clust$c.v[cc_subset]
+  orient.v <- parm$clust$orient.v[cc_subset]
 
   # manipulate PDP_fn.log.lik to get log-likelihoods separately for each sign
   tmp.parm <- parm
   tmp.parm$flip.sign=FALSE
 
-  log_lik.mt <- array(, c(2, length(col.subset)))
+  log_lik.mt <- array(, c(2, length(cc_subset)))
 
   for (gg in 0:parm$clust$G)
   {indx.gg <- c.v==gg
@@ -1112,11 +1112,11 @@ PDP_fn.orientation <- function(parm, col_subset)
 
   # assuming equal prior prob to each sign
 
-  for (tt in 1:length(col_subset))
+  for (tt in 1:length(cc_subset))
     {orient.v[tt] <- sample(c(-1,1),size=1,prob=log_lik.mt[,tt])
     }
 
-  parm$clust$orient.v[col.subset] <- orient.v
+  parm$clust$orient.v[cc_subset] <- orient.v
 
     parm
   }
@@ -1182,7 +1182,7 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
     ############
     ## Update signs for updated columns
     ############
-    parm <- PDP_fn.orientation(parm, col_subset=parm$subset_nbhd.indx)
+    parm <- PDP_fn.orientation(parm, cc_subset=parm$subset_nbhd.indx)
 
     ############
     # re-orient columns
