@@ -1144,7 +1144,8 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 
 
 	if (col.frac.probes < 1)
-	{parm$subset_nbhd.indx <- sort(sample(1:length(parm$clust$col.nbhd.k), size=round(col.frac.probes*length(parm$clust$col.nbhd.k))))
+	{num_nbhds <- max(1,round(col.frac.probes*length(parm$clust$col.nbhd.k)))
+	  parm$subset_nbhd.indx <- sort(sample(1:length(parm$clust$col.nbhd.k), size=num_nbhds))
 	}
 
 	if (col.frac.probes == 1)
