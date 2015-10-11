@@ -1176,15 +1176,18 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 
 			} # end for loop
 
-  ############
-  ## Update signs for updated columns
-  ############
-  parm <- PDP_fn.orientation(parm, col_subset=parm$subset_nbhd.indx)
+  if (parm$flip.sign)
+  {
+    ############
+    ## Update signs for updated columns
+    ############
+    parm <- PDP_fn.orientation(parm, col_subset=parm$subset_nbhd.indx)
 
-  ############
-  # re-orient columns
-  ############
-  parm <- fn.standardize_orient.X(parm)
+    ############
+    # re-orient columns
+    ############
+    parm <- fn.standardize_orient.X(parm)
+  }
 
 	err <- PDP_fn.consistency.check(parm)
 	if (err > 0)
