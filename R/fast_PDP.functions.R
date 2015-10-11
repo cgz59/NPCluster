@@ -1113,22 +1113,13 @@ PDP_fn.orientation <- function(parm, cc_subset)
   maxx.v <- apply(log_lik.mt, 2, max)
 
   log_lik.mt <- t(t(log_lik.mt) - maxx.v)
-  subset_ss.mt <- exp(log_lik.mt)
+  lik.mt <- exp(log_lik.mt)
 
-  col.sums.v <- colSums(subset_ss.mt)
-  subset_ss.mt <- t(t(subset_ss.mt)/col.sums.v)
-
-  small2 <- 1e-5
-  subset_ss.mt[subset_ss.mt < small2] <- small2
-
-  # again normalize
-  col.sums.v <- colSums(subset_ss.mt)
-  subset_ss.mt <- t(t(subset_ss.mt)/col.sums.v)
 
   # assuming equal prior prob to each sign
 
   for (tt in 1:length(cc_subset))
-    {orient.v[tt] <- sample(c(-1,1),size=1,prob=log_lik.mt[,tt])
+    {orient.v[tt] <- sample(c(-1,1),size=1,prob=lik.mt[,tt])
     }
 
   parm$clust$orient.v[cc_subset] <- orient.v
