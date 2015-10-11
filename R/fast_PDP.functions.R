@@ -1101,7 +1101,7 @@ PDP_fn.orientation <- function(parm, cc_subset)
   log_lik.mt <- array(, c(2, length(cc_subset)))
 
   for (gg in 0:parm$clust$G)
-  {indx.gg <- c.v==gg
+  {indx.gg <- which(c.v==gg)
 
     if (length(indx.gg)>0)
       {X_gg.mt <- matrix(X.mt[,indx.gg], ncol=length(indx.gg))
