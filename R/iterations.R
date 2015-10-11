@@ -362,10 +362,15 @@ fn.standardize_orient.X <- function(parm)
   ####
   ## STANDARDIZE X columns to unit variance and zero mean
   #####
+  # Do only for columns with NA's
+  # For other columns, it's just a one-time calculation at the beginning of MCMC
 
-  mean.v <- colMeans(parm$X)
-  sd.v <- apply(parm$X, 2, sd)
-  parm$X <- t((t(parm$X) - mean.v)/sd.v)
+  if (parm$num.X.miss > 0)
+    {tmp.X <- matrix(parm$X[,parm$X.missing.y],col=parm$num.X.miss)
+    mean.v <- colMeans(tmp.X)
+    sd.v <- apply(tmp.X, 2, sd)
+    parm$X[,parm$X.missing.y] <- t((t(tmp.X) - mean.v)/sd.v)
+   }
 
   ####
   ## ORIENT X

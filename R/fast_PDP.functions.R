@@ -1088,7 +1088,38 @@ PDP_fn.drop <- function(parm, computeMode)
 	}
 
 
+PDP_fn.orientation <- function(parm, col_subset)
+  {
+  X.mt <- matrix(parm$X[,col_subset], ncol=length(col_subset))
+  c.v <- parm$clust$c.v[col.subset]
+  orient.v <- parm$clust$orient.v[col.subset]
 
+  # manipulate PDP_fn.log.lik to get log-likelihoods separately for each sign
+  tmp.parm <- parm
+  tmp.parm$flip.sign=FALSE
+
+  log_lik.mt <- array(, c(2, length(col.subset)))
+
+  for (gg in 0:parm$clust$G)
+  {indx.gg <- c.v==gg
+
+    if (length(indx.gg)>0)
+      {X_gg.mt <- matrix(X.mt[,indx.gg], ncol=length(indx.gg))
+      log_lik.mt[1,indx.gg] <- PDP_fn.log.lik(gg, x.mt = X_gg.mt, tmp.parm)
+      log_lik.mt[2,indx.gg] <- PDP_fn.log.lik(gg, x.mt = -X_gg.mt, tmp.parm)
+      }
+  }
+
+  # assuming equal prior prob to each sign
+
+  for (tt in 1:length(col_subset))
+    {orient.v[tt] <- sample(c(-1,1),size=1,prob=log_lik.mt[,tt])
+    }
+
+  parm$clust$orient.v[col.subset] <- orient.v
+
+    parm
+  }
 
 
 fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd, max.col.nbhd.size, computeMode)
@@ -1120,7 +1151,6 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 	{parm$subset_nbhd.indx <- 1:length(parm$clust$col.nbhd.k)
 	}
 
-
 	new.flag.v <- NULL
   col.mh.flip.v <- col.mh.exit.v <- NULL
 
@@ -1144,22 +1174,22 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 			  col.mh.flip.v <- c(col.mh.flip.v, tmp[[4]])
 			}
 
-			############
-			## Update sign
-			############
+			} # end for loop
 
-      # to be added here
+  ############
+  ## Update signs for updated columns
+  ############
+  parm <- PDP_fn.orientation(parm, col_subset=parm$subset_nbhd.indx)
 
-			} # end
+  ############
+  # re-orient columns
+  ############
+  parm <- fn.standardize_orient.X(parm)
 
 	err <- PDP_fn.consistency.check(parm)
 	if (err > 0)
 			{stop(paste("LOOP: failed consistency check: err=",err))
 	}
-
-
-
-
 
 	parm$clust$col.new.flag <- mean(new.flag.v)
   if (!is.null(col.mh.flip.v))
