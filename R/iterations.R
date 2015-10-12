@@ -310,7 +310,7 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	# For delta neighborhoods
 	############################
 
-	parm$col.delta <- .1
+	parm$col.delta <- .05
 
 	# delta-neighborhood threshold for elements
 	parm$row.delta <- .1
@@ -618,7 +618,8 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 	}
 
 	if (parm$standardize.X)
-	  {parm <- fn.standardize_orient.X(parm)}
+	  {parm <- fn.standardize_orient.X(parm)
+	  }
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	if (parm$tBB_flag)
