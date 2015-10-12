@@ -617,6 +617,14 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 	  {parm <- fn.gen.missing.X(data, parm)
 	}
 
+	if (parm$flip.sign)
+	  {
+	    ############
+	    ## Update signs for updated columns
+	    ############
+	    parm <- PDP_fn.orientation(parm, cc_subset=1:parm$p)
+	  }
+
 	if (parm$standardize.X)
 	  {parm <- fn.standardize_orient.X(parm)
 	  }
