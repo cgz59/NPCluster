@@ -163,35 +163,69 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums=TRUE)
 		if (sum(z.g.v) > 0)
 			{a2.1.v <- parm$clust$A.mt[z.g.v,gg]
 			small.X.1 <- matrix(x.mt[z.g.v,], ncol=ncol(x.mt)) # HOT
+
 			if (colSums)
-				{tmp <- colSums(-.5*(small.X.1 - a2.1.v)^2)
-				}
+			{if (!parm$flip.sign)
+				  {tmp <- colSums(-.5*(small.X.1 - a2.1.v)^2)
+				  }
+			  if (parm$flip.sign)
+			    {tmp <- colSums(-.5*(small.X.1 - a2.1.v)^2) + colSums(-.5*(-small.X.1 - a2.1.v)^2)
+			  }
+			} # end 	if (colSums)
+
 			if (!colSums)
-				{tmp <- sum(-.5*(small.X.1 - a2.1.v)^2)
-				}
+				{if (!parm$flip.sign)
+				  {tmp <- sum(-.5*(small.X.1 - a2.1.v)^2)
+				  }
+			  if (parm$flip.sign)
+			    {tmp <- sum(-.5*(small.X.1 - a2.1.v)^2) + sum(-.5*(-small.X.1 - a2.1.v)^2)
+			    }
+				} # end if (!colSums)
+
 			log.lik.v <- log.lik.v + tmp/parm$tau^2 + sum(z.g.v)*(-.5*log(2*pi)-log(parm$tau))
-			}
+	    } # end if (sum(z.g.v) > 0)
+
 		if (sum(1-z.g.v) > 0)
 			{small.X.0 <- matrix(x.mt[!z.g.v,], ncol=ncol(x.mt))
 			if (colSums)
-				{tmp <- colSums(-.5*small.X.0^2)
+				{if (!parm$flip.sign)
+				  {tmp <- colSums(-.5*small.X.0^2)
+				  }
+			  if (parm$flip.sign)
+			    {tmp <- 2*colSums(-.5*small.X.0^2)
+			    }
 				}
 			if (!colSums)
-				{tmp <- sum(-.5*small.X.0^2)
+				{if (!parm$flip.sign)
+				  {tmp <- sum(-.5*small.X.0^2)
+				  }
+			  if (parm$flip.sign)
+			    {tmp <- 2*sum(-.5*small.X.0^2)
+			    }
 				}
 			log.lik.v <- log.lik.v + tmp/parm$tau_0^2 + sum(1-z.g.v)*(-.5*log(2*pi)-log(parm$tau_0))
-			}
-		}
+			} # end if (sum(1-z.g.v) > 0)
+		} # end if (gg > 0)
 
 	if (gg == 0)
 		{a2.v <- rep(1,parm$n2)
 		small.X <- x.mt
 		if (colSums)
-			{tmp <- colSums(-.5*(small.X - a2.v)^2)
+			{if (!parm$flip.sign)
+			  {tmp <- colSums(-.5*(small.X - a2.v)^2)
+			  }
+		  if (parm$flip.sign)
+		    {tmp <- colSums(-.5*(small.X - a2.v)^2)+colSums(-.5*(-small.X - a2.v)^2)
+		    }
 			}
 		if (!colSums)
-			{tmp <- sum(-.5*(small.X - a2.v)^2)
-			}
+			{if (!parm$flip.sign)
+			  {tmp <- sum(-.5*(small.X - a2.v)^2)
+			  }
+		  if (parm$flip.sign)
+		    {tmp <- sum(-.5*(small.X - a2.v)^2)+sum(-.5*(-small.X - a2.v)^2)
+		    }
+			} # end if (gg == 0)
 
 		log.lik.v <-  tmp/parm$tau_int^2 -parm$n2*.5*log(2*pi)-parm$n2*log(parm$tau_int)
 		}
@@ -461,8 +495,15 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
     marg.log.lik.v <- array(,length(x.mt))
     for (tt in 1:length(x.mt))
     {
-      tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
-      tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+      if (!parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
+        tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+        }
+      if (parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) + dnorm(-x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)# HOT 3
+        tmp.lik.v <- c((dnorm(x.mt[tt],mean=0, sd=parm$tau_0)+dnorm(-x.mt[tt],mean=0, sd=parm$tau_0)),tmp.lik.v)
+        }
+
       marg.log.lik.v[tt] <- log(sum(tmp.lik.v*P.aux))
     }
     marg.log.lik <- sum(marg.log.lik.v)
@@ -533,14 +574,23 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
   {
     ###generate the latent vector first, condition on the single kth column
     cand.s.v.k <- array(,length(x.mt))
+
     for (tt in 1:length(x.mt))
-	{
-      	tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
+	  {
+      if (!parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)
       	tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
-      	tmp.prob.v <- tmp.lik.v*P.aux
-      	prob.gen.v <- tmp.prob.v/sum(tmp.prob.v)
-      	cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v) # HOT
         }
+      if (parm$flip.sign)
+        {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) + dnorm(-x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)# HOT 3
+        tmp.lik.v <- c((dnorm(x.mt[tt],mean=0, sd=parm$tau_0)+dnorm(-x.mt[tt],mean=0, sd=parm$tau_0)),tmp.lik.v)
+        }
+
+      tmp.prob.v <- tmp.lik.v*P.aux
+      prob.gen.v <- tmp.prob.v/sum(tmp.prob.v)
+      cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=prob.gen.v) # HOT
+    } # end for loop
+
     parm$cand$s.v.k <- cand.s.v.k
 
     parm$cand$n.vec.k <- array(,parm$clust$K)
@@ -717,9 +767,16 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   ## marginal likelihood of new cluster
   marg.log.lik.v <- cand.s.v.k <- array(,length(x.mt))
   for (tt in 1:length(x.mt))
-  { # NEXT TARGET
-    tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
-    tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+  {
+    if (!parm$flip.sign)
+      {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) # HOT 3
+      tmp.lik.v <- c(dnorm(x.mt[tt],mean=0, sd=parm$tau_0),tmp.lik.v)
+      }
+    if (parm$flip.sign)
+      {tmp.lik.v <- dnorm(x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau) + dnorm(-x.mt[tt],mean=parm$clust$phi.v, sd=parm$tau)# HOT 3
+      tmp.lik.v <- c((dnorm(x.mt[tt],mean=0, sd=parm$tau_0)+dnorm(-x.mt[tt],mean=0, sd=parm$tau_0)),tmp.lik.v)
+      }
+
     tmp.marg.v <- tmp.lik.v*P.aux
     marg.log.lik.v[tt] <- log(sum(tmp.marg.v))
     cand.s.v.k[tt]<-sample(0:parm$clust$K, size=1, replace=TRUE, prob=tmp.marg.v)
@@ -1031,7 +1088,44 @@ PDP_fn.drop <- function(parm, computeMode)
 	}
 
 
+PDP_fn.orientation <- function(parm, cc_subset)
+  {
+  X.mt <- matrix(parm$X[,cc_subset], ncol=length(cc_subset))
+  c.v <- parm$clust$c.v[cc_subset]
+  orient.v <- parm$clust$orient.v[cc_subset]
 
+  # manipulate PDP_fn.log.lik to get log-likelihoods separately for each sign
+  tmp.parm <- parm
+  tmp.parm$flip.sign=FALSE
+
+  log_lik.mt <- array(, c(2, length(cc_subset)))
+
+  for (gg in 0:parm$clust$G)
+  {indx.gg <- which(c.v==gg)
+
+    if (length(indx.gg)>0)
+      {X_gg.mt <- matrix(X.mt[,indx.gg], ncol=length(indx.gg))
+      log_lik.mt[1,indx.gg] <- PDP_fn.log.lik(gg, x.mt = X_gg.mt, tmp.parm)
+      log_lik.mt[2,indx.gg] <- PDP_fn.log.lik(gg, x.mt = -X_gg.mt, tmp.parm)
+      }
+  }
+
+  maxx.v <- apply(log_lik.mt, 2, max)
+
+  log_lik.mt <- t(t(log_lik.mt) - maxx.v)
+  lik.mt <- exp(log_lik.mt)
+
+
+  # assuming equal prior prob to each sign
+
+  for (tt in 1:length(cc_subset))
+    {orient.v[tt] <- sample(c(-1,1),size=1,prob=lik.mt[,tt])
+    }
+
+  parm$clust$orient.v[cc_subset] <- orient.v
+
+    parm
+  }
 
 
 fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd, max.col.nbhd.size, computeMode)
@@ -1039,7 +1133,8 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
   p <- parm$p
 
   if (parm$standardize.X)
-  {parm <- fn.standardize_orient.X(parm)}
+    {parm <- fn.standardize_orient.X(parm)
+    }
 
 	##########################
 	# compute delta-neighborhoods
@@ -1055,13 +1150,13 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 
 
 	if (col.frac.probes < 1)
-	{parm$subset_nbhd.indx <- sort(sample(1:length(parm$clust$col.nbhd.k), size=round(col.frac.probes*length(parm$clust$col.nbhd.k))))
+	{num_nbhds <- max(1,round(col.frac.probes*length(parm$clust$col.nbhd.k)))
+	  parm$subset_nbhd.indx <- sort(sample(1:length(parm$clust$col.nbhd.k), size=num_nbhds))
 	}
 
 	if (col.frac.probes == 1)
 	{parm$subset_nbhd.indx <- 1:length(parm$clust$col.nbhd.k)
 	}
-
 
 	new.flag.v <- NULL
   col.mh.flip.v <- col.mh.exit.v <- NULL
@@ -1086,12 +1181,25 @@ fast_PDP_fn.main <- function(parm, data, col.frac.probes, prob.compute.col.nbhd,
 			  col.mh.flip.v <- c(col.mh.flip.v, tmp[[4]])
 			}
 
-			}
+			} # end for loop
+
+  if (parm$flip.sign)
+  {
+    ############
+    ## Update signs for updated columns
+    ############
+    parm <- PDP_fn.orientation(parm, cc_subset=parm$subset_nbhd.indx)
+
+    ############
+    # re-orient columns
+    ############
+    parm <- fn.standardize_orient.X(parm)
+  }
 
 	err <- PDP_fn.consistency.check(parm)
 	if (err > 0)
 			{stop(paste("LOOP: failed consistency check: err=",err))
-			}
+	}
 
 	parm$clust$col.new.flag <- mean(new.flag.v)
   if (!is.null(col.mh.flip.v))

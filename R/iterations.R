@@ -259,7 +259,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 
 	}
 
-fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode = "R")
+fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, flip.sign, computeMode = "R")
 	{
 
 
@@ -268,11 +268,15 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm <- NULL
 
 	parm$tBB_flag <- tBB_flag
-
 	parm$standardize.X <- standardize.X
+	parm$flip.sign <- flip.sign
 
 	parm$n2 <- dim(data$X)[1] # TODO Check
 	parm$p <- dim(data$X)[2]  # TODO Check
+
+	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
+	### IN INITIALIZATION
+	parm$clust$orient.v <- rep(1,parm$p)
 
 	# mass parameter of elementwise(s) groups
 	# stored later in parm$clust$M
@@ -318,10 +322,6 @@ fn.init <- function(true, data, max.row.nbhd.size, row.frac.probes, col.frac.pro
 	parm$shift <- true$shift
 	parm <- fn.gen.clust(parm, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, computeMode)
 
-	### ASSUMING POSITIVE ORIENTATION FOR ALL PDP CLUSTERS
-	### IN INITIALIZATION
-	parm$clust$orient.v <- rep(1,parm$p)
-
 	parm <- fn.assign.priors(parm, data)
 
 	parm
@@ -362,10 +362,15 @@ fn.standardize_orient.X <- function(parm)
   ####
   ## STANDARDIZE X columns to unit variance and zero mean
   #####
+  # Do only for columns with NA's
+  # For other columns, it's just a one-time calculation at the beginning of MCMC
 
-  mean.v <- colMeans(parm$X)
-  sd.v <- apply(parm$X, 2, sd)
-  parm$X <- t((t(parm$X) - mean.v)/sd.v)
+  if (parm$num.X.miss > 0)
+    {tmp.X <- matrix(parm$X[,parm$X.missing.y],col=parm$num.X.miss)
+    mean.v <- colMeans(tmp.X)
+    sd.v <- apply(tmp.X, 2, sd)
+    parm$X[,parm$X.missing.y] <- t((t(tmp.X) - mean.v)/sd.v)
+   }
 
   ####
   ## ORIENT X
@@ -612,8 +617,17 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 	  {parm <- fn.gen.missing.X(data, parm)
 	}
 
+	if (parm$flip.sign)
+	  {
+	    ############
+	    ## Update signs for updated columns
+	    ############
+	    parm <- PDP_fn.orientation(parm, cc_subset=1:parm$p)
+	  }
+
 	if (parm$standardize.X)
-	  {parm <- fn.standardize_orient.X(parm)}
+	  {parm <- fn.standardize_orient.X(parm)
+	  }
 
 	parm$clust$B.mt <- cbind(rep(1,parm$n2), parm$clust$A.mt)
 	if (parm$tBB_flag)
@@ -633,11 +647,11 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl.flag=FALSE,
-                    standardize.X=FALSE, tBB_flag=FALSE, computeMode = "R")
+                    standardize.X=FALSE, flip.sign=FALSE, tBB_flag=FALSE, computeMode = "R")
 	{
 
 	# initialize
-	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, computeMode)
+	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, flip.sign, computeMode)
 	init.parm <- parm
 
 	err <- fn.quality.check(parm)
