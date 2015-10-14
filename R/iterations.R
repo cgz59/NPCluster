@@ -240,8 +240,7 @@ fn.gen.clust <- function(parm, data, max.row.nbhd.size, row.frac.probes, col.fra
 	##################
 
 	parm$G.new <- data$G.max
-	tmp <- fn.eda(parm, data, computeMode)
-	parm <- tmp[[2]]
+	parm <- fn.eda(parm, data, computeMode)
 
 	#################
 
