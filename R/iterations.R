@@ -203,7 +203,7 @@ fn.eda <- function(parm, data, computeMode)
 
 	parm <- fn.assign.priors(parm, data)
 
-	list(NA, parm)
+  parm
 
 	}
 
