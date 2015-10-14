@@ -43,6 +43,7 @@ simulateExample <- function(n = 25, p = 250, prop.X.miss=0, tau = 0.5, tau_0 = 1
 #'
 #' @useDynLib NPCluster, .registration = TRUE
 #' @importFrom Rcpp evalCpp
+#' @importFrom RcppParallel RcppParallelLibs
 #'
 #' @export
 fitExample <- function(data,
