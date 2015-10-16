@@ -93,7 +93,8 @@ fn.element.DP <- function(data, parm, max.row.nbhd.size, row.frac.probes,
 {
 
   if (parm$standardize.X)
-  {parm <- fn.standardize_orient.X(parm)}
+  {parm <- fn.standardize_orient.X(parm)
+  }
 
 	# essentially, a Bush-Mac move: given groups, the parm$N=n2XG number of
 	# invidividual elements (summaries of microarray elements) belonging to group g>0
