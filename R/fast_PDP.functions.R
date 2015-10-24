@@ -256,8 +256,7 @@ PDP_fn.nbhd <- function(relative_I, parm, max.col.nbhd.size)
   relative_I.k <- relative_I[flag.v]
 
   if (length(relative_I.k) > max.col.nbhd.size) {
-    cutoff <- quantile(H.v[flag.v], probs = max.col.nbhd.size/length(relative_I.k))
-    relative_I.k <- relative_I[which(H.v <= cutoff)]
+    relative_I.k <- relative_I[rank(H.v, ties="random") <= max.col.nbhd.size]
   }
 
   relative_I.k <- sort(relative_I.k)
