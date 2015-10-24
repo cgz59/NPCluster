@@ -162,8 +162,9 @@ flag.v <- which(H.v <= cutoff)
 relative_I.k <- relative_I[flag.v]
 
 if (length(relative_I.k) > max.row.nbhd.size)
-{cutoff <- quantile(H.v[flag.v], probs=max.row.nbhd.size/length(relative_I.k))
- relative_I.k <- relative_I[which(H.v <= cutoff)]
+{#cutoff <- quantile(H.v[flag.v], probs=max.row.nbhd.size/length(relative_I.k))
+ #relative_I.k <- relative_I[which(H.v <= cutoff)]
+ relative_I.k <- relative_I[rank(H.v, ties="random") <= max.row.nbhd.size]
 }
 
 relative_I.k <- sort(relative_I.k)
