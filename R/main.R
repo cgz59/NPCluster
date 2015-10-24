@@ -49,8 +49,8 @@ simulateExample <- function(n = 25, p = 250, prop.X.miss=0, tau = 0.5, tau_0 = 1
 fitExample <- function(data,
 											 n.burn = 10,
 											 n.reps = 20,
-											 max.row.nbhd.size = 50, # should be small compared to n2 * G
-											 max.col.nbhd.size = 25, # should be small compared to p
+											 max.row.nbhd.size = round(.1*25*125^.5), # should be small compared to n2*p^d (~ n2*G if d=.5)
+											 max.col.nbhd.size = round(.05*125), # should be small compared to p
 											 row.frac.probes = 0.05,
 											 col.frac.probes = .1,
                        prob.compute.col.nbhd=.2,
