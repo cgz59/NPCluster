@@ -7,6 +7,8 @@
 #include "Rmath.h"
 #include "Rcpp.h"
 
+#include "tbb/parallel_for.h"
+
 #define MATCH_SG
 
 #ifdef NDEBUG
@@ -338,50 +340,122 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 		logSsMt.resize((K + 1) * N);
 	}
 
-	// TODO Parallelize
-	std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI),
-		[&phiVKp1,&tauV,&CmVec,&Y,&Xsd,&priorProbV,tau,tau0,n2,K,epsilon2,this](const int x) {
-			const auto row = x - 1; //rowSubsetI[i] - 1;
-			const auto gv = row / n2;
+	auto f = [&phiVKp1,&tauV,&CmVec,&Y,&Xsd,&priorProbV,tau,tau0,n2,K,epsilon2,this](const int x) {
+	    const auto row = x - 1; //rowSubsetI[i] - 1;
+	    const auto gv = row / n2;
 
-			// perform transformation and accumulate max entry
-			auto max = -std::numeric_limits<double>::max();
-			for (int j = 0; j < K + 1; ++j) {
-				const auto entry =
-					logLikelihood(phiVKp1[j], tauV[j], CmVec[gv], Y[row], Xsd[row])
-						+ priorProbV[j];
-				if (entry > max) {
-					max = entry;
-				}
-				// Store
-				logSsMt[row * (K + 1) + j] = entry;
-			}
+	    // perform transformation and accumulate max entry
+	    auto max = -std::numeric_limits<double>::max();
+	    for (int j = 0; j < K + 1; ++j) {
+	      const auto entry =
+	        logLikelihood(phiVKp1[j], tauV[j], CmVec[gv], Y[row], Xsd[row])
+	      + priorProbV[j];
+	      if (entry > max) {
+	        max = entry;
+	      }
+	      // Store
+	      logSsMt[row * (K + 1) + j] = entry;
+	    }
 
-			// subtract off max, exponentiate and accumulate colSum1
-			auto colSum1 = 0.0;
-			for (int j = 0; j < K + 1; ++j) {
-				const auto entry = std::exp(logSsMt[row * (K + 1) + j] - max);
-				colSum1 += entry;
-				logSsMt[row * (K + 1) + j] = entry;
-			}
+	    // subtract off max, exponentiate and accumulate colSum1
+	    auto colSum1 = 0.0;
+	    for (int j = 0; j < K + 1; ++j) {
+	      const auto entry = std::exp(logSsMt[row * (K + 1) + j] - max);
+	      colSum1 += entry;
+	      logSsMt[row * (K + 1) + j] = entry;
+	    }
 
-			// first normalize, replace zeros by "small" and accumulate colSum2
-			auto colSum2 = 0.0;
-			for (int j = 0; j < K + 1; ++j) {
-				auto entry = logSsMt[row * (K + 1) + j] / colSum1;
-				if (entry < epsilon2) {
-					entry = epsilon2;
-				}
-				colSum2 += entry;
-				logSsMt[row * (K + 1) + j] = entry;
-			}
+	    // first normalize, replace zeros by "small" and accumulate colSum2
+	    auto colSum2 = 0.0;
+	    for (int j = 0; j < K + 1; ++j) {
+	      auto entry = logSsMt[row * (K + 1) + j] / colSum1;
+	      if (entry < epsilon2) {
+	        entry = epsilon2;
+	      }
+	      colSum2 += entry;
+	      logSsMt[row * (K + 1) + j] = entry;
+	    }
 
-			// again normalize TODO Is second normalization really necessary?
-			for (int j = 0; j < K + 1; ++j) {
-				logSsMt[row * (K + 1) + j] /= colSum2;
-			}
-		}
-	);
+	    // again normalize TODO Is second normalization really necessary?
+	    for (int j = 0; j < K + 1; ++j) {
+	      logSsMt[row * (K + 1) + j] /= colSum2;
+	    }
+	  };
+// 	parallel_for( blocked_range<size_t>(0,n),//
+//                  [=](const blocked_range<size_t>& r) {//
+//                    for(size_t i=r.begin(); i!=r.end(); ++i)//
+//                    Foo(a[i]);//
+//                  }//
+// 	);
+
+
+	// TODO Parallelize  FIRST TARGET
+	if (false) {
+	  tbb::parallel_for(tbb::blocked_range<size_t>(0, rowSubsetI.size()),
+      [=](const tbb::blocked_range<size_t>& r) {
+        std::for_each(std::begin(rowSubsetI) + r.begin(), std::begin(rowSubsetI) + r.end(), f);
+	  });
+// 	  template<typename Index, typename Func>
+// 	  Func parallel_for( Index first, Index_type last, const Func& f
+//                         [, partitioner[, task_group_context& group]] );
+//
+// 	  template<typename Index, typename Func>
+// 	  Func parallel_for( Index first, Index_type last,
+//                       Index step, const Func& f
+//                         [, partitioner[, task_group_context& group]] );
+//
+// 	  template<typename Range, typename Body>
+// 	  void parallel_for( const Range& range, const Body& body,
+//                       [, partitioner[, task_group_context& group]] );
+// 	  Description
+// 	    A parallel_for(first,last,step,f) represents parallel execution of the loop:
+//
+// 	    for( auto i=first; i<last; i+=step ) f(i);
+	} else {
+	  std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI), f);
+	}
+// 		[&phiVKp1,&tauV,&CmVec,&Y,&Xsd,&priorProbV,tau,tau0,n2,K,epsilon2,this](const int x) {
+// 			const auto row = x - 1; //rowSubsetI[i] - 1;
+// 			const auto gv = row / n2;
+//
+// 			// perform transformation and accumulate max entry
+// 			auto max = -std::numeric_limits<double>::max();
+// 			for (int j = 0; j < K + 1; ++j) {
+// 				const auto entry =
+// 					logLikelihood(phiVKp1[j], tauV[j], CmVec[gv], Y[row], Xsd[row])
+// 						+ priorProbV[j];
+// 				if (entry > max) {
+// 					max = entry;
+// 				}
+// 				// Store
+// 				logSsMt[row * (K + 1) + j] = entry;
+// 			}
+//
+// 			// subtract off max, exponentiate and accumulate colSum1
+// 			auto colSum1 = 0.0;
+// 			for (int j = 0; j < K + 1; ++j) {
+// 				const auto entry = std::exp(logSsMt[row * (K + 1) + j] - max);
+// 				colSum1 += entry;
+// 				logSsMt[row * (K + 1) + j] = entry;
+// 			}
+//
+// 			// first normalize, replace zeros by "small" and accumulate colSum2
+// 			auto colSum2 = 0.0;
+// 			for (int j = 0; j < K + 1; ++j) {
+// 				auto entry = logSsMt[row * (K + 1) + j] / colSum1;
+// 				if (entry < epsilon2) {
+// 					entry = epsilon2;
+// 				}
+// 				colSum2 += entry;
+// 				logSsMt[row * (K + 1) + j] = entry;
+// 			}
+//
+// 			// again normalize TODO Is second normalization really necessary?
+// 			for (int j = 0; j < K + 1; ++j) {
+// 				logSsMt[row * (K + 1) + j] /= colSum2;
+// 			}
+// 		}
+//	 );
 
 // 	for (int j = 0; j < K + 1; ++j) {
 // 		std::cerr << " " << logSsMt[(rowSubsetI[0] - 1) * (K + 1) + j];
@@ -399,7 +473,7 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 
 	computeDeltaNeighborhoods(rowSubsetI,
 		neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-		cutOff, maxNeighborhoodSize, K, nullptr);
+		cutOff, maxNeighborhoodSize, K, false);
 
 	return Rcpp::List::create(
 		Rcpp::Named("neighbor") = neighborhoodList,
@@ -564,18 +638,20 @@ private:
 			auto k = sampleUniform(begin, end);
 
 			// Score each remaining entry in [begin, end) against k
-			std::transform(begin, end, begin, // TODO Parallelize
-				[k,K,this](Score score) {
-					const auto measure = distributionDistance(k.second - 1, score.second - 1, K);
-					return std::make_pair(measure, score.second);
-				}
-			);
 
-// 			if (collectionMax) {
-// 				std::cerr << "k = " << k.second << std::endl;
-// 			}
+			auto f = [k,K,this](Score score) {
+			  const auto measure = distributionDistance(k.second - 1, score.second - 1, K);
+			  return std::make_pair(measure, score.second);
+			};
 
-// 			std::cerr << "Current length: " << std::distance(begin,end) << std::endl;
+			if (true) {
+			  tbb::parallel_for(tbb::blocked_range<size_t>(0, std::distance(begin, end)),
+                       [=](const tbb::blocked_range<size_t>& r) {
+                         std::transform(begin + r.begin(), begin + r.end(), begin + r.begin(), f);
+                       });
+			} else {
+        std::transform(begin, end, begin, f);
+			}
 
 			// sort the first maxNeighborhoodSize elements in increasing measure
 			auto lastSort = (std::distance(begin, end) > maxSize) ? begin + maxSize : end;

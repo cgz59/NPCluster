@@ -135,13 +135,12 @@ quick_profile <- function() {
 
 }
 
+parallelization_profile <- function() {
+  n <- 100
+  p <- 2000
 
-play_profile <- function() {
-  n <- 25 # 100
-  p <- 125 # 1000
-
-  n.burn <- 100
-  n.reps <- 100
+  n.burn <- 1 # 100
+  n.reps <- 0 # 100
 
   row.frac.probes <- 0.1
   col.frac.probes <- 0.1
@@ -155,8 +154,44 @@ play_profile <- function() {
                                 col.frac.probes = col.frac.probes,
                                 filename = filename,
                                 computeMode = createComputeMode(language = "C",
-                                                                exactBitStream = TRUE,
-                                                                extraSort = TRUE)
+                                                                exactBitStream = FALSE,
+                                                                extraSort = TRUE,
+                                                                completeTest = FALSE)
+                                # computeMode = createComputeMode()
+    )
+
+  )
+
+  prof <- summaryRprof(filename = filename, lines = "show")$by.self
+  prof[1:5,]
+}
+
+
+play_profile <- function() {
+#   n <- 25 # 100
+#   p <- 125 # 1000
+
+  n <- 100
+  p <- 2000
+
+  n.burn <- 1 # 100
+  n.reps <- 0 # 100
+
+  row.frac.probes <- 0.1
+  col.frac.probes <- 0.1
+
+  filename <- "Rprof_100_1000.out"
+
+  set.seed(666)
+  system.time(
+    posterior <- profileExample(n = n, p = p, n.burn = n.burn, n.reps = n.reps,
+                                row.frac.probes = row.frac.probes,
+                                col.frac.probes = col.frac.probes,
+                                filename = filename,
+                                computeMode = createComputeMode(language = "C",
+                                                                exactBitStream = FALSE,
+                                                                extraSort = TRUE,
+                                                                completeTest = FALSE)
                                  # computeMode = createComputeMode()
                                 )
 
@@ -177,8 +212,8 @@ play_profile <- function() {
 
 
 big_profile <- function() {
-  n <- 200
-  p <- 1000
+  n <- 100
+  p <- 2000
 
   n.burn <- 1
   n.reps <- 0
@@ -189,17 +224,30 @@ big_profile <- function() {
   filename <- "Rprof_100_1000.out"
 
   set.seed(666)
-  system.time(
-    posterior <- profileExample(n = n, p = p, n.burn = n.burn, n.reps = n.reps,
-                            row.frac.probes = row.frac.probes,
-                            col.frac.probes = col.frac.probes,
-                            filename = filename,
-                            computeMode = createComputeMode(language = "C",
-                                                            exactBitStream = FALSE,
-                                                            extraSort = TRUE,
-                                                            test1 = TRUE))
 
+  simulation <- simulateExample(n = n, p = p)
+
+  system.time(
+  posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
+                          row.frac.probes = row.frac.probes,
+                          col.frac.probes = col.frac.probes,
+                          computeMode = createComputeMode(language = "C",
+                                                          exactBitStream = FALSE,
+                                                          extraSort = TRUE,
+                                                          test1 = TRUE))
   )
+
+#   system.time(
+#     posterior <- profileExample(n = n, p = p, n.burn = n.burn, n.reps = n.reps,
+#                             row.frac.probes = row.frac.probes,
+#                             col.frac.probes = col.frac.probes,
+#                             filename = filename,
+#                             computeMode = createComputeMode(language = "C",
+#                                                             exactBitStream = FALSE,
+#                                                             extraSort = TRUE,
+#                                                             test1 = TRUE))
+#
+#   )
 
   prof <- summaryRprof(filename = filename, lines = "show")$by.self
 
