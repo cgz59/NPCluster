@@ -19,10 +19,10 @@ EnginePtr parsePtr(SEXP sexp) {
 
 
 // [[Rcpp::export(.createEngine)]]
-Rcpp::List createEngine(bool sort) {
+Rcpp::List createEngine(bool sort, int mode) {
 
 	EnginePtr engine(
-		new np_cluster::CPUEngine<double>(sort)
+		new np_cluster::CPUEngine<double>(sort, mode)
 	);
 
 	Rcpp::List list = Rcpp::List::create(
@@ -36,6 +36,12 @@ Rcpp::List createEngine(bool sort) {
 int accessEngine(SEXP sexp) {
   EnginePtr engine = parsePtr(sexp);
   return 1;
+}
+
+// [[Rcpp::export(.printEngineTiming)]]
+void printEngineTiming(SEXP sexp) {
+  EnginePtr engine = parsePtr(sexp);
+  engine->printTiming();
 }
 
 // [[Rcpp::export(.vectorizedElementFnLogLik)]]

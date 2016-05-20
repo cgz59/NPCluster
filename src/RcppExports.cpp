@@ -17,13 +17,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // createEngine
-Rcpp::List createEngine(bool sort);
-RcppExport SEXP NPCluster_createEngine(SEXP sortSEXP) {
+Rcpp::List createEngine(bool sort, int mode);
+RcppExport SEXP NPCluster_createEngine(SEXP sortSEXP, SEXP modeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< bool >::type sort(sortSEXP);
-    __result = Rcpp::wrap(createEngine(sort));
+    Rcpp::traits::input_parameter< int >::type mode(modeSEXP);
+    __result = Rcpp::wrap(createEngine(sort, mode));
     return __result;
 END_RCPP
 }
@@ -36,6 +37,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
     __result = Rcpp::wrap(accessEngine(sexp));
     return __result;
+END_RCPP
+}
+// printEngineTiming
+void printEngineTiming(SEXP sexp);
+RcppExport SEXP NPCluster_printEngineTiming(SEXP sexpSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
+    printEngineTiming(sexp);
+    return R_NilValue;
 END_RCPP
 }
 // vectorizedElementFnLogLik

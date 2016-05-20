@@ -164,6 +164,8 @@ parallelization_profile <- function() {
 
   prof <- summaryRprof(filename = filename, lines = "show")$by.self
   prof[1:5,]
+  mean.taxicab <- mean(posterior$mean.taxicab.v)
+  mean.taxicab
 }
 
 

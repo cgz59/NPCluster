@@ -102,6 +102,8 @@ profileExample <- function(n = 25,
 	           computeMode = computeMode)
 	Rprof(NULL)
 	#summaryRprof(lines = "show")$by.self
+
+	.printEngineTiming(computeMode$device$engine)
 	return(posterior)
 }
 
@@ -115,7 +117,8 @@ createComputeMode <- function(language = "R",
                               tolerance = 1E-10,
                               test1 = FALSE,
                               test2 = FALSE,
-                              test3 = FALSE) {
+                              test3 = FALSE,
+                              lowLevelTiming = FALSE) {
   if (!(language %in% c("C","R"))) {
     stop("Invalid language")
   }
@@ -123,8 +126,12 @@ createComputeMode <- function(language = "R",
   useR <- (language == "R")
   device <- NULL
   if (!useR) {
+    cMode <- 0
+    if (lowLevelTiming) {
+      cMode <- cMode + 1
+    }
     doSort <- (exactBitStream | extraSort)
-    device <- .createEngine(doSort)
+    device <- .createEngine(doSort, cMode)
   }
 
   object <- list(

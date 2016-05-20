@@ -5,12 +5,16 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_rcpp_hello_world', PACKAGE = 'NPCluster')
 }
 
-.createEngine <- function(sort) {
-    .Call('NPCluster_createEngine', PACKAGE = 'NPCluster', sort)
+.createEngine <- function(sort, mode) {
+    .Call('NPCluster_createEngine', PACKAGE = 'NPCluster', sort, mode)
 }
 
 .accessEngine <- function(sexp) {
     .Call('NPCluster_accessEngine', PACKAGE = 'NPCluster', sexp)
+}
+
+.printEngineTiming <- function(sexp) {
+    invisible(.Call('NPCluster_printEngineTiming', PACKAGE = 'NPCluster', sexp))
 }
 
 .vectorizedElementFnLogLik <- function(sexp, phi, sd, num, Y, Xsd) {

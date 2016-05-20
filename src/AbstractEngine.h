@@ -9,6 +9,8 @@
 
 #include "tbb/parallel_for.h"
 
+#include "boost/format.hpp"
+
 #define MATCH_SG
 
 #ifdef NDEBUG
@@ -22,6 +24,22 @@ void __verify(const char *msg, const char *file, int line) {
     snprintf(buffer, 100, "Assert Failure: %s at %s line #%d", msg, file, line);
     throw std::invalid_argument(buffer);
 }
+
+class Tick {
+public:
+  Tick() : start(std::chrono::steady_clock::now()) { }
+
+  virtual ~Tick() { }
+
+  long operator()() {
+    auto end = std::chrono::steady_clock::now();
+    auto diff = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    return diff;
+  }
+
+private:
+  std::chrono::time_point<std::chrono::steady_clock> start;
+};
 
 
 static void ProbSampleReplace(int n, double *p, int *perm, int nans, int *ans)
@@ -63,8 +81,16 @@ public:
 	typedef std::vector<int> StdIntVector;
   typedef std::vector<double> StdNumericVector;
 
-  AbstractEngine(bool sort = true) : extraSorting(sort) { }
+  AbstractEngine(bool sort = true, int specialMode = 0) : extraSorting(sort), specialMode(specialMode) { }
+
   virtual ~AbstractEngine() { }
+
+  void printTiming() {
+    boost::format format("%1.3e");
+    for (auto& d : duration) {
+      Rcpp::Rcout << d.first << " " << (format % static_cast<double>(d.second)) << std::endl;
+    }
+  }
 
   // virtual void computePmfAndNeighborhoods() = 0; // pure virtual
 
@@ -83,7 +109,7 @@ public:
   }
 
 
-Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X,
+  Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X,
 							const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C,
 							const Rcpp::NumericVector& phiR,
 							const Rcpp::IntegerVector& newS, const Rcpp::IntegerVector& oldS,
@@ -146,7 +172,7 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
       Rcpp::Named("old") = oldRatio
     );
 
-}
+  }
 
 
   Rcpp::List computeMarginalLikelihood(const Rcpp::NumericMatrix& X,
@@ -267,6 +293,9 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 	);
 	logLikelihood[0] = -0.5 * tmp / (tauInt * tauInt) - N * 0.5 * std::log(2.0 * M_PI)
 											          - N * std::log(tauInt);
+
+	Tick iCPL;
+
 	// gg > 0 cases
 	for (int gg = 1; gg <= G; ++gg) { // TODO Parallelize
 		auto Xmtgg = Xmt;
@@ -289,6 +318,8 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 		}
 		logLikelihood[gg] = tmp;
 	}
+
+	duration["iCPL____"] += iCPL();
   }
 
 //   static inline double dnorm(double x, double mean, double sd) {
@@ -381,89 +412,20 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 	      logSsMt[row * (K + 1) + j] /= colSum2;
 	    }
 	  };
-// 	parallel_for( blocked_range<size_t>(0,n),//
-//                  [=](const blocked_range<size_t>& r) {//
-//                    for(size_t i=r.begin(); i!=r.end(); ++i)//
-//                    Foo(a[i]);//
-//                  }//
-// 	);
 
+  Tick cPAN;
 
-	// TODO Parallelize  FIRST TARGET
+	// TODO Parallelize
 	if (false) {
 	  tbb::parallel_for(tbb::blocked_range<size_t>(0, rowSubsetI.size()),
       [=](const tbb::blocked_range<size_t>& r) {
         std::for_each(std::begin(rowSubsetI) + r.begin(), std::begin(rowSubsetI) + r.end(), f);
 	  });
-// 	  template<typename Index, typename Func>
-// 	  Func parallel_for( Index first, Index_type last, const Func& f
-//                         [, partitioner[, task_group_context& group]] );
-//
-// 	  template<typename Index, typename Func>
-// 	  Func parallel_for( Index first, Index_type last,
-//                       Index step, const Func& f
-//                         [, partitioner[, task_group_context& group]] );
-//
-// 	  template<typename Range, typename Body>
-// 	  void parallel_for( const Range& range, const Body& body,
-//                       [, partitioner[, task_group_context& group]] );
-// 	  Description
-// 	    A parallel_for(first,last,step,f) represents parallel execution of the loop:
-//
-// 	    for( auto i=first; i<last; i+=step ) f(i);
 	} else {
 	  std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI), f);
 	}
-// 		[&phiVKp1,&tauV,&CmVec,&Y,&Xsd,&priorProbV,tau,tau0,n2,K,epsilon2,this](const int x) {
-// 			const auto row = x - 1; //rowSubsetI[i] - 1;
-// 			const auto gv = row / n2;
-//
-// 			// perform transformation and accumulate max entry
-// 			auto max = -std::numeric_limits<double>::max();
-// 			for (int j = 0; j < K + 1; ++j) {
-// 				const auto entry =
-// 					logLikelihood(phiVKp1[j], tauV[j], CmVec[gv], Y[row], Xsd[row])
-// 						+ priorProbV[j];
-// 				if (entry > max) {
-// 					max = entry;
-// 				}
-// 				// Store
-// 				logSsMt[row * (K + 1) + j] = entry;
-// 			}
-//
-// 			// subtract off max, exponentiate and accumulate colSum1
-// 			auto colSum1 = 0.0;
-// 			for (int j = 0; j < K + 1; ++j) {
-// 				const auto entry = std::exp(logSsMt[row * (K + 1) + j] - max);
-// 				colSum1 += entry;
-// 				logSsMt[row * (K + 1) + j] = entry;
-// 			}
-//
-// 			// first normalize, replace zeros by "small" and accumulate colSum2
-// 			auto colSum2 = 0.0;
-// 			for (int j = 0; j < K + 1; ++j) {
-// 				auto entry = logSsMt[row * (K + 1) + j] / colSum1;
-// 				if (entry < epsilon2) {
-// 					entry = epsilon2;
-// 				}
-// 				colSum2 += entry;
-// 				logSsMt[row * (K + 1) + j] = entry;
-// 			}
-//
-// 			// again normalize TODO Is second normalization really necessary?
-// 			for (int j = 0; j < K + 1; ++j) {
-// 				logSsMt[row * (K + 1) + j] /= colSum2;
-// 			}
-// 		}
-//	 );
 
-// 	for (int j = 0; j < K + 1; ++j) {
-// 		std::cerr << " " << logSsMt[(rowSubsetI[0] - 1) * (K + 1) + j];
-// 	}
-// 	std::cerr << std::endl;
-//
-// 	double total = std::accumulate(std::begin(logSsMt), std::end(logSsMt), 0.0);
-// 	std::cerr << total << std::endl;
+  duration["cPAN____"] += cPAN();
 
 	// now compute the delta-neighborhoods
 
@@ -517,6 +479,8 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 		logSsMt.resize((K + 1) * N);
 	}
 
+	Tick cCPAN;
+
 	// TODO Parallelize
 	std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI),
 		[&CmVec,&Y,&X,&A,&S,&priorProbV,&rowSubsetI,tau,tau0,tauInt,P,K,epsilon2,N,this](const int x) {
@@ -563,6 +527,8 @@ Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::Nu
 			}
 		}
 	);
+
+	duration["cCPAN___"] += cCPAN();
 
 	// now compute the delta-neighborhoods
 	StdIntVector neighborhoodList;
@@ -644,7 +610,9 @@ private:
 			  return std::make_pair(measure, score.second);
 			};
 
-			if (true) {
+			Tick dNN;
+
+			if (false) { // TODO Parallelize
 			  tbb::parallel_for(tbb::blocked_range<size_t>(0, std::distance(begin, end)),
                        [=](const tbb::blocked_range<size_t>& r) {
                          std::transform(begin + r.begin(), begin + r.end(), begin + r.begin(), f);
@@ -652,6 +620,8 @@ private:
 			} else {
         std::transform(begin, end, begin, f);
 			}
+
+			duration["dNN_____"] += dNN();
 
 			// sort the first maxNeighborhoodSize elements in increasing measure
 			auto lastSort = (std::distance(begin, end) > maxSize) ? begin + maxSize : end;
@@ -745,13 +715,15 @@ protected:
 	std::vector<double> logSsMt;
 
 	bool extraSorting;
-
+	const int specialMode;
+	std::map<std::string,long long> duration;
 };
 
 template <typename RealType>
 class CPUEngine : public AbstractEngine {
 public:
-  CPUEngine(bool sort) : AbstractEngine(sort) { }
+  CPUEngine(bool sort, int specialMode) : AbstractEngine(sort, specialMode) { }
+
   virtual ~CPUEngine() { }
 
 
