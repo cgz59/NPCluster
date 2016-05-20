@@ -139,8 +139,8 @@ parallelization_profile <- function() {
   n <- 100
   p <- 2000
 
-  n.burn <- 1 # 100
-  n.reps <- 0 # 100
+  n.burn <- 10 # 100
+  n.reps <- 100 # 100
 
   row.frac.probes <- 0.1
   col.frac.probes <- 0.1
@@ -163,7 +163,7 @@ parallelization_profile <- function() {
   )
 
   prof <- summaryRprof(filename = filename, lines = "show")$by.self
-  prof[1:5,]
+  prof[1:10,]
   mean.taxicab <- mean(posterior$mean.taxicab.v)
   mean.taxicab
 }

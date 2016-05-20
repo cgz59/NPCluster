@@ -5,6 +5,22 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_rcpp_hello_world', PACKAGE = 'NPCluster')
 }
 
+.createGraph <- function(size) {
+    .Call('NPCluster_createGraph', PACKAGE = 'NPCluster', size)
+}
+
+.incrementGraph <- function(sexp, indices) {
+    invisible(.Call('NPCluster_incrementGraph', PACKAGE = 'NPCluster', sexp, indices))
+}
+
+.getGraph <- function(sexp) {
+    .Call('NPCluster_getGraph', PACKAGE = 'NPCluster', sexp)
+}
+
+.getTaxiDistance <- function(sexp1, sexp2) {
+    .Call('NPCluster_getTaxiDistance', PACKAGE = 'NPCluster', sexp1, sexp2)
+}
+
 .createEngine <- function(sort, mode) {
     .Call('NPCluster_createEngine', PACKAGE = 'NPCluster', sort, mode)
 }

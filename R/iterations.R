@@ -677,16 +677,24 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	All.Stuff$row.flip.v  <- array(0,n.reps)
 	All.Stuff$nbhd_max <- All.Stuff$col_new_clust.v  <- All.Stuff$col_exit.v <- All.Stuff$col_flip.v  <- array(0,n.reps)
 
-	All.Stuff$pi.mt <- array(0,c(parm$p,parm$p))
+	# Make p-by-p matrix sparse, since p can be very large
+	All.Stuff$pi.mt <- array(0, c(parm$p, parm$p))
+	# All.Stuff$pi.mt <- Matrix::Matrix(0, nrow = parm$p, ncol = parm$p, sparse = TRUE)
+	All.Stuff$pi.mt2 <- .createGraph(parm$p)
+
 	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
 
-	if (dahl.flag)
-	  {All.Stuff$c.matrix <- array(0,c(n.reps,parm$p))
-	  }
+	if (dahl.flag) {
+	  All.Stuff$c.matrix <- array(0,c(n.reps,parm$p))
+	 }
 
+	# Allocate tmp.mat once
+	# tmp.mat <- array(0, c(parm$p, parm$p))
 
-	for (cc in 1:n.reps)
-		{parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, computeMode)
+	for (cc in 1:n.reps) {
+
+	  parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
+	                  prob.compute.col.nbhd, true_parm, computeMode)
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K
@@ -696,10 +704,9 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 		All.Stuff$d.v[cc] <- parm$d
 
-		if (dahl.flag)
-		{All.Stuff$c.matrix[cc,] <- parm$clust$c.v
+		if (dahl.flag) {
+		  All.Stuff$c.matrix[cc,] <- parm$clust$c.v
 		}
-
 
 		# summarizing elementwise DP in "fn.groupwise.updates"
 
@@ -709,27 +716,53 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		All.Stuff$col_flip.v[cc]  <- parm$clust$col.mh.flip
 		All.Stuff$col_exit.v[cc]  <- parm$clust$col.mh.exit
 
-		tmp.mat <- array(0,c(parm$p,parm$p))
+	  # tmp.mat[,] <- 0 # Set all entries to 0
+	  tmp.mat2 <- .createGraph(parm$p)
 
-		for (jj in 1:parm$clust$G)
-			{indx.jj <- which(parm$clust$c.v==jj)
-			tmp.mat[indx.jj,indx.jj] <- 1
+		for (jj in 1:parm$clust$G) {
+		  indx.jj <- which(parm$clust$c.v == jj)
+		  # tmp.mat[indx.jj,indx.jj] <- 1
+
+		  .incrementGraph(All.Stuff$pi.mt2$ptr, indx.jj)
+		  .incrementGraph(tmp.mat2$ptr, indx.jj)
 		}
 
-		All.Stuff$pi.mt <- All.Stuff$pi.mt + tmp.mat
+		# All.Stuff$pi.mt <- All.Stuff$pi.mt + tmp.mat
 
-		All.Stuff$mean.taxicab.v[cc] <- mean(true_parm$clust$nbhd.matrix != tmp.mat)
+		# All.Stuff$mean.taxicab.v[cc] <- mean(true_parm$clust$nbhd.matrix != tmp.mat)
+
+		# Create once
+		if (is.null(true_parm$clust$nbhd.matrix2)) {
+		  writeLines("CONSTRUCT")
+		  true_parm$clust$nbhd.matrix2 <- .createGraph(parm$p)
+		  for (jj in 1:true_parm$clust$G) {
+		    indx.jj <- which(true_parm$clust$c.v == jj)
+		    .incrementGraph(true_parm$clust$nbhd.matrix2$ptr, indx.jj)
+		  }
+		}
+
+	  All.Stuff$mean.taxicab.v[cc] <- .getTaxiDistance(tmp.mat2$ptr, true_parm$clust$nbhd.matrix2$ptr)
+# 		tmp <- .getGraph(All.Stuff$pi.mt2$ptr)
+# 		if (dd != All.Stuff$mean.taxicab.v[cc]) {
+# 		  browser()
+# 		}
+# 		if (sum(tmp$x) != sum(All.Stuff$pi.mt)) {
+# 		  browser()
+# 		}
 
 		All.Stuff$nbhd_max[cc] <- round(parm$clust$nbhd_max_dist, digits = 2)
 
-		if (cc %% 10 == 0)
-			{print(paste(text, "REPS = ",cc,date(),"***********"))
-			}
+		if (cc %% 10 == 0) {
+		  print(paste(text, "REPS = ",cc,date(),"***********"))
+		}
 
-		} # end for loop in cc
+	} # end for loop in cc
 
 
-	All.Stuff$pi.mt <- All.Stuff$pi.mt/n.reps
+	# All.Stuff$pi.mt <- All.Stuff$pi.mt/n.reps
+
+	All.Stuff$pi.mt <- .getGraph(All.Stuff$pi.mt2$ptr)
+	All.Stuff$pi.mt$x <- All.Stuff$pi.mt$x / n.reps
 
 	All.Stuff$parm <- parm
 	All.Stuff$init.parm <- init.parm

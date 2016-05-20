@@ -16,6 +16,51 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// createGraph
+Rcpp::List createGraph(int size);
+RcppExport SEXP NPCluster_createGraph(SEXP sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    __result = Rcpp::wrap(createGraph(size));
+    return __result;
+END_RCPP
+}
+// incrementGraph
+void incrementGraph(SEXP sexp, const Rcpp::IntegerVector& indices);
+RcppExport SEXP NPCluster_incrementGraph(SEXP sexpSEXP, SEXP indicesSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type indices(indicesSEXP);
+    incrementGraph(sexp, indices);
+    return R_NilValue;
+END_RCPP
+}
+// getGraph
+Rcpp::List getGraph(SEXP sexp);
+RcppExport SEXP NPCluster_getGraph(SEXP sexpSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp(sexpSEXP);
+    __result = Rcpp::wrap(getGraph(sexp));
+    return __result;
+END_RCPP
+}
+// getTaxiDistance
+double getTaxiDistance(SEXP sexp1, SEXP sexp2);
+RcppExport SEXP NPCluster_getTaxiDistance(SEXP sexp1SEXP, SEXP sexp2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< SEXP >::type sexp1(sexp1SEXP);
+    Rcpp::traits::input_parameter< SEXP >::type sexp2(sexp2SEXP);
+    __result = Rcpp::wrap(getTaxiDistance(sexp1, sexp2));
+    return __result;
+END_RCPP
+}
 // createEngine
 Rcpp::List createEngine(bool sort, int mode);
 RcppExport SEXP NPCluster_createEngine(SEXP sortSEXP, SEXP modeSEXP) {

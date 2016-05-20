@@ -6,8 +6,10 @@
 #include "RcppEigen.h"
 
 #include "AbstractEngine.h"
+#include "NeighborhoodGraph.h"
 
 typedef Rcpp::XPtr<np_cluster::AbstractEngine> EnginePtr;
+typedef Rcpp::XPtr<np_cluster::NeighborhoodGraph> GraphPtr;
 
 EnginePtr parsePtr(SEXP sexp) {
 	EnginePtr ptr(sexp);
@@ -15,6 +17,44 @@ EnginePtr parsePtr(SEXP sexp) {
 		Rcpp::stop("External pointer is uninitialized");
 	}
 	return ptr;
+}
+
+GraphPtr parseGraphPtr(SEXP sexp) {
+  GraphPtr ptr(sexp);
+  if (!ptr) {
+    Rcpp::stop("External point is uninitialized");
+  }
+  return ptr;
+}
+
+// [[Rcpp::export(.createGraph)]]
+Rcpp::List createGraph(int size) {
+  GraphPtr graph(
+    new np_cluster::NeighborhoodGraph(size)
+  );
+  Rcpp::List list = Rcpp::List::create(
+    Rcpp::Named("ptr") = graph
+  );
+  return list;
+}
+
+// [[Rcpp::export(.incrementGraph)]]
+void incrementGraph(SEXP sexp, const Rcpp::IntegerVector& indices) {
+  GraphPtr graph = parseGraphPtr(sexp);
+  graph->incrementGraph(indices);
+}
+
+// [[Rcpp::export(.getGraph)]]
+Rcpp::List getGraph(SEXP sexp) {
+  GraphPtr graph = parseGraphPtr(sexp);
+  return graph->getGraph();
+}
+
+// [[Rcpp::export(.getTaxiDistance)]]
+double getTaxiDistance(SEXP sexp1, SEXP sexp2) {
+  GraphPtr graph1 = parseGraphPtr(sexp1);
+  GraphPtr graph2 = parseGraphPtr(sexp2);
+  return graph1->taxiDistance(*graph2);
 }
 
 
