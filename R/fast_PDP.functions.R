@@ -617,20 +617,19 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 
    tmp.a.v <- array(,parm$n2)
    s.G.v <- parm$cand$s.v.k
-		indxx <- s.G.v==0
+		indxx <- s.G.v == 0
 		tmp.a.v[indxx] <- 0
 		tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
 		#
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v) # HOT
 
-		if (parm$tBB_flag)
-		{
-		if (computeMode$computeR) {
-		  parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
-		} else {
-		  parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
-		}
+		if (parm$tBB_flag) {
+		  if (computeMode$computeR) {
+		    parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
+		  } else {
+		    parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
+		  }
 		}
 
   } # end  if (new.flag)
@@ -932,20 +931,21 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
 
         tmp.a.v <- array(,parm$n2)
         s.G.v <- parm$cand$s.v.k
-        indxx <- s.G.v==0
+        indxx <- s.G.v == 0
         tmp.a.v[indxx] <- 0
         tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
         #
         parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
         parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v)
 
-        if (parm$tBB_flag)
-        {
-        if (computeMode$computeR) {
-          parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
-        } else {
-          parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
-        }
+        # TODO Remove code duplication with, e.g., lines 624-625 in this file
+
+        if (parm$tBB_flag) {
+          if (computeMode$computeR) {
+            parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
+          } else {
+            parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
+          }
         }
 
       } # end  if (new.count > 0)
@@ -1076,11 +1076,26 @@ PDP_fn.drop <- function(parm, computeMode)
 	parm$N <- parm$n2 * parm$clust$G
 	parm$clust$s.v <- as.vector(parm$clust$s.mt)
 
-	parm$clust$n0 <- sum(parm$clust$s.v==0)
-	parm$clust$n.vec <- array(,parm$clust$K)
-	for (ss in 1:parm$clust$K)
-		{parm$clust$n.vec[ss] <- sum(parm$clust$s.v==ss)  # HOT
-		}
+	if (computeMode$computeR) {
+    # TODO Remove code duplication, e.g., with elementwise_main.R
+	  parm$clust$n0 <- sum(parm$clust$s.v == 0)
+	  parm$clust$n.vec <- array(0, parm$clust$K)
+	  for (ss in 1:parm$clust$K) {
+	    parm$clust$n.vec[ss] <- sum(parm$clust$s.v == ss)  # HOT
+	   }
+	}
+
+	if (computeMode$computeC) {
+	  all.n.vec <- .fastTabulateVector(parm$clust$s.v, parm$clust$K, TRUE)
+
+	  if (computeMode$computeR) { #debug
+	    assertEqual(parm$clust$n0, all.n.vec[1])
+	    assertEqual(parm$clust$n.vec, all.n.vec[-1])
+	  }
+
+	  parm$clust$n0 <- all.n.vec[1]
+	  parm$clust$n.vec <- all.n.vec[-1]
+	}
 
   }
 	parm

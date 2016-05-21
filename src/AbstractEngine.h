@@ -294,10 +294,7 @@ public:
     logLikelihood[0] = -0.5 * tmp / (tauInt * tauInt) - N * 0.5 * std::log(2.0 * M_PI)
       - N * std::log(tauInt);
 
-    Tick iCPL;
-
-    // gg > 0 cases
-    for (int gg = 1; gg <= G; ++gg) { // TODO Parallelize
+    auto f = [Xmt,&A,&S,N,tau,tau0,&logLikelihood](const int gg) {
       auto Xmtgg = Xmt;
       auto Agg = std::begin(A) + (gg - 1) * N;
       auto Sgg = std::begin(S) + (gg - 1) * N;
@@ -317,7 +314,46 @@ public:
         ++Sgg;
       }
       logLikelihood[gg] = tmp;
+    };
+
+    Tick iCPL;
+
+    if (true) {
+      tbb::parallel_for(tbb::blocked_range<int>(1, G + 1),
+                        [=](const tbb::blocked_range<int>& r) {
+                          const auto end = r.end();
+                          for (auto i = r.begin(); i != end; ++i) {
+                            f(i);
+                          }
+                        });
+    } else {
+      for (int gg = 1; gg <= G; ++gg) {
+        f(gg);
+      }
     }
+
+    // gg > 0 cases
+    // for (int gg = 1; gg <= G; ++gg) { // TODO Parallelize
+      // auto Xmtgg = Xmt;
+      // auto Agg = std::begin(A) + (gg - 1) * N;
+      // auto Sgg = std::begin(S) + (gg - 1) * N;
+      //
+      // const auto   occupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau);
+      // const auto unoccupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau0);
+      //
+      // auto tmp = 0.0;
+      // for (int i = 0; i < N; ++i) { // TODO Could use std::accumulate with zip(Agg, Sgg)
+      //   if (*Sgg == 0) {
+      //     tmp += -0.5 * (*Xmtgg) * (*Xmtgg) / (tau0 * tau0) + unoccupied;
+      //   } else {
+      //     tmp += -0.5 * (*Xmtgg - *Agg) * (*Xmtgg - *Agg) / (tau * tau) + occupied;
+      //   }
+      //   ++Xmtgg;
+      //   ++Agg;
+      //   ++Sgg;
+      // }
+      // logLikelihood[gg] = tmp;
+    // }
 
     duration["iCPL____"] += iCPL();
   }
