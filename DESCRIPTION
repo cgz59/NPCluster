@@ -12,7 +12,7 @@ Imports:
     MASS,
     mvtnorm,
     Matrix
-LinkingTo: Rcpp, BH, RcppEigen, RcppParallel
+LinkingTo: Rcpp, BH, RcppEigen, RcppParallel, RcppNT2
 Suggests:
     testthat
 LazyData: true

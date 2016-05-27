@@ -7,9 +7,17 @@
 #include "Rmath.h"
 #include "Rcpp.h"
 
+#define USE_NT2
+
+#ifdef USE_NT2
+  #include "RcppNT2.h"
+#endif
+
 #include "tbb/parallel_for.h"
 
 #include "boost/format.hpp"
+
+#include "aligned_allocator.hpp"
 
 #define MATCH_SG
 
@@ -403,11 +411,13 @@ public:
     std::vector<double> tauV(K + 1, tau); // TODO Remove, without switch in for-loop below
     tauV[0] = tau0;
 
-    if ((K + 1) * N > logSsMt.size()) { // TODO Handle alignment, minor dimension == K
-      logSsMt.resize((K + 1) * N);
+    auto stride = getAlignedStride(K + 1);
+
+    if (stride * N > logSsMt.size()) { // TODO Handle alignment, minor dimension == K
+      logSsMt.resize(stride * N);
     }
 
-    auto f = [&phiVKp1,&tauV,&CmVec,&Y,&Xsd,&priorProbV,tau,tau0,n2,K,epsilon2,this](const int x) {
+    auto f = [&phiVKp1,&tauV,&CmVec,&Y,&Xsd,&priorProbV,tau,tau0,n2,K,stride,epsilon2,this](const int x) {
       const auto row = x - 1; //rowSubsetI[i] - 1;
       const auto gv = row / n2;
 
@@ -421,31 +431,31 @@ public:
           max = entry;
         }
         // Store
-        logSsMt[row * (K + 1) + j] = entry;
+        logSsMt[row * stride + j] = entry;
       }
 
       // subtract off max, exponentiate and accumulate colSum1
       auto colSum1 = 0.0;
       for (int j = 0; j < K + 1; ++j) {
-        const auto entry = std::exp(logSsMt[row * (K + 1) + j] - max);
+        const auto entry = std::exp(logSsMt[row * stride + j] - max);
         colSum1 += entry;
-        logSsMt[row * (K + 1) + j] = entry;
+        logSsMt[row * stride + j] = entry;
       }
 
       // first normalize, replace zeros by "small" and accumulate colSum2
       auto colSum2 = 0.0;
       for (int j = 0; j < K + 1; ++j) {
-        auto entry = logSsMt[row * (K + 1) + j] / colSum1;
+        auto entry = logSsMt[row * stride + j] / colSum1;
         if (entry < epsilon2) {
           entry = epsilon2;
         }
         colSum2 += entry;
-        logSsMt[row * (K + 1) + j] = entry;
+        logSsMt[row * stride + j] = entry;
       }
 
       // again normalize TODO Is second normalization really necessary?
       for (int j = 0; j < K + 1; ++j) {
-        logSsMt[row * (K + 1) + j] /= colSum2;
+        logSsMt[row * stride + j] /= colSum2;
       }
     };
 
@@ -471,7 +481,7 @@ public:
 
     computeDeltaNeighborhoods(rowSubsetI,
                               neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-                              cutOff, maxNeighborhoodSize, K, false);
+                              cutOff, maxNeighborhoodSize, K, stride, false);
 
     return Rcpp::List::create(
       Rcpp::Named("neighbor") = neighborhoodList,
@@ -511,55 +521,57 @@ public:
                    }
     );
 
-    if ((K + 1) * N > logSsMt.size()) { // TODO Handle alignment, minor dimension == K
-      logSsMt.resize((K + 1) * N);
+    auto stride = getAlignedStride(K + 1);
+
+    if (stride * N > logSsMt.size()) {
+      logSsMt.resize(stride * N);
     }
 
     Tick cCPAN;
 
     // TODO Parallelize
     std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI),
-                  [&CmVec,&Y,&X,&A,&S,&priorProbV,&rowSubsetI,tau,tau0,tauInt,P,K,epsilon2,N,this](const int x) {
+                  [&CmVec,&Y,&X,&A,&S,&priorProbV,&rowSubsetI,tau,tau0,tauInt,P,K,stride,epsilon2,N,this](const int x) {
                     const auto col = x - 1; //rowSubsetI[i] - 1;
                     // const auto gv = col / n2;
 
-                    internalComputePdpLogLikelihood(&logSsMt[col * (K + 1)], col + 1, X, A, S, K, N, tau, tau0, tauInt, false);
+                    internalComputePdpLogLikelihood(&logSsMt[col * stride], col + 1, X, A, S, K, N, tau, tau0, tauInt, false);
 
                     // add prior and accumulate max entry
                     auto max = -std::numeric_limits<double>::max();
                     for (int j = 0; j < K + 1; ++j) {
                       const auto entry =
-                        logSsMt[col * (K + 1) + j] // TODO Could compute here instead of above, one fewer write/read pair
+                        logSsMt[col * stride + j] // TODO Could compute here instead of above, one fewer write/read pair
                       + priorProbV[j];
                       if (entry > max) {
                         max = entry;
                       }
                       // Store
-                      logSsMt[col * (K + 1) + j] = entry;
+                      logSsMt[col * stride + j] = entry;
                     }
 
                     // subtract off max, exponentiate and accumulate colSum1
                     auto colSum1 = 0.0;
                     for (int j = 0; j < K + 1; ++j) {
-                      const auto entry = std::exp(logSsMt[col * (K + 1) + j] - max);
+                      const auto entry = std::exp(logSsMt[col * stride + j] - max);
                       colSum1 += entry;
-                      logSsMt[col * (K + 1) + j] = entry;
+                      logSsMt[col * stride + j] = entry;
                     }
 
                     // first normalize, replace zeros by "small" and accumulate colSum2
                     auto colSum2 = 0.0;
                     for (int j = 0; j < K + 1; ++j) {
-                      auto entry = logSsMt[col * (K + 1) + j] / colSum1;
+                      auto entry = logSsMt[col * stride + j] / colSum1;
                       if (entry < epsilon2) {
                         entry = epsilon2;
                       }
                       colSum2 += entry;
-                      logSsMt[col * (K + 1) + j] = entry;
+                      logSsMt[col * stride + j] = entry;
                     }
 
                     // again normalize TODO Is second normalization really necessary?
                     for (int j = 0; j < K + 1; ++j) {
-                      logSsMt[col * (K + 1) + j] /= colSum2;
+                      logSsMt[col * stride + j] /= colSum2;
                     }
                   }
     );
@@ -573,7 +585,7 @@ public:
 
     const auto max = computeDeltaNeighborhoods(rowSubsetI,
                                                neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-                                               cutOff, maxNeighborhoodSize, K, collectMax);
+                                               cutOff, maxNeighborhoodSize, K, stride, collectMax);
 
     return Rcpp::List::create(
       Rcpp::Named("neighbor") = neighborhoodList,
@@ -595,10 +607,17 @@ private:
   typedef NeighborhoodContainer::iterator NeighborhoodIterator;
   typedef typename FastContainer::iterator FastIterator;
 
+  size_t getAlignedStride(size_t length) {
+    const int multiple = 2;
+
+    assert(multiple && ((multiple & (multiple -1)) == 0));
+    return (length + multiple - 1) & ~(multiple - 1);
+  }
+
   double computeDeltaNeighborhoods(const IntegerVector& rowSubsetI,
                                    StdIntVector& list, StdIntVector& offset, StdIntVector& index,
                                    const double cutOff,
-                                   const int maxSize, const int K,
+                                   const int maxSize, const int K, const int stride,
                                    const bool returnMax) {
 
     FastContainer I; // TODO Better to reuse?
@@ -613,7 +632,7 @@ private:
 
     while (beginI != endI) {
       drawNextNeighborhood(beginI, endI, list, offset, index,
-                           cutOff, maxSize, K, (returnMax ? &maxList : nullptr));
+                           cutOff, maxSize, K, stride, (returnMax ? &maxList : nullptr));
     }
     offset.push_back(list.size() + 1); // Inclusive counting
 
@@ -627,7 +646,7 @@ private:
   void drawNextNeighborhood(FastIterator& begin, const FastIterator& end,
                             StdIntVector& list, StdIntVector& offset, StdIntVector& index,
                             double cutOff,
-                            const int maxSize, const int K,
+                            const int maxSize, const int K, const int stride,
                             StdNumericVector* collectionMax) {
     offset.push_back(list.size() + 1); // Add next offset to a neighborhood
     if (std::distance(begin, end) == 1) {
@@ -641,8 +660,8 @@ private:
 
       // Score each remaining entry in [begin, end) against k
 
-      auto f = [k,K,this](Score score) {
-        const auto measure = distributionDistance(k.second - 1, score.second - 1, K);
+      auto f = [k,K,stride,this](Score score) {
+        const auto measure = distributionDistance(k.second - 1, score.second - 1, K, stride);
         return std::make_pair(measure, score.second);
       };
 
@@ -718,19 +737,96 @@ private:
     // 		std::cerr << std::endl;
   }
 
+#ifdef USE_NT2
+  template <typename V>
+  class DDFunctor : public RcppNT2::PlusReducer<V> {
+  public:
+    template <typename T>
+    T map(const T& lhs, const T& rhs) {
+      return sqrt(lhs * rhs);
+    }
+  };
 
-  double distributionDistance(const int i, const int j, const int K) {
+  template <typename MapReducer, typename U, typename T, typename... Ts>
+  U simdMapReduce(MapReducer&& f, U init, const T* it, const T* end, const Ts*... ts)
+  {
+
+    using namespace RcppNT2::variadic;
+
+    typedef boost::simd::pack<T> vT; // SIMD vector of T
+    typedef boost::simd::pack<U> vU; // SIMD vector of U
+
+#define NEW
+
+#ifdef NEW
+    // Buffer for the SIMD mapping operations
+    vU buffer = boost::simd::splat<vU>(init);
+
+    static const std::size_t N = vT::static_size;
+
+    // Aligned, SIMD operations
+    for (; it != end; increment<N>(it, ts...))
+      buffer = f.combine(
+        f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)...),
+        buffer
+      );
+    init = f.reduce(buffer);
+#else
+    static const std::size_t N = vT::static_size;
+    const T* aligned_begin = std::min(boost::simd::align_on(it, N * sizeof(T)), end);
+    const T* aligned_end   = aligned_begin + (end - aligned_begin) / N * N;
+
+    // Buffer for the SIMD mapping operations
+    vU buffer = boost::simd::splat<vU>(init);
+
+    // Scalar operations for the initial unaligned region
+    for (; it != aligned_begin; increment<1>(it, ts...))
+      init = f.combine(f.map(*it, *ts...), init);
+
+    // Aligned, SIMD operations
+    for (; it != aligned_end; increment<N>(it, ts...))
+      buffer = f.combine(
+        f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)...),
+        buffer
+      );
+
+    // Reduce the buffer, joining it into the scalar vale
+    init = f.combine(f.reduce(buffer), init);
+
+    // Leftover unaligned region
+    for (; it != end; increment<1>(it, ts...))
+      init = f.combine(f.map(*it, *ts...), init);
+#endif
+
+    return init;
+  }
+#endif // USE_NT2
+
+  double distributionDistance(const int i, const int j, const int K, const int stride) {
+
+#ifdef USE_NT2
+    auto innerProduct =
+      simdMapReduce(DDFunctor<double>(), 0.0,
+                                       &logSsMt[i * stride],
+                                       &logSsMt[(i + 1) * stride],
+                                       &logSsMt[j * stride]);
+    return 2.0 * (1.0 - innerProduct);
+#else // USE_NT2
     return 2.0 * (1.0 -
                   std::inner_product(
-                    std::begin(logSsMt) + i * (K + 1),
-                    std::begin(logSsMt) + (i + 1) * (K + 1),
-                    std::begin(logSsMt) + j * (K + 1), 0.0,
+                    std::begin(logSsMt) + i * stride,
+                    std::begin(logSsMt) + (i + 1) * stride,
+                    std::begin(logSsMt) + j * stride, 0.0,
                     std::plus<double>(),
                     //std::product<double>()
                     [](double x, double y) {
                       return std::sqrt(x * y);
                     }
                   ));
+#endif
+    // Unroll template:  http://cpplove.blogspot.com/2012/07/a-generic-loop-unroller-based-on.html
+    // Unroll by hand + SSE: http://fastcpp.blogspot.com/2011/04/how-to-unroll-loop-in-c.html
+    // RcppNT2
   }
 
   void fillInitialList(FastContainer& container, const IntegerVector& rowSubsetI) {
@@ -748,7 +844,9 @@ private:
 
 protected:
 
-  std::vector<double> logSsMt;
+  std::vector<double,
+              util::aligned_allocator<double, 16> // SSE alignment
+              > logSsMt;
 
   bool extraSorting;
   const int specialMode;
