@@ -136,7 +136,7 @@ quick_profile <- function() {
 }
 
 parallelization_profile <- function() {
-  n <- 100
+  n <- 200
   p <- 2000
 
   n.burn <- 10 # 100

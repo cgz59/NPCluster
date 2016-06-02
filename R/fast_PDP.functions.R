@@ -158,7 +158,7 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums=TRUE)
 	if (gg > 0)
 		{a2.v <- parm$clust$A.mt[,gg]
 		z.g.v <- parm$clust$s.mt[,gg] > 0
-		log.lik.v <- rep(0,ncol(x.mt)) ## HOT
+		log.lik.v <- rep(0,ncol(x.mt))
 
 		if (sum(z.g.v) > 0)
 			{a2.1.v <- parm$clust$A.mt[z.g.v,gg]
@@ -620,7 +620,8 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		indxx <- s.G.v == 0
 		tmp.a.v[indxx] <- 0
 		tmp.a.v[!indxx] <- parm$clust$phi.v[s.G.v[!indxx]]
-		#
+		# Allocate A.mt as buffer with exponentially increasing size and
+		# auxilliary variable to keep track of end
 		parm$clust$A.mt <- cbind(parm$clust$A.mt, tmp.a.v) # HOT
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v) # HOT
 

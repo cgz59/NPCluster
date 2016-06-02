@@ -83,13 +83,28 @@ namespace np_cluster {
 using namespace Rcpp;
 
 
+enum class SpecialComputeMode {
+  TBB = 2,
+  SSE = 4,
+  AVX = 8,
+};
+
 class AbstractEngine {
 public:
 
   typedef std::vector<int> StdIntVector;
   typedef std::vector<double> StdNumericVector;
 
-  AbstractEngine(bool sort = true, int specialMode = 0) : extraSorting(sort), specialMode(specialMode) { }
+  AbstractEngine(bool sort = true, int specialMode = 0) :
+    extraSorting(sort),
+    specialMode(specialMode),
+    useTBB(specialMode & static_cast<long>(SpecialComputeMode::TBB)),
+    useSSE(specialMode & static_cast<long>(SpecialComputeMode::SSE)) {
+
+    Rcpp::Rcout << "AbstractEngine:\n";
+    Rcpp::Rcout << "\tTBB: " << (useTBB ? "true" : "false") << "\n";
+    Rcpp::Rcout << "\tSSE: " << (useSSE ? "true" : "false") << std::endl;
+  }
 
   virtual ~AbstractEngine() { }
 
@@ -326,7 +341,7 @@ public:
 
     Tick iCPL;
 
-    if (true) {
+    if (useTBB) {
       tbb::parallel_for(tbb::blocked_range<int>(1, G + 1),
                         [=](const tbb::blocked_range<int>& r) {
                           const auto end = r.end();
@@ -461,8 +476,7 @@ public:
 
     Tick cPAN;
 
-    // TODO Parallelize
-    if (false) {
+    if (useTBB) {
       tbb::parallel_for(tbb::blocked_range<size_t>(0, rowSubsetI.size()),
                         [=](const tbb::blocked_range<size_t>& r) {
                           std::for_each(std::begin(rowSubsetI) + r.begin(), std::begin(rowSubsetI) + r.end(), f);
@@ -608,7 +622,7 @@ private:
   typedef typename FastContainer::iterator FastIterator;
 
   size_t getAlignedStride(size_t length) {
-    const int multiple = 2;
+    const int multiple = (useSSE ? 2 : 1);
 
     assert(multiple && ((multiple & (multiple -1)) == 0));
     return (length + multiple - 1) & ~(multiple - 1);
@@ -667,7 +681,7 @@ private:
 
       Tick dNN;
 
-      if (true) { // TODO Parallelize
+      if (useTBB) {
         tbb::parallel_for(tbb::blocked_range<size_t>(0, std::distance(begin, end)),
                           [=](const tbb::blocked_range<size_t>& r) {
                             std::transform(begin + r.begin(), begin + r.end(), begin + r.begin(), f);
@@ -677,6 +691,8 @@ private:
       }
 
       duration["dNN_____"] += dNN();
+
+      Tick remainder;
 
       // sort the first maxNeighborhoodSize elements in increasing measure
       auto lastSort = (std::distance(begin, end) > maxSize) ? begin + maxSize : end;
@@ -689,7 +705,7 @@ private:
 
       // find cut-off point
       auto lastCut = std::find_if(begin, lastSort, [cutOff](Score score) {
-        return score.first > cutOff;
+        return score.first > cutOff; // TODO Could replace with binary search via std::lower_bound
       });
 
       // 			if (collectionMax) {
@@ -729,6 +745,8 @@ private:
           return x.second < y.second;
         });
       }
+
+      duration["rem_____"] += remainder();
     }
 
     // 		std::for_each(begin, begin + 10, [](Score score) {
@@ -804,15 +822,13 @@ private:
 
   double distributionDistance(const int i, const int j, const int K, const int stride) {
 
-#ifdef USE_NT2
     auto innerProduct =
+      (useSSE ?
       simdMapReduce(DDFunctor<double>(), 0.0,
                                        &logSsMt[i * stride],
                                        &logSsMt[(i + 1) * stride],
-                                       &logSsMt[j * stride]);
-    return 2.0 * (1.0 - innerProduct);
-#else // USE_NT2
-    return 2.0 * (1.0 -
+                                       &logSsMt[j * stride])
+      :
                   std::inner_product(
                     std::begin(logSsMt) + i * stride,
                     std::begin(logSsMt) + (i + 1) * stride,
@@ -822,8 +838,10 @@ private:
                     [](double x, double y) {
                       return std::sqrt(x * y);
                     }
-                  ));
-#endif
+                  )
+    );
+
+    return 2.0 * (1.0 - innerProduct);
     // Unroll template:  http://cpplove.blogspot.com/2012/07/a-generic-loop-unroller-based-on.html
     // Unroll by hand + SSE: http://fastcpp.blogspot.com/2011/04/how-to-unroll-loop-in-c.html
     // RcppNT2
@@ -850,6 +868,8 @@ protected:
 
   bool extraSorting;
   const int specialMode;
+  const bool useTBB;
+  const bool useSSE;
   std::map<std::string,long long> duration;
 };
 

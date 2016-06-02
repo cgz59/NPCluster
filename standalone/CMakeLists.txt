@@ -4,9 +4,9 @@ PROJECT(npcluster)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
 if(APPLE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g -DNDEBUG -msse4.2 -std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g -DNDEBUG -msse4.2 -std=c++0x")
 else(APPLE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g -DNDEBUG -msse4.2 -std=c++11")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g -DNDEBUG -msse4.2 -std=c++0x")
 endif(APPLE)
 
 
@@ -33,7 +33,7 @@ ELSE(${UNIX}) #Windows
 ENDIF()
 
 # Version information
-INCLUDE(${CMAKE_MODULE_PATH}/Version.cmake)
+#INCLUDE(${CMAKE_MODULE_PATH}/Version.cmake)
 
 
 # Get R information
@@ -47,13 +47,6 @@ find_package(R REQUIRED)
 #add_library(mds_jni SHARED ${JNI_SOURCE_FILES})
 #target_link_libraries(mds_jni mds_opencl)
 #target_link_libraries(mds_jni ${TBB_LIBRARIES})
-
-
-##
-# Build boost program_options for benchmark
-##
-
-ADD_SUBDIRECTORY(boost_program_options)
 
 ##
 # Build benchmark
@@ -79,12 +72,17 @@ link_directories(
  	${R_HOME}/lib 
 	${R_SHAREDLIBDIR}
 	${R_LIBDIR}/RInside/lib
+	${R_LIBDIR}/BoostCompiledLibraries/lib
 	${R_LIBDIR}/RcppParallel/lib
 )
 
 add_executable(benchmark src/benchmark.cpp)
 target_link_libraries(benchmark ${R_USED_LIBS})
-target_link_libraries(benchmark tbb RInside)
+target_link_libraries(benchmark tbb RInside Boost)
+
+
+
+
 #target_link_libraries(benchmark R)
 #add_library(tbb SHARED IMPORTED)
 #add_library(R SHARED IMPORTED)

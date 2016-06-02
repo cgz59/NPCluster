@@ -18,45 +18,44 @@
 
 typedef std::shared_ptr<np_cluster::AbstractEngine> EnginePtr;
 
-// __attribute__((constructor))
-// static void initialize(void) {
-// 	RInside R(0, nullptr); // This is a horrible hack to allow Rcpp memory objects as global variables
-// 	// TODO Real solution is to move RInside() into main() and *not* use global variables
-// }
+__attribute__((constructor))
+static void initialize(void) {
+	RInside R(0, nullptr); // This is a horrible hack to allow Rcpp memory objects as global variables
+	// TODO Real solution is to move RInside() into main() and *not* use global variables
+}
 
 int main(int argc, char* argv[]) {
 
 // Set-up CLI
-// 	namespace po = boost::program_options;
-// 	po::options_description desc("Allowed options");
-// 	desc.add_options()
-// 		("help", "produce help message")
-// 		("gpu", "run on first GPU")
-// 		("tbb", po::value<int>()->default_value(0), "use TBB with specified number of threads")
-// 		("float", "run in single-precision")
-// 		("truncation", "enable truncation")
-// 		("iterations", po::value<int>()->default_value(10), "number of iterations")
-// 		("locations", po::value<int>()->default_value(6000), "number of locations")
-// 	;
-// 	po::variables_map vm;
-// 
-// 	try {
-// 		po::store(po::parse_command_line(argc, argv, desc), vm);
-// 		po::notify(vm);
-// 	} catch (std::exception& e) {
-// 		std::cout << desc << std::endl;
-// 		return 1;
-// 	}
-// 
-// 	if (vm.count("help")) {
-// 		std::cout << desc << std::endl;
-// 		return 1;
-// 	}
+	namespace po = boost::program_options;
+	po::options_description desc("Allowed options");
+	desc.add_options()
+		("help", "produce help message")
+		("sse", "use SSE vectorization")				
+		("tbb", po::value<int>()->default_value(0), "use TBB with specified number of threads")		
+		("iterations", po::value<int>()->default_value(1), "number of iterations")
+	;
+	po::variables_map vm;
+
+	try {
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+	} catch (std::exception& e) {
+		std::cout << desc << std::endl;
+		return 1;
+	}
+
+	if (vm.count("help")) {
+		std::cout << desc << std::endl;
+		return 1;
+	}
+
+
 
 	auto useSSE = false;
 	auto useTBB = false;
 	
-	RInside R(0, nullptr); // This is a horrible hack to allow Rcpp memory objects as global variables
+// 	RInside R(0, nullptr); // This is a horrible hack to allow Rcpp memory objects as global variables
 	
     using namespace Rcpp;
     
@@ -79,10 +78,11 @@ int main(int argc, char* argv[]) {
 // 	auto colSum = false;
 	
 	auto specialMode = 0;
-	if (useTBB) {
+	int threads = vm["tbb"].as<int>();
+	if (threads > 0) {
 		specialMode |= static_cast<long>(np_cluster::SpecialComputeMode::TBB);
 	}
-	if (useSSE) {
+	if (vm.count("sse")) {
 		specialMode |= static_cast<long>(np_cluster::SpecialComputeMode::SSE);
 	}
 		
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
 	auto maxNeighborhoodSize = 28;
 	auto cutOff = 0.1;
 	
-	auto iterations = 1;
+	int iterations = vm["iterations"].as<int>();
 	
     std::cout << "Running benchmark ..." << std::endl;
     auto startTime = std::chrono::steady_clock::now();
