@@ -78,6 +78,11 @@ int accessEngine(SEXP sexp) {
   return 1;
 }
 
+// [[Rcpp::export(.sampleUniform)]]
+int sampleUniform(int length) {
+  return sample(length) + 1;
+}
+
 // [[Rcpp::export(.printEngineTiming)]]
 void printEngineTiming(SEXP sexp) {
   EnginePtr engine = parsePtr(sexp);
@@ -125,14 +130,14 @@ Rcpp::List computeColumnsPmfAndNeighborhoods(SEXP sexp,
                                const Rcpp::IntegerVector& CmVec, const int n2,
                                const Rcpp::NumericVector& phiV, const double tau, const double tau0, const double tauInt,
                                const int maxNeighborhoodSize,
-                               const double cutOff, const bool collectMax) {
+                               const double cutOff, const bool collectMax, const bool useRanks) {
   EnginePtr engine = parsePtr(sexp);
   return engine->computeColumnPmfAndNeighborhoods(n0, nVec, epsilon, epsilon2,
                                      K, N,
                                      Y, X, A, S, rowSubsetI,
                                      CmVec, n2,
                                      phiV, tau, tau0, tauInt,
-                                     maxNeighborhoodSize, cutOff, collectMax);
+                                     maxNeighborhoodSize, cutOff, collectMax, useRanks);
 }
 
 
@@ -143,14 +148,14 @@ Rcpp::List computePmfAndNeighborhoods(SEXP sexp,
                                const Rcpp::NumericVector& Y, const Rcpp::NumericVector& Xsd, const Rcpp::IntegerVector& rowSubsetI,
                                const Rcpp::IntegerVector& CmVec, const int n2,
                                const Rcpp::NumericVector& phiV, const double tau, const double tau0, const int maxNeighborhoodSize,
-                               const double cutOff) {
+                               const double cutOff, const bool useRank) {
   EnginePtr engine = parsePtr(sexp);
   return engine->computePmfAndNeighborhoods(n0, nVec, epsilon, epsilon2,
                                      K, N,
                                      Y, Xsd, rowSubsetI,
                                      CmVec, n2,
                                      phiV, tau, tau0,
-                                     maxNeighborhoodSize, cutOff);
+                                     maxNeighborhoodSize, cutOff, useRank);
 }
 
 // [[Rcpp::export(.computePdpLogLikelihood)]]

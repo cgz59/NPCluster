@@ -256,7 +256,7 @@ PDP_fn.nbhd <- function(relative_I, parm, max.col.nbhd.size)
   relative_I.k <- relative_I[flag.v]
 
   if (length(relative_I.k) > max.col.nbhd.size) {
-    relative_I.k <- relative_I[rank(H.v, ties="random") <= max.col.nbhd.size]
+    relative_I.k <- relative_I[rank(H.v, ties.method = "first") <= max.col.nbhd.size] # was "random"
   }
 
   relative_I.k <- sort(relative_I.k)
@@ -359,7 +359,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
                                         col.subset,
                                         parm$clust$C.m.vec, parm$p,
                                         parm$clust$phi.v, parm$tau, parm$tau_0, parm$tau_int,
-                                        max.col.nbhd.size, parm$col.delta, TRUE)
+                                        max.col.nbhd.size, parm$col.delta, TRUE, TRUE)
 
     if (computeMode$computeR) { # debugging
       assertEqual(test$index, parm$clust$col.nbhd.k)

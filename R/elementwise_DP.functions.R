@@ -143,12 +143,15 @@ element_fn.nbhd <- function(I, parm, max.row.nbhd.size)
 
 fast_element_fn.nbhd <- function(relative_I, parm, max.row.nbhd.size)
 {
-  if (length(relative_I)>1)
-{relative_k <- sample(relative_I, size=1)
-}
-if (length(relative_I)==1)
-{relative_k <- relative_I
-}
+  if (length(relative_I) > 1) {
+    relative_k <- sample(relative_I, size=1)
+    # relative_k <- relative_I[.sampleUniform(length(relative_I))]
+    # print(paste(relative_I, collapse = " "))
+    # print(paste("draw:", relative_k, length(relative_I)))
+  }
+  if (length(relative_I) == 1) {
+    relative_k <- relative_I
+  }
 
 post.prob.mt <- parm$clust$subset_post.prob.mt
 
@@ -161,10 +164,10 @@ cutoff <- parm$row.delta
 flag.v <- which(H.v <= cutoff)
 relative_I.k <- relative_I[flag.v]
 
-if (length(relative_I.k) > max.row.nbhd.size)
-{#cutoff <- quantile(H.v[flag.v], probs=max.row.nbhd.size/length(relative_I.k))
- #relative_I.k <- relative_I[which(H.v <= cutoff)]
- relative_I.k <- relative_I[rank(H.v, ties="random") <= max.row.nbhd.size]
+if (length(relative_I.k) > max.row.nbhd.size) {
+  # cutoff <- quantile(H.v[flag.v], probs=max.row.nbhd.size/length(relative_I.k))
+  # relative_I.k <- relative_I[which(H.v <= cutoff)]
+  relative_I.k <- relative_I[rank(H.v, ties.method = "first") <= max.row.nbhd.size] # was "random"
 }
 
 relative_I.k <- sort(relative_I.k)
@@ -296,7 +299,7 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	                            parm$Y, parm$X.sd, parm$row.subset.I,
 	                            parm$clust$C.m.vec, parm$n2,
 	                            parm$clust$phi.v, parm$tau, parm$tau_0,
-	                            max.row.nbhd.size, parm$row.delta)
+	                            max.row.nbhd.size, parm$row.delta, TRUE) # Use ranks
 
 	if (computeMode$computeR) { # debugging
 	  assertEqual(parm$clust$row.nbhd.k, test$index)

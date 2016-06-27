@@ -7,10 +7,10 @@
 #include "Rmath.h"
 #include "Rcpp.h"
 
-#define USE_NT2
+// #define USE_NT2
 
 #ifdef USE_NT2
-  #include "RcppNT2.h"
+#include "RcppNT2.h"
 #endif
 
 #include "tbb/parallel_for.h"
@@ -31,6 +31,10 @@ void __verify(const char *msg, const char *file, int line) {
   char buffer[100];
   snprintf(buffer, 100, "Assert Failure: %s at %s line #%d", msg, file, line);
   throw std::invalid_argument(buffer);
+}
+
+static inline int sample(int length) {
+  return static_cast<int>(length * unif_rand());
 }
 
 class Tick {
@@ -87,6 +91,7 @@ enum class SpecialComputeMode {
   TBB = 2,
   SSE = 4,
   AVX = 8,
+  UNROLL = 16,
 };
 
 class AbstractEngine {
@@ -99,11 +104,13 @@ public:
     extraSorting(sort),
     specialMode(specialMode),
     useTBB(specialMode & static_cast<long>(SpecialComputeMode::TBB)),
-    useSSE(specialMode & static_cast<long>(SpecialComputeMode::SSE)) {
+    useSSE(specialMode & static_cast<long>(SpecialComputeMode::SSE)),
+    unroll(specialMode & static_cast<long>(SpecialComputeMode::UNROLL)) {
 
     Rcpp::Rcout << "AbstractEngine:\n";
     Rcpp::Rcout << "\tTBB: " << (useTBB ? "true" : "false") << "\n";
-    Rcpp::Rcout << "\tSSE: " << (useSSE ? "true" : "false") << std::endl;
+    Rcpp::Rcout << "\tSSE: " << (useSSE ? "true" : "false") << "\n";
+    Rcpp::Rcout << "\tUnr: " << (unroll ? "true" : "false") << std::endl;
   }
 
   virtual ~AbstractEngine() { }
@@ -401,7 +408,7 @@ public:
                                         const IntegerVector& CmVec, const int n2,
                                         const NumericVector& phiV, const double tau, const double tau0,
                                         const int maxNeighborhoodSize,
-                                        const double cutOff) {
+                                        const double cutOff, const bool useRank) {
 
     // TODO n2 is const throughout run
 
@@ -469,8 +476,12 @@ public:
       }
 
       // again normalize TODO Is second normalization really necessary?
-      for (int j = 0; j < K + 1; ++j) {
+      int j = 0;
+      for ( ; j < K + 1; ++j) {
         logSsMt[row * stride + j] /= colSum2;
+      }
+      for ( ; j < stride; ++j) {
+        logSsMt[row * stride + j] = 0.0; // pad
       }
     };
 
@@ -485,6 +496,12 @@ public:
       std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI), f);
     }
 
+//     return Rcpp::List::create(
+//       Rcpp::Named("logSsMt") = logSsMt,
+//       Rcpp::Named("epsilon2") = epsilon2,
+//       Rcpp::Named("stride") = stride
+//     );
+
     duration["cPAN____"] += cPAN();
 
     // now compute the delta-neighborhoods
@@ -495,7 +512,7 @@ public:
 
     computeDeltaNeighborhoods(rowSubsetI,
                               neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-                              cutOff, maxNeighborhoodSize, K, stride, false);
+                              cutOff, maxNeighborhoodSize, K, stride, false, useRank);
 
     return Rcpp::List::create(
       Rcpp::Named("neighbor") = neighborhoodList,
@@ -515,7 +532,8 @@ public:
                                               const NumericVector& phiV, const double tau, const double tau0, const double tauInt,
                                               const int maxNeighborhoodSize,
                                               const double cutOff,
-                                              const bool collectMax) {
+                                              const bool collectMax,
+                                              const bool useRank) {
 
     // TODO n2 is const throughout run
 
@@ -599,7 +617,7 @@ public:
 
     const auto max = computeDeltaNeighborhoods(rowSubsetI,
                                                neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-                                               cutOff, maxNeighborhoodSize, K, stride, collectMax);
+                                               cutOff, maxNeighborhoodSize, K, stride, collectMax, useRank);
 
     return Rcpp::List::create(
       Rcpp::Named("neighbor") = neighborhoodList,
@@ -622,7 +640,11 @@ private:
   typedef typename FastContainer::iterator FastIterator;
 
   size_t getAlignedStride(size_t length) {
-    const int multiple = (useSSE ? 2 : 1);
+    int multiple = (useSSE ? 2 : 1);
+
+    if (unroll) {
+      multiple *= 2;
+    }
 
     assert(multiple && ((multiple & (multiple -1)) == 0));
     return (length + multiple - 1) & ~(multiple - 1);
@@ -632,7 +654,7 @@ private:
                                    StdIntVector& list, StdIntVector& offset, StdIntVector& index,
                                    const double cutOff,
                                    const int maxSize, const int K, const int stride,
-                                   const bool returnMax) {
+                                   const bool returnMax, const bool useRank) {
 
     FastContainer I; // TODO Better to reuse?
     fillInitialList(I, rowSubsetI);
@@ -646,7 +668,7 @@ private:
 
     while (beginI != endI) {
       drawNextNeighborhood(beginI, endI, list, offset, index,
-                           cutOff, maxSize, K, stride, (returnMax ? &maxList : nullptr));
+                           cutOff, maxSize, K, stride, (returnMax ? &maxList : nullptr), useRank);
     }
     offset.push_back(list.size() + 1); // Inclusive counting
 
@@ -661,7 +683,7 @@ private:
                             StdIntVector& list, StdIntVector& offset, StdIntVector& index,
                             double cutOff,
                             const int maxSize, const int K, const int stride,
-                            StdNumericVector* collectionMax) {
+                            StdNumericVector* collectionMax, const bool useRank) {
     offset.push_back(list.size() + 1); // Add next offset to a neighborhood
     if (std::distance(begin, end) == 1) {
       // Singleton
@@ -671,6 +693,8 @@ private:
     } else {
       // 2 or more left
       auto k = sampleUniform(begin, end);
+
+      // std::cerr << "draw: " << k.second << ", " << std::distance(begin, end) << std::endl;
 
       // Score each remaining entry in [begin, end) against k
 
@@ -737,6 +761,8 @@ private:
         collectionMax->push_back((lastCut - 1)->first);
       }
 
+      extraSorting = true;
+
       if (extraSorting) {
         std::sort(std::end(list) - cutLength, std::end(list)); // TODO Ask SG: Do these need to be sorted?
 
@@ -765,8 +791,74 @@ private:
     }
   };
 
+  template <typename MapReducer, typename U, typename T, typename Ts>
+  U simdMapReduce2(MapReducer&& f, bool unroll, U init, const T* it, const T* end, const Ts* ts)
+  {
+
+    using namespace RcppNT2::variadic;
+
+    typedef boost::simd::pack<T> vT; // SIMD vector of T
+    typedef boost::simd::pack<U> vU; // SIMD vector of U
+
+    // Buffer for the SIMD mapping operations
+    vU buffer = boost::simd::splat<vU>(init);
+
+    if (unroll) {
+      static const std::size_t N = vT::static_size;
+      vU buffer2 = boost::simd::splat<vU>(0.0);
+
+      for (; it != end; it += 2 * N, ts += 2 * N) {
+        buffer = f.combine(
+          f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)),
+          buffer);
+        buffer2 = f.combine(
+            f.map(boost::simd::aligned_load<vT>(it + N), boost::simd::aligned_load<vT>(ts + N)),
+            buffer2);
+      }
+      buffer += buffer2;
+
+      // Aligned, SIMD operations
+      // for (; it != end; it += 2 * N, ts += 2 * N)
+      //   buffer = f.combine(
+      //     f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)),
+      //     f.combine(
+      //       f.map(boost::simd::aligned_load<vT>(it + N), boost::simd::aligned_load<vT>(ts + N)),
+      //       buffer
+      //     )
+      //   );
+// for (; it != end; it += 4 * N, ts += 4 * N)
+//   buffer = f.combine(
+//     f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)),
+//     f.combine(
+//       f.map(boost::simd::aligned_load<vT>(it + N), boost::simd::aligned_load<vT>(ts + N)),
+//       f.combine(
+//         f.map(boost::simd::aligned_load<vT>(it + 2 * N), boost::simd::aligned_load<vT>(ts + 2 * N)),
+//         f.combine(
+//           f.map(boost::simd::aligned_load<vT>(it + 3 * N), boost::simd::aligned_load<vT>(ts + 3 * N)),
+//           buffer
+//         )
+//       )
+//     ),
+//     buffer
+//   );
+    } else {
+
+      static const std::size_t N = vT::static_size;
+
+      // Aligned, SIMD operations
+      for (; it != end; increment<N>(it, ts))
+        buffer = f.combine(
+          f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)),
+          buffer
+        );
+    }
+    init = f.reduce(buffer);
+    return init;
+  }
+
+
   template <typename MapReducer, typename U, typename T, typename... Ts>
-  U simdMapReduce(MapReducer&& f, U init, const T* it, const T* end, const Ts*... ts)
+  U simdMapReduce(MapReducer&& f, bool unroll, U init, const T* it, const T* end, const Ts*... ts)
   {
 
     using namespace RcppNT2::variadic;
@@ -780,14 +872,32 @@ private:
     // Buffer for the SIMD mapping operations
     vU buffer = boost::simd::splat<vU>(init);
 
-    static const std::size_t N = vT::static_size;
+    if (unroll) {
+      static const std::size_t N = vT::static_size;
 
-    // Aligned, SIMD operations
-    for (; it != end; increment<N>(it, ts...))
-      buffer = f.combine(
-        f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)...),
-        buffer
-      );
+      // Aligned, SIMD operations
+      for (; it != end; increment<N>(it, ts...)) {
+        buffer = f.combine(
+          f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)...),
+          buffer
+        );
+        increment<N>(it, ts...);
+        buffer = f.combine(
+          f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)...),
+          buffer
+        );
+      }
+    } else {
+
+      static const std::size_t N = vT::static_size;
+
+      // Aligned, SIMD operations
+      for (; it != end; increment<N>(it, ts...))
+        buffer = f.combine(
+          f.map(boost::simd::aligned_load<vT>(it), boost::simd::aligned_load<vT>(ts)...),
+          buffer
+        );
+    }
     init = f.reduce(buffer);
 #else
     static const std::size_t N = vT::static_size;
@@ -824,10 +934,14 @@ private:
 
     auto innerProduct =
       (useSSE ?
-      simdMapReduce(DDFunctor<double>(), 0.0,
+#ifdef USE_NT2
+      simdMapReduce2(DDFunctor<double>(), unroll, 0.0,
                                        &logSsMt[i * stride],
                                        &logSsMt[(i + 1) * stride],
                                        &logSsMt[j * stride])
+#else
+      0.0
+#endif // USE_NT2
       :
                   std::inner_product(
                     std::begin(logSsMt) + i * stride,
@@ -854,11 +968,15 @@ private:
     }
   }
 
+//   static double ru() {
+//     double U = 33554432.0;
+//     return (floor(U*unif_rand()) + unif_rand())/U;
+//   }
+
   template <typename Itr>
   auto sampleUniform(Itr begin, Itr end) -> decltype(*begin) {
-    return *(begin + std::distance(begin, end) * unif_rand());
+    return *(begin + sample(std::distance(begin, end)));
   }
-
 
 protected:
 
@@ -870,6 +988,7 @@ protected:
   const int specialMode;
   const bool useTBB;
   const bool useSSE;
+  const bool unroll;
   std::map<std::string,long long> duration;
 };
 

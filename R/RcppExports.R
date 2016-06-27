@@ -29,6 +29,10 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_accessEngine', PACKAGE = 'NPCluster', sexp)
 }
 
+.sampleUniform <- function(length) {
+    .Call('NPCluster_sampleUniform', PACKAGE = 'NPCluster', length)
+}
+
 .printEngineTiming <- function(sexp) {
     invisible(.Call('NPCluster_printEngineTiming', PACKAGE = 'NPCluster', sexp))
 }
@@ -45,12 +49,12 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_computeDPAcceptanceRatio', PACKAGE = 'NPCluster', sexp, Y, X, I, C, phi, newS, oldS, tau, tau0, N)
 }
 
-.computeColumnPmfAndNeighborhoods <- function(sexp, n0, nVec, epsilon, epsilon2, K, N, Y, X, A, S, rowSubsetI, CmVec, n2, phiV, tau, tau0, tauInt, maxNeighborhoodSize, cutOff, collectMax) {
-    .Call('NPCluster_computeColumnsPmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, X, A, S, rowSubsetI, CmVec, n2, phiV, tau, tau0, tauInt, maxNeighborhoodSize, cutOff, collectMax)
+.computeColumnPmfAndNeighborhoods <- function(sexp, n0, nVec, epsilon, epsilon2, K, N, Y, X, A, S, rowSubsetI, CmVec, n2, phiV, tau, tau0, tauInt, maxNeighborhoodSize, cutOff, collectMax, useRanks) {
+    .Call('NPCluster_computeColumnsPmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, X, A, S, rowSubsetI, CmVec, n2, phiV, tau, tau0, tauInt, maxNeighborhoodSize, cutOff, collectMax, useRanks)
 }
 
-.computePmfAndNeighborhoods <- function(sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff) {
-    .Call('NPCluster_computePmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff)
+.computePmfAndNeighborhoods <- function(sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff, useRank) {
+    .Call('NPCluster_computePmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff, useRank)
 }
 
 .computePdpLogLikelihood <- function(sexp, k, X, A, S, G, N, tau, tau0, tauInt, colSums) {
