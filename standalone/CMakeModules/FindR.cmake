@@ -136,7 +136,7 @@ ENDIF(WIN32)
 MESSAGE(STATUS "Checking for R package library location to use")
 IF(NOT R_LIBDIR)
 	EXECUTE_PROCESS(
-		COMMAND ${R_EXECUTABLE} "--slave" "--no-save" "-e" "cat(paste(unique (c(.Library.site, .Library)), collapse='${PATH_SEP}'))"
+		COMMAND ${R_EXECUTABLE} "--slave" "--no-save" "-e" "cat(paste(unique(.libPaths()), collapse='${PATH_SEP}'))"
 		OUTPUT_VARIABLE R_LIBDIR)
 ELSE(NOT R_LIBDIR)
 	MESSAGE(STATUS "Location specified by user")

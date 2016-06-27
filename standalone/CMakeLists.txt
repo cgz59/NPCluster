@@ -35,6 +35,7 @@ ENDIF()
 # Version information
 #INCLUDE(${CMAKE_MODULE_PATH}/Version.cmake)
 
+include(cotire)
 
 # Get R information
 find_package(R REQUIRED)
@@ -79,7 +80,7 @@ link_directories(
 add_executable(benchmark src/benchmark.cpp)
 target_link_libraries(benchmark ${R_USED_LIBS})
 target_link_libraries(benchmark tbb RInside Boost)
-
+cotire(benchmark)
 
 
 

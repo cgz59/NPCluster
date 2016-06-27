@@ -31,7 +31,8 @@ int main(int argc, char* argv[]) {
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		("sse", "use SSE vectorization")				
+		("sse", "use SSE vectorization")
+		("unroll", "unroll loop")				
 		("tbb", po::value<int>()->default_value(0), "use TBB with specified number of threads")		
 		("iterations", po::value<int>()->default_value(1), "number of iterations")
 	;
@@ -52,15 +53,15 @@ int main(int argc, char* argv[]) {
 
 
 
-	auto useSSE = false;
-	auto useTBB = false;
+// 	auto useSSE = false;
+// 	auto useTBB = false;
 	
 // 	RInside R(0, nullptr); // This is a horrible hack to allow Rcpp memory objects as global variables
 	
     using namespace Rcpp;
     
-	auto seed = 666L;
-    
+	unsigned int seed = 666;
+
 	// Set the R RNG seed
 	Rcpp::Environment baseEnv("package:base");
 	Rcpp::Function setSeed = baseEnv["set.seed"];
@@ -84,6 +85,9 @@ int main(int argc, char* argv[]) {
 	}
 	if (vm.count("sse")) {
 		specialMode |= static_cast<long>(np_cluster::SpecialComputeMode::SSE);
+	}
+	if (vm.count("unroll")) {
+		specialMode |= static_cast<long>(np_cluster::SpecialComputeMode::UNROLL);
 	}
 		
 	auto prng = std::mt19937(seed);
