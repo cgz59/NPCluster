@@ -479,6 +479,9 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
     	new.n0 <- parm$clust$n0
     }
 
+	parm$clust$n.vec <- new.n.vec
+	parm$clust$n0<-new.n0
+
   ## generate auxilliary P vector
 
   tmp.M <- rep(parm$clust$M/new.K,parm$clust$K)
@@ -614,6 +617,7 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
    parm$clust$n0 <- parm$clust$n0 + parm$cand$n0.k
 
 		parm$N <- sum(parm$clust$n.vec) + parm$clust$n0
+#		if (parm$N!=parm$clust$G*parm$n2) {stop(paste('n.vec error'))}
 
    tmp.a.v <- array(,parm$n2)
    s.G.v <- parm$cand$s.v.k
@@ -746,7 +750,8 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     new.K <- parm$clust$K
     new.n0 <- parm$clust$n0
   }
-
+  parm$clust$n.vec <- new.n.vec
+  parm$clust$n0<-new.n0
   ## generate auxilliary P vector
 
   tmp.M <- rep(parm$clust$M/new.K,parm$clust$K)
@@ -926,9 +931,12 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
         parm$clust$s.mt <- matrix(parm$clust$s.v, nrow = parm$n2)
 
         parm$clust$n.vec <- parm$clust$n.vec + parm$cand$n.vec.k
+        #parm$clust$n.vec <- new.n.vec + parm$cand$n.vec.k
         parm$clust$n0 <- parm$clust$n0 + parm$cand$n0.k
+        #parm$clust$n0 <- new.n0 + parm$cand$n0.k
 
         parm$N <- sum(parm$clust$n.vec) + parm$clust$n0
+#        if (parm$N!=parm$clust$G*parm$n2) {stop(paste('n.vec error'))}
 
         tmp.a.v <- array(,parm$n2)
         s.G.v <- parm$cand$s.v.k
@@ -992,11 +1000,13 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     indx.new <- parm$clust$C.m.vec > 0
     tmp.new.parm$clust$G <- sum(indx.new)
     tmp.new.parm$clust$C.m.vec <- parm$clust$C.m.vec[indx.new]
+    tmp.new.parm$clust$s.mt<-parm$clust$s.mt[,indx.new]
     #
     tmp.old.parm <- init.cc.parm
     indx.old <- init.cc.parm$clust$C.m.vec > 0
     tmp.old.parm$clust$G <- sum(indx.old)
     tmp.old.parm$clust$C.m.vec <- init.cc.parm$clust$C.m.vec[indx.old]
+    tmp.old.parm$clust$s.mt <- init.cc.parm$clust$s.mt[,indx.old]
 
     rho.tru <- fn.d(d=parm$d, tmp.new.parm) - fn.d(d=parm$d, tmp.old.parm)
 
