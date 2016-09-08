@@ -46,6 +46,7 @@ quick_profile <- function() {
                               computeMode = createComputeMode())
   )
   posteriorOrig$G.v
+  posteriorOrig$rng[1:10]
 
   d_credible.v <- quantile(posterior$d.v, prob = c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
@@ -73,6 +74,7 @@ quick_profile <- function() {
                             computeMode = mode)
   )
   posterior$G.v
+  posterior$rng[1:10]
 
 
   d_credible.v <- quantile(posterior$d.v, prob = c(.025,.975))

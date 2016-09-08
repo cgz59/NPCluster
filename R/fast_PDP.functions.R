@@ -356,6 +356,10 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
       parm$clust$col.nbhd.k <- c(parm$clust$col.nbhd.k, col.subset[relative_k])
     }
 
+    if (computeMode$computeC) { # debugging
+      restoreSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    }
+
     ### SG: how good are these nbhds?
 
     parm <- PDP_fn.check.nbhd(parm)
@@ -377,6 +381,10 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
                                         parm$clust$C.m.vec, parm$p,
                                         parm$clust$phi.v, parm$tau, parm$tau_0, parm$tau_int,
                                         max.col.nbhd.size, parm$col.delta, TRUE, TRUE)
+
+    if (computeMode$computeR) { # debugging
+      .GlobalEnv$.Random.seed <- restoreSeed # Roll back PRNG
+    }
 
     if (FALSE && computeMode$computeR) { # debugging TODO Turn back on
       assertEqual(test$index, parm$clust$col.nbhd.k)
@@ -814,6 +822,10 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   parm$cand$s.v.k <- cand.s.v.k
   marg.log.lik <- sum(marg.log.lik.v)
 
+  if (computeMode$computeC) { # debugging
+    restoreSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+  }
+
   # SWTICH
   }
 
@@ -830,6 +842,10 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
                                      parm$tau, parm$tau_0,
                                      TRUE, # do sampling
                                      computeMode$exactBitStream)
+
+    if (computeMode$computeR) { # debugging
+      .GlobalEnv$.Random.seed <- restoreSeed # Roll back PRNG
+    }
 
     if (computeMode$computeR) { # debugging
       assertEqual(test$logMarginalLikelihood, marg.log.lik, computeMode$toleranace)

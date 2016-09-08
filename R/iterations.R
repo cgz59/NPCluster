@@ -673,7 +673,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 	All.Stuff <- NULL
 	#
-	All.Stuff$d.v <- All.Stuff$tau_0.v <- All.Stuff$tau.v <- All.Stuff$tau_int.v <- All.Stuff$G.v <- All.Stuff$K.v <- array(,n.reps)
+	All.Stuff$d.v <- All.Stuff$tau_0.v <- All.Stuff$tau.v <- All.Stuff$tau_int.v <- All.Stuff$G.v <- All.Stuff$K.v <- All.Stuff$rng <- array(,n.reps)
 	All.Stuff$row.flip.v  <- array(0,n.reps)
 	All.Stuff$nbhd_max <- All.Stuff$col_new_clust.v  <- All.Stuff$col_exit.v <- All.Stuff$col_flip.v  <- array(0,n.reps)
 
@@ -695,6 +695,8 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 	  parm <- fn.iter(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
 	                  prob.compute.col.nbhd, true_parm, computeMode)
+
+	  All.Stuff$rng[cc] <- runif(1)
 
 		All.Stuff$G.v[cc] <- parm$clust$G
 		All.Stuff$K.v[cc] <- parm$clust$K

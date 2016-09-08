@@ -284,7 +284,11 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 		  parm$clust$row.nbhd.k <- c(parm$clust$row.nbhd.k, parm$row.subset.I[relative_k])
 		}
 
-		}
+	}
+
+    if (computeMode$computeC) { # debugging
+      restoreSeed <- .GlobalEnv$.Random.seed # For debugging purposed only
+    }
   }
 
   if (computeMode$computeC) {
@@ -300,6 +304,10 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	                            parm$clust$C.m.vec, parm$n2,
 	                            parm$clust$phi.v, parm$tau, parm$tau_0,
 	                            max.row.nbhd.size, parm$row.delta, TRUE) # Use ranks
+
+	if (computeMode$computeR) { # debugging
+	  .GlobalEnv$.Random.seed <- restoreSeed # Roll back PRNG
+	}
 
 	if (computeMode$computeR) { # debugging
 	  assertEqual(parm$clust$row.nbhd.k, test$index)
