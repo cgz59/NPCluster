@@ -37,8 +37,10 @@ fn1.update.element.objects <- function(parm, computeMode)
 	    assertEqual(parm$clust$n.vec, all.n.vec[-1])
 	  }
 
-	  parm$clust$n0 <- all.n.vec[1]
-	  parm$clust$n.vec <- all.n.vec[-1]
+	  if (!computeMode$computeR || computeMode$useCTab) {
+	    parm$clust$n0 <- all.n.vec[1]
+	    parm$clust$n.vec <- all.n.vec[-1]
+	  }
 	}
 
 	parm

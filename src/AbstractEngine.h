@@ -315,13 +315,25 @@ public:
 
     // gg == 0 case
 
-    const auto tmp = std::accumulate(
+//#define TEST
+
+    const double tmp = std::accumulate(
       Xmt, Xmt + N, 0.0,
       [](double sum, double x) {
+#ifdef TEST
+		return (sum - 0.5 * (x - 1.0) * (x - 1.0));
+#else
         return (sum + (x - 1.0) * (x - 1.0));
+#endif
       }
     );
-    logLikelihood[0] = -0.5 * tmp / (tauInt * tauInt) - N * 0.5 * std::log(2.0 * M_PI)
+    logLikelihood[0] =
+#ifdef TEST
+	tmp
+#else
+    -0.5 * tmp
+#endif
+    / (tauInt * tauInt) - N * 0.5 * std::log(2.0 * M_PI)
       - N * std::log(tauInt);
 
     auto f = [Xmt,&A,&S,N,tau,tau0,&logLikelihood](const int gg) {
@@ -329,10 +341,10 @@ public:
       auto Agg = std::begin(A) + (gg - 1) * N;
       auto Sgg = std::begin(S) + (gg - 1) * N;
 
-      const auto   occupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau);
-      const auto unoccupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau0);
+      const double   occupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau);
+      const double unoccupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau0);
 
-      auto tmp = 0.0;
+      double tmp = 0.0;
       for (int i = 0; i < N; ++i) { // TODO Could use std::accumulate with zip(Agg, Sgg)
         if (*Sgg == 0) {
           tmp += -0.5 * (*Xmtgg) * (*Xmtgg) / (tau0 * tau0) + unoccupied;
@@ -437,6 +449,7 @@ public:
 
     if (stride * N > logSsMt.size()) { // TODO Handle alignment, minor dimension == K
       logSsMt.resize(stride * N);
+      std::fill(std::begin(logSsMt), std::end(logSsMt), 0.0);
     }
 
     auto f = [&phiVKp1,&tauV,&CmVec,&Y,&Xsd,&priorProbV,tau,tau0,n2,K,stride,epsilon2,this](const int x) {
@@ -512,7 +525,7 @@ public:
 
     computeDeltaNeighborhoods(rowSubsetI,
                               neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-                              cutOff, maxNeighborhoodSize, K, stride, false, useRank);
+                              cutOff, maxNeighborhoodSize, K + 1, stride, false, useRank);
 
     return Rcpp::List::create(
       Rcpp::Named("neighbor") = neighborhoodList,
@@ -524,7 +537,7 @@ public:
 
   Rcpp::List computeColumnPmfAndNeighborhoods(int n0, const IntegerVector& nVec,
                                               const double epsilon, const double epsilon2,
-                                              int K, int N,  // NB: K -> G for column-space
+                                              int K, int N,  // NB: K -> G for column-space, N -> P for column-space
                                               const NumericVector& Y, const NumericMatrix& X,
                                               const NumericMatrix& A, const IntegerMatrix& S,
                                               const IntegerVector& rowSubsetI,
@@ -539,6 +552,10 @@ public:
 
     verify(K == nVec.size());
     verify(K == phiV.size());
+
+//     std::cerr << epsilon << std::endl;
+//     std::cerr << epsilon2 << std::endl;
+//     Rcpp::stop("debug");
 
     std::vector<double> priorProbV(K + 1); // TODO Reuse memory
 
@@ -555,19 +572,31 @@ public:
 
     auto stride = getAlignedStride(K + 1);
 
-    if (stride * N > logSsMt.size()) {
-      logSsMt.resize(stride * N);
+    if (stride * P > logSsMt.size()) {
+      logSsMt.resize(stride * P);
+      std::fill(std::begin(logSsMt), std::end(logSsMt), 0.0);
     }
 
     Tick cCPAN;
 
+    std::vector<double> debugVec(logSsMt.size());
+
     // TODO Parallelize
     std::for_each(std::begin(rowSubsetI), std::end(rowSubsetI),
-                  [&CmVec,&Y,&X,&A,&S,&priorProbV,&rowSubsetI,tau,tau0,tauInt,P,K,stride,epsilon2,N,this](const int x) {
+                  [&CmVec,&Y,&X,&A,&S,&priorProbV,&rowSubsetI,tau,tau0,tauInt,P,K,stride,epsilon2,N,this
+                  ,&debugVec
+                  ](const int x) {
                     const auto col = x - 1; //rowSubsetI[i] - 1;
                     // const auto gv = col / n2;
 
                     internalComputePdpLogLikelihood(&logSsMt[col * stride], col + 1, X, A, S, K, N, tau, tau0, tauInt, false);
+
+//           debugVec.resize(logSsMt.size());
+//           std::copy(std::begin(logSsMt), std::end(logSsMt), std::begin(debugVec));
+            for (int j = 0; j < K + 1; ++j) {
+              debugVec[col * stride + j] = logSsMt[col * stride + j];
+            }
+					//debugVec = logSsMt; // TODO Remove
 
                     // add prior and accumulate max entry
                     auto max = -std::numeric_limits<double>::max();
@@ -617,12 +646,28 @@ public:
 
     const auto max = computeDeltaNeighborhoods(rowSubsetI,
                                                neighborhoodList, neighborhoodOffset, neighborhoodIndex,
-                                               cutOff, maxNeighborhoodSize, K, stride, collectMax, useRank);
+                                               cutOff, maxNeighborhoodSize, K + 1, stride, collectMax, useRank);
+
+    //std::cerr << stride << " x " << P << std::endl;
+
+    std::vector<double> tmp;
+    for (int i = 0; i < rowSubsetI.size(); ++i) {
+      const int col = rowSubsetI[i] - 1;
+      for (int j = 0; j < (K + 1); ++j) {
+        tmp.push_back(
+        //  logSsMt[col * stride + j]
+        debugVec[col * stride + j]
+        );
+      }
+    }
 
     return Rcpp::List::create(
       Rcpp::Named("neighbor") = neighborhoodList,
       Rcpp::Named("offset") = neighborhoodOffset,
       Rcpp::Named("index") = neighborhoodIndex,
+      Rcpp::Named("tmp") = tmp,
+      Rcpp::Named("priorProbV") = priorProbV,
+      Rcpp::Named("debugVec") = debugVec,
       Rcpp::Named("neighborhoodMax") = max
     );
 
@@ -679,6 +724,8 @@ private:
     }
   }
 
+  int debugCount = 0;
+
   void drawNextNeighborhood(FastIterator& begin, const FastIterator& end,
                             StdIntVector& list, StdIntVector& offset, StdIntVector& index,
                             double cutOff,
@@ -694,12 +741,46 @@ private:
       // 2 or more left
       auto k = sampleUniform(begin, end);
 
-      // std::cerr << "draw: " << k.second << ", " << std::distance(begin, end) << std::endl;
+//#define DEBUG
+
+#ifdef DEBUG
+      const bool debug = (k.second == 78);// && (debugCount == 2);
+      if (debug) ++debugCount;
+#endif
 
       // Score each remaining entry in [begin, end) against k
 
-      auto f = [k,K,stride,this](Score score) {
-        const auto measure = distributionDistance(k.second - 1, score.second - 1, K, stride);
+      auto f = [k,K,stride,this
+#ifdef DEBUG
+               ,debug
+#endif
+              ](Score score) {
+     //   const auto measure = distributionDistance(k.second - 1, score.second - 1, K, stride);
+
+        auto i = k.second - 1;
+        auto j = score.second - 1;
+
+        const auto tmp = std::inner_product(
+          std::begin(logSsMt) + i * stride,
+          std::begin(logSsMt) + (i + 1) * stride,
+          std::begin(logSsMt) + j * stride, static_cast<double>(0.0),
+          std::plus<double>(),
+          //std::product<double>()
+          [](double x, double y) {
+            if (x == y) {
+              return x;
+            } else {
+              return std::sqrt(x * y);
+            }
+          }
+        );
+
+        const auto measure = 2.0 * (1.0 - tmp);
+#ifdef DEBUG
+        if (debug) {
+          std::cerr << score.second << " " << K << " " << stride << " " << tmp << " " << measure << std::endl;
+        }
+#endif
         return std::make_pair(measure, score.second);
       };
 
@@ -718,14 +799,25 @@ private:
 
       Tick remainder;
 
+#ifdef DEBUG
+      if (debug) {
+        auto b = begin;
+        for (; b != end; ++b) {
+          std::cerr << b->first << " ";
+        }
+        std::cerr << std::endl;
+      }
+#endif
+
       // sort the first maxNeighborhoodSize elements in increasing measure
       auto lastSort = (std::distance(begin, end) > maxSize) ? begin + maxSize : end;
-
-      // 			std::cerr << "Partial length: " << std::distance(begin,lastSort) << std::endl;
-
-      // 			return;
-
       std::partial_sort(begin, lastSort, end);
+
+#ifdef DEBUG
+      if (debug) {
+
+      }
+#endif
 
       // find cut-off point
       auto lastCut = std::find_if(begin, lastSort, [cutOff](Score score) {
@@ -749,6 +841,18 @@ private:
       if (begin == lastCut) {
         Rcpp::stop("Bad neighborhood");
       }
+
+#ifdef DEBUG
+      if (debug) {
+        auto b = begin;
+        for (; b != lastCut; ++b) {
+          std::cerr << "(" << b->second << ", " << b->first << ")" << std::endl;
+        }
+        std::cerr << std::endl;
+
+      //  if (debugCount > 1) Rcpp::stop("out");
+      }
+#endif
 
       auto cutLength = std::distance(begin, lastCut);
       for( ; begin != lastCut; ++begin) {

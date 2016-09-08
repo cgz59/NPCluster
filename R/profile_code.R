@@ -36,14 +36,18 @@ quick_profile <- function() {
 
   n <- 25
   p <- 125
+  n.burn <- 100
+  n.reps <- 500
 
   set.seed(666)
   simulation <- simulateExample(n = n, p = p)
   system.time(
-      posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
+      posteriorOrig <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
                               computeMode = createComputeMode())
   )
-  d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
+  posteriorOrig$G.v
+
+  d_credible.v <- quantile(posterior$d.v, prob = c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
   se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
   d_credible.v
@@ -52,13 +56,26 @@ quick_profile <- function() {
 
   set.seed(666)
   simulation <- simulateExample(n = n, p = p)
+  mode <- createComputeMode(language = "C", completeTest = TRUE,
+                            exactBitStream = TRUE)
+  mode$useCPdp <- FALSE
+  mode$useCPmf <- FALSE
+  mode$useCLogLike <- FALSE
+  mode$useCTab <- FALSE
+  mode$useCRho <- FALSE #
+  mode$useCAccept <- FALSE
+  mode$useCPdpLike <- FALSE
+  mode$useCGibbs <- FALSE
+  mode$useCMarg <- FALSE
+
   system.time(
     posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
-                            computeMode = createComputeMode(language = "C",
-                                                            exactBitStream = TRUE))
-
+                            computeMode = mode)
   )
-  d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975))
+  posterior$G.v
+
+
+  d_credible.v <- quantile(posterior$d.v, prob = c(.025,.975))
   mean.taxicab <- mean(posterior$mean.taxicab.v)
   se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxicab.v))
   d_credible.v

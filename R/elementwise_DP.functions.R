@@ -306,17 +306,19 @@ fast_element_fn.post.prob.and.delta <- function(parm, max.row.nbhd.size, compute
 	  assertEqual(unlist(parm$clust$row.nbhd), test$neighbor)
 	}
 
-	# Convert from simple flat format to list of int vectors
-	end <- test$offset[-1] - 1
-	begin <- test$offset
-	length(begin) <- length(begin) - 1
-
 	parm$clust$row.nbhd.flat.length <- length(test$neighbor)
-	parm$clust$row.nbhd <- lapply(1:length(begin),
-	                              FUN = function(x) {
-	                                test$neighbor[begin[x]:end[x]]
-	                              })
-	parm$clust$row.nbhd.k <- test$index
+	if (!computeMode$computeR || computeMode$useCPmf) {
+	  # Convert from simple flat format to list of int vectors
+	  end <- test$offset[-1] - 1
+	  begin <- test$offset
+	  length(begin) <- length(begin) - 1
+
+	  parm$clust$row.nbhd <- lapply(1:length(begin),
+	                                FUN = function(x) {
+	                                  test$neighbor[begin[x]:end[x]]
+	                                })
+	  parm$clust$row.nbhd.k <- test$index
+	}
 
   } # computeMode
 
@@ -377,7 +379,9 @@ element_fn.row.gibbs.DP <- function(parm, computeMode)
 	    assertEqual(L.v.C, L.v, computeMode$tolerance)
 	  }
 
-	  L.v <- L.v.C
+	  if (!computeMode$computeR || computeMode$useCLogLike) {
+	    L.v <- L.v.C
+	  }
 	}
 
 	# add possibility that s=0 in front
@@ -473,8 +477,10 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	    assertEqual(parm$clust$n.vec.k, all.n.vec[-1])
 	  }
 
-	  parm$clust$n0.k <- all.n.vec[1]
-	  parm$clust$n.vec.k <- all.n.vec[-1]
+	  if (!computeMode$computeR || computeMode$useCTab) {
+	    parm$clust$n0.k <- all.n.vec[1]
+	    parm$clust$n.vec.k <- all.n.vec[-1]
+	  }
 	}
 
 	parm$clust$n.vec.k.comp <- parm$clust$n.vec - parm$clust$n.vec.k
@@ -501,7 +507,9 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	    assertEqual(L.v.C, L.v, computeMode$tolerance)
 	  }
 
-	  L.v <- L.v.C
+	  if (!computeMode$computeR || computeMode$useCLogLike) {
+	    L.v <- L.v.C
+	  }
 	}
 
 # 	  	  if (any(abs(L.v - L.v2) > 1e-10)) {
@@ -590,9 +598,11 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	    assertEqual(rho.prop.C, rho.prop, computeMode$tolerance)
 	  }
 
-	  parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
-	  parm$clust$n.vec <- parm$clust$n.vec.k.com + all.count[-1]
-    rho.prop <- rho.prop.C
+	  if (!computeMode$computeR || computeMode$useCRho) {
+	    parm$clust$n0 <- parm$clust$n0.k.comp + all.count[1]
+	    parm$clust$n.vec <- parm$clust$n.vec.k.com + all.count[-1]
+      rho.prop <- rho.prop.C
+	  }
 	}
 	# sum(parm$clust$n.vec) + parm$clust$n0 == parm$N
 
@@ -627,7 +637,9 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
       assertEqual(rho.prop.C, rho.prop, computeMode$tolerance)
     }
 
-    rho.prop <- rho.prop.C
+    if (!computeMode$computeR || computeMode$useCRho) {
+      rho.prop <- rho.prop.C
+    }
   }
 
 	#######################################################
@@ -693,8 +705,10 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	    assertEqual(result$old, old.log.lik, computeMode$tolerance)
 	  }
 
-	  new.log.lik <- result$new
-	  old.log.lik <- result$old
+	  if (!computeMode$computeR || computeMode$useCAccept) {
+	    new.log.lik <- result$new
+	    old.log.lik <- result$old
+	  }
 
 	} # END
 

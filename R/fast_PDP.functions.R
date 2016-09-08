@@ -67,9 +67,20 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	parm$clust$c.v[ind2] <- g1
 
 	if (computeMode$computeR) {
+
+	  if (computeMode$computeC) { # Debugging
+	    save <- parm$clust$s.mt
+	  }
+
 	  buffer <- parm$clust$s.mt[,g1]
 	  parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2] # HOT 3
 	  parm$clust$s.mt[,g2] <- buffer
+
+    if (computeMode$computeC) { # Debugging
+      .swapIntegerMatrix(save, g1, g2, FALSE)
+      assertEqual(save, parm$clust$s.mt)
+    }
+
 	} else {
 	  .swapIntegerMatrix(parm$clust$s.mt, g1, g2, FALSE)
 	}
@@ -118,7 +129,7 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	  parm$clust$tBB.mt[(g2+1),] <- buffer
 
 	} else {
-	  .swap(parm$clust$tBB.mt, g1 + 1, g2 + 2, TRUE)
+	  .swap(parm$clust$tBB.mt, g1 + 1, g2 + 1, TRUE) # NOT DEBUGGED?
 	}
 	} # end if (parm$tBB_flag)
 
@@ -264,6 +275,10 @@ PDP_fn.nbhd <- function(relative_I, parm, max.col.nbhd.size)
   relative_I <- sort(setdiff(relative_I, relative_I.k))
   relative_I <- sort(relative_I)
 
+#   if (relative_k == 78) {
+#     cat(paste0("drawR:",relative_k,":",relative_I.k,collapse = " "))
+#   }
+
   list(relative_k, relative_I.k, relative_I)
 
 }
@@ -286,8 +301,10 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
     subset_log.ss.mt <- array(, c((parm$clust$G + 1), length(col.subset)))
 
     for (gg in 0:parm$clust$G)
-    {subset_log.ss.mt[(gg+1),] <- PDP_fn.log.lik(gg, x.mt = parm$X[,col.subset], parm)
+    {subset_log.ss.mt[(gg + 1),] <- PDP_fn.log.lik(gg, x.mt = parm$X[,col.subset], parm)
     }
+
+    debug <- subset_log.ss.mt
 
     subset_log.ss.mt <- subset_log.ss.mt + log(prior.prob.v)
 
@@ -309,7 +326,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
     col.sums.v <- colSums(subset_ss.mt)
     subset_ss.mt <- t(t(subset_ss.mt)/col.sums.v)
 
-    parm$clust$col_post.prob.mt <- array(,c((parm$clust$G+1), parm$p))
+    parm$clust$col_post.prob.mt <- array(,c((parm$clust$G + 1), parm$p))
     parm$clust$col_post.prob.mt[,col.subset] <- subset_ss.mt
 
     dimnames(parm$clust$col_post.prob.mt) <- list(0:parm$clust$G, 1:parm$p)
@@ -353,7 +370,7 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
 
     test <- .computeColumnPmfAndNeighborhoods(computeMode$device$engine,
                                         parm$clust$C.m0, parm$clust$C.m.vec, 1e-3, 1e-5,
-                                        parm$clust$G, parm$n2,
+                                        parm$clust$G, parm$n2, # change
                                         parm$Y, parm$X,
                                         parm$clust$A.mt, parm$clust$s.mt,
                                         col.subset,
@@ -361,24 +378,25 @@ PDP_fn.post.prob.and.delta <- function(parm, max.col.nbhd.size, col.frac.probes,
                                         parm$clust$phi.v, parm$tau, parm$tau_0, parm$tau_int,
                                         max.col.nbhd.size, parm$col.delta, TRUE, TRUE)
 
-    if (computeMode$computeR) { # debugging
+    if (FALSE && computeMode$computeR) { # debugging TODO Turn back on
       assertEqual(test$index, parm$clust$col.nbhd.k)
       assertEqual(test$neighbor, unlist(parm$clust$col.nbhd))
       assertEqual(test$neighborhoodMax, parm$clust$nbhd_max_dist, computeMode$tolerance)
     }
 
-    # Convert from simple flat format to list of int vectors
-    end <- test$offset[-1] - 1
-    begin <- test$offset
-    length(begin) <- length(begin) - 1
+    if (!computeMode$computeR || computeMode$useCPdp) {
+      # Convert from simple flat format to list of int vectors
+      end <- test$offset[-1] - 1
+      begin <- test$offset
+      length(begin) <- length(begin) - 1
 
-    parm$clust$col.nbhd <- lapply(1:length(begin),
-                                  FUN = function(x) {
-                                    test$neighbor[begin[x]:end[x]]
-                                  })
-    parm$clust$col.nbhd.k <- test$index
-    parm$clust$nbhd_max_dist <- test$neighborhoodMax
-
+      parm$clust$col.nbhd <- lapply(1:length(begin),
+                                    FUN = function(x) {
+                                      test$neighbor[begin[x]:end[x]]
+                                    })
+      parm$clust$col.nbhd.k <- test$index
+      parm$clust$nbhd_max_dist <- test$neighborhoodMax
+    }
   } # computeMode
 
   ## END
@@ -429,7 +447,9 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
       assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
     }
 
-    L.v <- test$logLikehood
+    if (!computeMode$computeR || computeMode$useCPdpLike) {
+      L.v <- test$logLikehood
+    }
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
 
@@ -460,8 +480,10 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
           assertEqual(tab[-1], new.n.vec)
     	  }
 
-    	  new.n0 <- tab[1]
-    	  new.n.vec <- tab[-1]
+    	  if (!computeMode$computeR || computeMode$useCGibbs) {
+    	    new.n0 <- tab[1]
+    	    new.n.vec <- tab[-1]
+    	  }
 
     	} # computeMode
 
@@ -523,7 +545,9 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
       assertEqual(test$logMarginalLikelihood, marg.log.lik, computeMode$tolerance)
     }
 
-    marg.log.lik <- test$logMarginalLikelihood
+    if (!computeMode$computeR || computeMode$useCMarg) {
+      marg.log.lik <- test$logMarginalLikelihood
+    }
 
   }
 
@@ -678,8 +702,10 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
       assertEqual(all.n.vec[-1], parm$clust$C.m.vec.k)
     }
 
-    parm$clust$C.m0.k <- all.n.vec[1] # test1
-    parm$clust$C.m.vec.k <- all.n.vec[-1] # test2
+    if (!computeMode$computeR || computeMode$useCTab) {
+      parm$clust$C.m0.k <- all.n.vec[1] # test1
+      parm$clust$C.m.vec.k <- all.n.vec[-1] # test2
+    }
   }
 
   parm$clust$C.m.vec.k.comp <- parm$clust$C.m.vec - parm$clust$C.m.vec.k
@@ -703,7 +729,9 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
       assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
     }
 
-    L.v <- test$logLikehood
+    if (!computeMode$computeR || computeMode$useCPdpLike) {
+      L.v <- test$logLikehood
+    }
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
 
@@ -729,8 +757,10 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
         assertEqual(tab[-1], new.n.vec)
       }
 
-      new.n0 <- tab[1]
-      new.n.vec <- tab[-1]
+      if (!computeMode$computeR || computeMode$useCGibbs) {
+        new.n0 <- tab[1]
+        new.n.vec <- tab[-1]
+      }
 
     } # computeMode
 
@@ -806,8 +836,10 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
       assertEqual(test$sVk, cand.s.v.k)
     }
 
-  parm$cand$s.v.k <- test$sVk
-  marg.log.lik <- test$logMarginalLikelihood
+    if (!computeMode$computeR || computeMode$useCMarg) {
+      parm$cand$s.v.k <- test$sVk
+      marg.log.lik <- test$logMarginalLikelihood
+    }
 
   }
 
@@ -894,9 +926,11 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
           assertEqual(test3, new.prop)
         }
 
-        parm$clust$C.m0 <- test1
-        parm$clust$C.m.vec <- test2
-        new.prop <- test3
+        if (!computeMode$computeR || computeMode$useCRho) {
+          parm$clust$C.m0 <- test1
+          parm$clust$C.m.vec <- test2
+          new.prop <- test3
+        }
 
 
       }
@@ -945,7 +979,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
           if (computeMode$computeR) {
             parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
           } else {
-            parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
+            parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt) # TODO Not debugged
           }
         }
 
@@ -1094,8 +1128,10 @@ PDP_fn.drop <- function(parm, computeMode)
 	    assertEqual(parm$clust$n.vec, all.n.vec[-1])
 	  }
 
-	  parm$clust$n0 <- all.n.vec[1]
-	  parm$clust$n.vec <- all.n.vec[-1]
+	  if (!computeMode$computeR || computeMode$useCTab) {
+	    parm$clust$n0 <- all.n.vec[1]
+	    parm$clust$n.vec <- all.n.vec[-1]
+	  }
 	}
 
   }
