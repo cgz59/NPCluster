@@ -66,23 +66,12 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	parm$clust$c.v[ind1] <- g2
 	parm$clust$c.v[ind2] <- g1
 
-	if (computeMode$computeR) {
-
-	  if (computeMode$computeC) { # Debugging
-	    save <- parm$clust$s.mt
-	  }
-
+	if (computeMode$computeC) { # TODO No debug
+	  .swapIntegerMatrix(parm$clust$s.mt, g1, g2, FALSE)
+	} else {
 	  buffer <- parm$clust$s.mt[,g1]
 	  parm$clust$s.mt[,g1] <- parm$clust$s.mt[,g2] # HOT 3
 	  parm$clust$s.mt[,g2] <- buffer
-
-    if (computeMode$computeC) { # Debugging
-      .swapIntegerMatrix(save, g1, g2, FALSE)
-      assertEqual(save, parm$clust$s.mt)
-    }
-
-	} else {
-	  .swapIntegerMatrix(parm$clust$s.mt, g1, g2, FALSE)
 	}
 
 	buffer <- parm$clust$beta.v[g1]
@@ -117,8 +106,9 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 
 	if (parm$tBB_flag)
 	{
-	if (computeMode$computeR) {
-
+	if (computeMode$computeC) { # TODO No debug
+	  .swap(parm$clust$tBB.mt, g1 + 1, g2 + 1, TRUE) # NOT DEBUGGED?
+	} else {
 	  # first swap columns
 	  buffer <- parm$clust$tBB.mt[,(g1+1)]
 	  parm$clust$tBB.mt[,(g1+1)] <- parm$clust$tBB.mt[,(g2+1)] # HOT 3
@@ -128,8 +118,6 @@ PDP_fn.swap.clusters <- function(parm, g1, g2, computeMode)
 	  parm$clust$tBB.mt[(g1+1),] <- parm$clust$tBB.mt[(g2+1),]
 	  parm$clust$tBB.mt[(g2+1),] <- buffer
 
-	} else {
-	  .swap(parm$clust$tBB.mt, g1 + 1, g2 + 1, TRUE) # NOT DEBUGGED?
 	}
 	} # end if (parm$tBB_flag)
 
@@ -658,10 +646,10 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
 		parm$clust$B.mt <- cbind(parm$clust$B.mt, tmp.a.v) # HOT
 
 		if (parm$tBB_flag) {
-		  if (computeMode$computeR) {
-		    parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
-		  } else {
+		  if (computeMode$computeC) { # TODO No debug
 		    parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt)
+		  } else {
+		    parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
 		  }
 		}
 
@@ -992,10 +980,10 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
         # TODO Remove code duplication with, e.g., lines 624-625 in this file
 
         if (parm$tBB_flag) {
-          if (computeMode$computeR) {
-            parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
+          if (computeMode$computeC) { # TODO No debug
+            parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt) # TODO No debug
           } else {
-            parm$clust$tBB.mt <- .fastXtX(parm$clust$B.mt) # TODO Not debugged
+            parm$clust$tBB.mt <- t(parm$clust$B.mt) %*% parm$clust$B.mt # HOT
           }
         }
 

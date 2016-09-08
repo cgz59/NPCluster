@@ -59,22 +59,23 @@ quick_profile <- function() {
   simulation <- simulateExample(n = n, p = p)
   mode <- createComputeMode(language = "C", completeTest = TRUE,
                             exactBitStream = TRUE)
-  mode$useCPdp <- FALSE
-  mode$useCPmf <- FALSE
-  mode$useCLogLike <- FALSE
-  mode$useCTab <- FALSE
-  mode$useCRho <- FALSE #
-  mode$useCAccept <- FALSE
-  mode$useCPdpLike <- FALSE
-  mode$useCGibbs <- FALSE
-  mode$useCMarg <- FALSE
+  mode$useCPdp <- FALSE # Causes difference
+  mode$useCPmf <- TRUE # Works
+  mode$useCLogLike <- TRUE# Works
+  mode$useCTab <- TRUE # Works
+  mode$useCRho <- TRUE # Works
+  mode$useCAccept <- FALSE # Causes difference
+  mode$useCPdpLike <- FALSE # Causes difference
+  mode$useCGibbs <- TRUE # Works
+  mode$useCMarg <- TRUE # Works
 
   system.time(
     posterior <- fitExample(simulation, n.burn = n.burn, n.reps = n.reps,
                             computeMode = mode)
   )
   posterior$G.v
-  posterior$rng[1:10]
+  mean(posterior$G.v) # 53.158
+  mean(posterior$rng) # 0.4968298
 
 
   d_credible.v <- quantile(posterior$d.v, prob = c(.025,.975))
