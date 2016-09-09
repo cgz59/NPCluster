@@ -162,7 +162,7 @@ Rcpp::List computePmfAndNeighborhoods(SEXP sexp,
 Rcpp::List computePdpLogLikelihood(SEXP sexp,
 							const int k, const Rcpp::NumericMatrix& X,
 							const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
-							const int G, const int N,
+							const int G, const int N, const bool flip,
 							const double tau, const double tau0, const double tauInt, bool colSums) {
 	EnginePtr engine = parsePtr(sexp);
 
@@ -174,7 +174,7 @@ Rcpp::List computePdpLogLikelihood(SEXP sexp,
   std::cerr << S.rows() << ":" << S.cols() << std::endl << std::endl;
 #endif // PRINT_DIM
 
-	return engine->computePdpLogLikelihood(k, X, A, S, G, N, tau, tau0, tauInt, colSums);
+	return engine->computePdpLogLikelihood(k, X, A, S, G, N, flip, tau, tau0, tauInt, colSums);
 }
 
 // [[Rcpp::export(.fastIndexedSetCopy)]]

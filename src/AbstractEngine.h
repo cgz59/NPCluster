@@ -21,6 +21,8 @@
 
 #define MATCH_SG
 
+//#define HIGH_PRECISION
+
 #ifdef NDEBUG
 # define verify(EX)
 #else
@@ -286,18 +288,24 @@ public:
 
   Rcpp::List computePdpLogLikelihood(const int k, const Rcpp::NumericMatrix& X,
                                      const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
-                                     const int G, const int N,
+                                     const int G, const int N, const bool flip,
                                      const double tau, const double tau0, const double tauInt, bool colSums) {
     using namespace Rcpp;
 
-    if (colSums) {
-      stop("colSums = TRUE is not yet implemented.");
-    }
+//     if (colSums) {
+//       stop("colSums = TRUE is not yet implemented.");
+//     }
 
     // TODO X may be constant, so may consider making single, padded copy for vectorization
 
     NumericVector logLikelihood(G + 1);
-    internalComputePdpLogLikelihood(&logLikelihood[0], k, X, A, S, G, N, tau, tau0, tauInt, colSums);
+
+    if (colSums) {
+	  internalComputePdpLogLikelihoodWithSum(&logLikelihood[0], k, X, A, S, G, N, flip, tau, tau0, tauInt);
+      //internalComputePdpLogLikelihood(&logLikelihood[0], k, X, A, S, G, N, flip, tau, tau0, tauInt, colSums);
+	} else {
+		internalComputePdpLogLikelihood(&logLikelihood[0], k, X, A, S, G, N, flip, tau, tau0, tauInt, colSums);
+	}
 
     return Rcpp::List::create(
       Rcpp::Named("logLikelihood") = logLikelihood
@@ -305,13 +313,107 @@ public:
   }
 
   template <typename OutputPtr>
+  void internalComputePdpLogLikelihoodWithSum(OutputPtr logLikelihood, const int k, const Rcpp::NumericMatrix& X,
+                                       const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
+                                       const int G, const int N, const bool flip,
+                                       const double itau, const double itau0, const double itauInt) {
+
+    // TODO X may be constant, so may consider making single, padded copy for vectorization
+    const auto Xmt = std::begin(X) + (k - 1) * N;
+
+	if (flip) {
+		stop("Sign flip is not yet implemented in PDP Log-likelihood");
+	}
+
+    // gg == 0 case
+
+#ifdef HIGH_PRECISION
+	#define LDOUBLE long double
+#else
+	#define LDOUBLE double
+#endif
+
+    LDOUBLE tau = static_cast<LDOUBLE>(itau);
+    LDOUBLE tau0 = static_cast<LDOUBLE>(itau0);
+    LDOUBLE tauInt = static_cast<LDOUBLE>(itauInt);
+
+    const double tmp = std::accumulate(
+      Xmt, Xmt + N, static_cast<LDOUBLE>(0.0),
+      [](LDOUBLE sum, double x) {
+			return (sum + (x - 1.0) * (x - 1.0));
+      }
+    );
+    logLikelihood[0] = -0.5 * tmp / (tauInt * tauInt) - N * 0.5 * std::log(2.0 * M_PI)
+    					- N * std::log(tauInt);
+
+    auto f = [Xmt,&A,&S,N,tau,tau0,&logLikelihood](const int gg) {
+      auto Xmtgg = Xmt;
+      auto Agg = std::begin(A) + (gg - 1) * N;
+      auto Sgg = std::begin(S) + (gg - 1) * N;
+
+      const double   occupied = -0.5 * std::log(2.0 * M_PI)
+//       -0.9189385332046726695409688545623794198036
+      - std::log(tau);
+      const double unoccupied = -0.5 * std::log(2.0 * M_PI)
+//       -0.9189385332046726695409688545623794198036
+      - std::log(tau0);
+
+      LDOUBLE tmpUnoccupied = 0.0;
+      LDOUBLE tmpOccupied = 0.0;
+      LDOUBLE tmp = 0.0;
+      int cntUnoccupied = 0;
+      int cntOccupied = 0;
+      for (int i = 0; i < N; ++i) { // TODO Could use std::accumulate with zip(Agg, Sgg)
+        if (*Sgg == 0) {
+          tmpUnoccupied += static_cast<LDOUBLE>(-0.5) * (*Xmtgg) * (*Xmtgg); // / (tau0 * tau0) + unoccupied;
+          tmp += static_cast<LDOUBLE>(-0.5) * (*Xmtgg) * (*Xmtgg) / (tau0 * tau0) + unoccupied;
+          ++cntUnoccupied;
+        } else {
+          tmpOccupied += static_cast<LDOUBLE>(-0.5) * (*Xmtgg - *Agg) * (*Xmtgg - *Agg); // / (tau * tau) + occupied;
+          tmp += static_cast<LDOUBLE>(-0.5) * (*Xmtgg - *Agg) * (*Xmtgg - *Agg) / (tau * tau) + occupied;
+          ++cntOccupied;
+        }
+        ++Xmtgg;
+        ++Agg;
+        ++Sgg;
+      }
+      auto intermediate =
+
+      logLikelihood[gg] = (tmpUnoccupied / (tau0 * tau0) + tmpOccupied / (tau * tau)) + cntUnoccupied * unoccupied + cntOccupied * occupied;
+      // logLikelihood[gg] = tmp;
+    };
+
+    Tick iCPLWS;
+
+    if (useTBB) {
+      tbb::parallel_for(tbb::blocked_range<int>(1, G + 1),
+                        [=](const tbb::blocked_range<int>& r) {
+                          const auto end = r.end();
+                          for (auto i = r.begin(); i != end; ++i) {
+                            f(i);
+                          }
+                        });
+    } else {
+      for (int gg = 1; gg <= G; ++gg) {
+        f(gg);
+      }
+    }
+
+    duration["iCPLWS__"] += iCPLWS();
+  }
+
+  template <typename OutputPtr>
   void internalComputePdpLogLikelihood(OutputPtr logLikelihood, const int k, const Rcpp::NumericMatrix& X,
                                        const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
-                                       const int G, const int N,
+                                       const int G, const int N, const bool flip,
                                        const double tau, const double tau0, const double tauInt, bool colSums) {
 
     // TODO X may be constant, so may consider making single, padded copy for vectorization
     const auto Xmt = std::begin(X) + (k - 1) * N;
+
+	if (true || flip) {
+		stop("Sign flip is not yet implemented in PDP Log-likelihood");
+	}
 
     // gg == 0 case
 
@@ -588,8 +690,9 @@ public:
                   ](const int x) {
                     const auto col = x - 1; //rowSubsetI[i] - 1;
                     // const auto gv = col / n2;
+                    const bool flip = false; // TODO Fix!
 
-                    internalComputePdpLogLikelihood(&logSsMt[col * stride], col + 1, X, A, S, K, N, tau, tau0, tauInt, false);
+                    internalComputePdpLogLikelihoodWithSum(&logSsMt[col * stride], col + 1, X, A, S, K, N, flip, tau, tau0, tauInt);
 
 //           debugVec.resize(logSsMt.size());
 //           std::copy(std::begin(logSsMt), std::end(logSsMt), std::begin(debugVec));

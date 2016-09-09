@@ -154,6 +154,11 @@ PDP_fn.clip.clusters <- function(parm, keep)
 
 PDP_fn.log.lik <- function(gg, x.mt, parm, colSums=TRUE)
 	{
+
+  # Debug
+  if (!colSums) {
+    stop("PDP_fn.log.lik colSums == FALSE")
+  }
 	if (gg > 0)
 		{a2.v <- parm$clust$A.mt[,gg]
 		z.g.v <- parm$clust$s.mt[,gg] > 0
@@ -212,6 +217,10 @@ PDP_fn.log.lik <- function(gg, x.mt, parm, colSums=TRUE)
 		if (colSums)
 			{if (!parm$flip.sign)
 			  {tmp <- colSums(-.5*(small.X - a2.v)^2)
+			  #parm$tmp <<- tmp
+			  #if (exists("save_tmp", where = -1)) {
+			    assign("save_tmp", tmp, envir = .GlobalEnv)
+			  #}
 			  }
 		  if (parm$flip.sign)
 		    {tmp <- colSums(-.5*(small.X - a2.v)^2)+colSums(-.5*(-small.X - a2.v)^2)
@@ -437,13 +446,14 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
     test <- .computePdpLogLikelihood(computeMode$device$engine, k, parm$X,
                                      parm$clust$A.mt, parm$clust$s.mt,
                                      parm$clust$G, parm$n2,
-                                     parm$tau, parm$tau_0, parm$tau_int, FALSE)
+                                     parm$flip.sign,
+                                     parm$tau, parm$tau_0, parm$tau_int, TRUE)
 
     if (computeMode$computeR) { # debugging
       assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
     }
 
-    if (!computeMode$computeR || computeMode$useCPdpLike) {
+    if (!computeMode$computeR || computeMode$useCPdpLike1) {
       L.v <- test$logLikehood
     }
   } # computeMode
@@ -712,25 +722,33 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   if (computeMode$computeR) {
 
     # intercept cluster or any existing cluster
-    L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
+    tmp.L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
+    tmp.L.v <- round(tmp.L.v, digits = 6)
   }
 
   if (computeMode$computeC) {
     test <- .computePdpLogLikelihood(computeMode$device$engine, k, parm$X,
                                      parm$clust$A.mt, parm$clust$s.mt,
                                      parm$clust$G, parm$n2,
-                                     parm$tau, parm$tau_0, parm$tau_int, FALSE)
+                                     parm$flip.sign,
+                                     parm$tau, parm$tau_0, parm$tau_int, TRUE)
+    test$logLikelihood <- round(test$logLikelihood, digits = 6)
 
     if (computeMode$computeR) { # debugging
-      assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
+      assertEqual(test$logLikelihood, tmp.L.v, 0)
     }
 
-    if (!computeMode$computeR || computeMode$useCPdpLike) {
-      L.v <- test$logLikehood
+    if (sum(abs(test$logLikelihood - tmp.L.v)) != 0) {
+      stop("die")
+    }
+
+    if (!computeMode$computeR || computeMode$useCPdpLike2) {
+      tmp.L.v <- test$logLikehood
     }
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
 
+  L.v <- tmp.L.v
    emptied.indx <- which(parm$clust$C.m.vec.k.comp==0)
    new.G <- parm$clust$G - length(emptied.indx)
 

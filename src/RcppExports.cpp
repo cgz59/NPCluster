@@ -221,8 +221,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // computePdpLogLikelihood
-Rcpp::List computePdpLogLikelihood(SEXP sexp, const int k, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const int G, const int N, const double tau, const double tau0, const double tauInt, bool colSums);
-RcppExport SEXP NPCluster_computePdpLogLikelihood(SEXP sexpSEXP, SEXP kSEXP, SEXP XSEXP, SEXP ASEXP, SEXP SSEXP, SEXP GSEXP, SEXP NSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP tauIntSEXP, SEXP colSumsSEXP) {
+Rcpp::List computePdpLogLikelihood(SEXP sexp, const int k, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const int G, const int N, const bool flip, const double tau, const double tau0, const double tauInt, bool colSums);
+RcppExport SEXP NPCluster_computePdpLogLikelihood(SEXP sexpSEXP, SEXP kSEXP, SEXP XSEXP, SEXP ASEXP, SEXP SSEXP, SEXP GSEXP, SEXP NSEXP, SEXP flipSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP tauIntSEXP, SEXP colSumsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -233,11 +233,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type S(SSEXP);
     Rcpp::traits::input_parameter< const int >::type G(GSEXP);
     Rcpp::traits::input_parameter< const int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const bool >::type flip(flipSEXP);
     Rcpp::traits::input_parameter< const double >::type tau(tauSEXP);
     Rcpp::traits::input_parameter< const double >::type tau0(tau0SEXP);
     Rcpp::traits::input_parameter< const double >::type tauInt(tauIntSEXP);
     Rcpp::traits::input_parameter< bool >::type colSums(colSumsSEXP);
-    __result = Rcpp::wrap(computePdpLogLikelihood(sexp, k, X, A, S, G, N, tau, tau0, tauInt, colSums));
+    __result = Rcpp::wrap(computePdpLogLikelihood(sexp, k, X, A, S, G, N, flip, tau, tau0, tauInt, colSums));
     return __result;
 END_RCPP
 }

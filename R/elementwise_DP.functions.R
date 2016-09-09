@@ -716,7 +716,7 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	  if (!computeMode$computeR || computeMode$useCAccept) {
 	    new.log.lik <- result$new
 	    old.log.lik <- result$old
-	  }
+	  }  # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
 
 	} # END
 

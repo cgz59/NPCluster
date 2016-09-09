@@ -57,15 +57,16 @@ quick_profile <- function() {
 
   set.seed(666)
   simulation <- simulateExample(n = n, p = p)
-  mode <- createComputeMode(language = "C", completeTest = TRUE,
+  mode <- createComputeMode(language = "C", completeTest = TRUE, tolerance = 1E-10,
                             exactBitStream = TRUE)
-  mode$useCPdp <- FALSE # Causes difference
+  mode$useCPdp <- FALSE # Causes difference  Unknown, but not so bad
   mode$useCPmf <- TRUE # Works
   mode$useCLogLike <- TRUE# Works
   mode$useCTab <- TRUE # Works
   mode$useCRho <- TRUE # Works
-  mode$useCAccept <- FALSE # Causes difference
-  mode$useCPdpLike <- FALSE # Causes difference
+  mode$useCAccept <- TRUE # Causes difference  Non-transitivity? or maybe works?
+  mode$useCPdpLike1 <- FALSE # Causes difference  Non-transitivity? Bad!
+  mode$useCPdpLike2 <- TRUE # Causes difference  Non-transitivity? Bad!
   mode$useCGibbs <- TRUE # Works
   mode$useCMarg <- TRUE # Works
 

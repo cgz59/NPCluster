@@ -652,6 +652,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	# initialize
 	parm <- fn.init(true, data, max.row.nbhd.size, row.frac.probes, col.frac.probes, true_parm, tBB_flag, standardize.X, flip.sign, computeMode)
 	init.parm <- parm
+	parm$tmp <- 0
 
 	err <- fn.quality.check(parm)
 	if (err > 0)

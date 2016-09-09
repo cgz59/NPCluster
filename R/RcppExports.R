@@ -57,8 +57,8 @@ rcpp_hello_world <- function() {
     .Call('NPCluster_computePmfAndNeighborhoods', PACKAGE = 'NPCluster', sexp, n0, nVec, epsilon, epsilon2, K, N, Y, Xsd, rowSubsetI, CmVec, n2, phiV, tau, tau0, maxNeighborhoodSize, cutOff, useRank)
 }
 
-.computePdpLogLikelihood <- function(sexp, k, X, A, S, G, N, tau, tau0, tauInt, colSums) {
-    .Call('NPCluster_computePdpLogLikelihood', PACKAGE = 'NPCluster', sexp, k, X, A, S, G, N, tau, tau0, tauInt, colSums)
+.computePdpLogLikelihood <- function(sexp, k, X, A, S, G, N, flip, tau, tau0, tauInt, colSums) {
+    .Call('NPCluster_computePdpLogLikelihood', PACKAGE = 'NPCluster', sexp, k, X, A, S, G, N, flip, tau, tau0, tauInt, colSums)
 }
 
 .fastIndexedSetCopy <- function(inY, indices, x) {
