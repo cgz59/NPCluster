@@ -107,7 +107,6 @@ fn.eda <- function(parm, data, computeMode)
 	parm <- fn.init.clusters(parm)
 	# reintroduced on 6/29/12
 	parm$G.max <- min(parm$p/2, round(parm$clust$G*1.1))
-	parm <- fn.poissonDP.hyperparm(data, parm, w=.01, max.d=1)
 
 	parm$Y <- parm$clust$A.mt <- array(,c(parm$n2,parm$clust$G))
 	parm$clust$C.m.vec <- array(,parm$clust$G)
@@ -132,7 +131,9 @@ fn.eda <- function(parm, data, computeMode)
 	########## Fix  DP hyperprior
 
 	parm$clust$mu2 <- mean(as.vector(parm$X))
+#	parm$clust$mu2 <- 0.02
 	parm$clust$tau2 <- diff(range(as.vector(parm$X)))/6
+#	parm$clust$tau2<-2.1
 
 	#################################
 
@@ -153,7 +154,10 @@ fn.eda <- function(parm, data, computeMode)
 	    centers <- sapply(1:data$K.max, FUN = function(x) {
 	      mean(parm$Y[which(cluster == x)])
 	    })
-	    list(cluster = cluster, centers = centers, size = data$K.max)
+	    size <- sapply(1:data$K.max, FUN = function(x) {
+	      sum(cluster == x)
+	    })
+	    list(cluster = cluster, centers = centers, size = size)
 	  })
 
 # 	} else {
@@ -171,6 +175,8 @@ fn.eda <- function(parm, data, computeMode)
 	parm$clust$n0 <- 0
 
 	parm$clust$s.mt <- array(parm$clust$s.v, c(parm$n2,parm$clust$G))
+
+	parm <- fn.poissonDP.hyperparm(data, parm, w=.01, max.d=1)
 
 	for (g in 1:parm$clust$G)
 		{parm$clust$A.mt[,g] <- parm$clust$phi.v[parm$clust$s.mt[,g]]
@@ -542,11 +548,13 @@ fn.funky <- function(s,t)
 
 fn.d <- function(d, parm)
 	{
-
+  tmp0<-c(parm$clust$n0,parm$clust$n.vec)
+  tmp1<-matrix(log(tmp0[parm$clust$s.mt+1]),ncol=ncol(parm$clust$s.mt))
+  tmpF<-exp(colSums(tmp1)-parm$n2*log(sum(tmp0)))
 	# formula in review paper by Lijoi and Prunster
-	log.lik <- sum(log(parm$b1 + (1:(parm$clust$G-1))*d)) - fn.funky((parm$b1+1), (parm$p-1)) + sum(fn.funky((1-d), (parm$clust$C.m.vec-1)))
-
+	log.lik <- sum(log(parm$b1 + (1:(parm$clust$G-1))*d)) - fn.funky((parm$b1+1), (parm$p-1)) + sum(fn.funky((1-d+tmpF*parm$b1), (parm$clust$C.m.vec-1)))
 	log.lik
+#	return(list(log.lik,tmpF))
 	}
 
 
@@ -570,6 +578,10 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 
 	log.post.v <- log.lik.v + log.p.v
 	log.post.v <- log.post.v - max(log.post.v)
+
+	log.post.2 <- c(log.post.v[1], log(sum(exp(log.post.v[-1]))))
+	parm$PDP_log.BF <- log.post.2[2]-log.post.2[1]
+
 	post.v <- exp(log.post.v)
 	post.v <- post.v/sum(post.v)
 
@@ -592,8 +604,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 		if (flip==1)
 			{parm$d <- prop.d
 			}
-		}
-
+	}
 	parm
 
 	}
@@ -674,7 +685,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 	All.Stuff <- NULL
 	#
-	All.Stuff$d.v <- All.Stuff$tau_0.v <- All.Stuff$tau.v <- All.Stuff$tau_int.v <- All.Stuff$G.v <- All.Stuff$K.v <- All.Stuff$rng <- array(,n.reps)
+	All.Stuff$PDP_log.BF <- All.Stuff$d.v <- All.Stuff$tau_0.v <- All.Stuff$tau.v <- All.Stuff$tau_int.v <- All.Stuff$G.v <- All.Stuff$K.v <- All.Stuff$rng <- array(,n.reps)
 	All.Stuff$row.flip.v  <- array(0,n.reps)
 	All.Stuff$nbhd_max <- All.Stuff$col_new_clust.v  <- All.Stuff$col_exit.v <- All.Stuff$col_flip.v  <- array(0,n.reps)
 
@@ -706,6 +717,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		All.Stuff$tau_int.v[cc] <- parm$tau_int
 
 		All.Stuff$d.v[cc] <- parm$d
+		All.Stuff$PDP_log.BF[cc] <- parm$PDP_log.BF
 
 		if (dahl.flag) {
 		  All.Stuff$c.matrix[cc,] <- parm$clust$c.v
