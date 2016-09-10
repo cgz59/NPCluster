@@ -221,7 +221,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // computePdpLogLikelihood
-Rcpp::List computePdpLogLikelihood(SEXP sexp, const int k, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const int G, const int N, const bool flip, const double tau, const double tau0, const double tauInt, bool colSums);
+Rcpp::NumericVector computePdpLogLikelihood(SEXP sexp, const int k, const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S, const int G, const int N, const bool flip, const double tau, const double tau0, const double tauInt, bool colSums);
 RcppExport SEXP NPCluster_computePdpLogLikelihood(SEXP sexpSEXP, SEXP kSEXP, SEXP XSEXP, SEXP ASEXP, SEXP SSEXP, SEXP GSEXP, SEXP NSEXP, SEXP flipSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP tauIntSEXP, SEXP colSumsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;

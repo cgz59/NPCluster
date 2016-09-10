@@ -158,8 +158,9 @@ Rcpp::List computePmfAndNeighborhoods(SEXP sexp,
                                      maxNeighborhoodSize, cutOff, useRank);
 }
 
+//Rcpp::List
 // [[Rcpp::export(.computePdpLogLikelihood)]]
-Rcpp::List computePdpLogLikelihood(SEXP sexp,
+Rcpp::NumericVector computePdpLogLikelihood(SEXP sexp,
 							const int k, const Rcpp::NumericMatrix& X,
 							const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
 							const int G, const int N, const bool flip,

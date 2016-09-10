@@ -286,7 +286,9 @@ public:
   }
 
 
-  Rcpp::List computePdpLogLikelihood(const int k, const Rcpp::NumericMatrix& X,
+  //Rcpp::List
+  Rcpp::NumericVector
+             computePdpLogLikelihood(const int k, const Rcpp::NumericMatrix& X,
                                      const Rcpp::NumericMatrix& A, const Rcpp::IntegerMatrix& S,
                                      const int G, const int N, const bool flip,
                                      const double tau, const double tau0, const double tauInt, bool colSums) {
@@ -307,9 +309,10 @@ public:
 		internalComputePdpLogLikelihood(&logLikelihood[0], k, X, A, S, G, N, flip, tau, tau0, tauInt, colSums);
 	}
 
-    return Rcpp::List::create(
-      Rcpp::Named("logLikelihood") = logLikelihood
-    );
+    // return Rcpp::List::create(
+    //   Rcpp::Named("logLikelihood") = logLikelihood
+    // );
+    return logLikelihood;
   }
 
   template <typename OutputPtr>

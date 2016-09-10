@@ -65,7 +65,7 @@ quick_profile <- function() {
   mode$useCTab <- TRUE # Works
   mode$useCRho <- TRUE # Works
   mode$useCAccept <- TRUE # Causes difference  Non-transitivity? or maybe works?
-  mode$useCPdpLike1 <- FALSE # Causes difference  Non-transitivity? Bad!
+  mode$useCPdpLike1 <- TRUE # Causes difference  Non-transitivity? Bad!
   mode$useCPdpLike2 <- TRUE # Causes difference  Non-transitivity? Bad!
   mode$useCGibbs <- TRUE # Works
   mode$useCMarg <- TRUE # Works

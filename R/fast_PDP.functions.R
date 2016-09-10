@@ -450,11 +450,13 @@ PDP_fn.gibbs <- function(k, parm, data, computeMode)
                                      parm$tau, parm$tau_0, parm$tau_int, TRUE)
 
     if (computeMode$computeR) { # debugging
-      assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
+      # assertEqual(test$logLikelihood, L.v, computeMode$tolerance)
+      assertEqual(test, L.v, computeMode$tolerance)
     }
 
     if (!computeMode$computeR || computeMode$useCPdpLike1) {
-      L.v <- test$logLikehood
+      # L.v <- test$logLikehood
+      L.v <- test
     }
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
@@ -732,18 +734,22 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
                                      parm$clust$G, parm$n2,
                                      parm$flip.sign,
                                      parm$tau, parm$tau_0, parm$tau_int, TRUE)
-    test$logLikelihood <- round(test$logLikelihood, digits = 6)
+    # test$logLikelihood <- round(test$logLikelihood, digits = 6)
+    test <- round(test, digits = 6)
 
     if (computeMode$computeR) { # debugging
-      assertEqual(test$logLikelihood, tmp.L.v, 0)
+      # assertEqual(test$logLikelihood, tmp.L.v, 0)
+      assertEqual(test, tmp.L.v, 0)
     }
 
-    if (sum(abs(test$logLikelihood - tmp.L.v)) != 0) {
+    # if (sum(abs(test$logLikelihood - tmp.L.v)) != 0) {
+    if (sum(abs(test - tmp.L.v)) != 0) {
       stop("die")
     }
 
     if (!computeMode$computeR || computeMode$useCPdpLike2) {
-      tmp.L.v <- test$logLikehood
+      # tmp.L.v <- as.vector(test$logLikehood)
+      tmp.L.v <- test
     }
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
