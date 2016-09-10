@@ -6,7 +6,8 @@
 \usage{
 createComputeMode(language = "R", exactBitStream = FALSE,
   extraSort = TRUE, completeTest = FALSE, tolerance = 1e-10,
-  test1 = FALSE, test2 = FALSE, test3 = FALSE, lowLevelTiming = FALSE)
+  specialMode = NULL, test1 = FALSE, test2 = FALSE, test3 = FALSE,
+  lowLevelTiming = FALSE)
 }
 \description{
 createComputeMode
