@@ -709,13 +709,13 @@ element_fn.fast.DP.iter <- function(parm, computeMode)
 	                                    parm$tau, parm$tau_0, parm$n2)
 
 	  if (computeMode$computeR) { # debugging
-	    assertEqual(result$new, new.log.lik, computeMode$tolerance)
-	    assertEqual(result$old, old.log.lik, computeMode$tolerance)
+	    assertEqual(result[1], new.log.lik, computeMode$tolerance)
+	    assertEqual(result[2], old.log.lik, computeMode$tolerance)
 	  }
 
 	  if (!computeMode$computeR || computeMode$useCAccept) {
-	    new.log.lik <- result$new
-	    old.log.lik <- result$old
+	    new.log.lik <- result[1]
+	    old.log.lik <- result[2]
 	  }  # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
 
 	} # END

@@ -109,7 +109,7 @@ Rcpp::List computeMarginalLikelihood(SEXP sexp,
 }
 
 // [[Rcpp::export(.computeDPAcceptanceRatio)]]
-Rcpp::List computeDPAcceptanceRatio(SEXP sexp,
+Rcpp::NumericVector computeDPAcceptanceRatio(SEXP sexp,
 							const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X,
 							const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C,
 							const Rcpp::NumericVector& phi,

@@ -141,7 +141,7 @@ public:
   }
 
 
-  Rcpp::List computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X,
+  Rcpp::NumericVector computeDPAcceptanceRatio(const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X,
                                       const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C,
                                       const Rcpp::NumericVector& phiR,
                                       const Rcpp::IntegerVector& newS, const Rcpp::IntegerVector& oldS,
@@ -197,12 +197,16 @@ public:
     double ratio = newRatio - oldRatio;
 
 
+    NumericVector rtn(2);
+    rtn[0] = newRatio;
+    rtn[1] = oldRatio;
+    return rtn;
 
-    return Rcpp::List::create(
-      Rcpp::Named("ratio") = ratio,
-      Rcpp::Named("new") = newRatio,
-      Rcpp::Named("old") = oldRatio
-    );
+    // return Rcpp::List::create(
+    //   Rcpp::Named("ratio") = ratio,
+    //   Rcpp::Named("new") = newRatio,
+    //   Rcpp::Named("old") = oldRatio
+    // );
 
   }
 
@@ -354,36 +358,30 @@ public:
       auto Agg = std::begin(A) + (gg - 1) * N;
       auto Sgg = std::begin(S) + (gg - 1) * N;
 
-      const double   occupied = -0.5 * std::log(2.0 * M_PI)
-//       -0.9189385332046726695409688545623794198036
-      - std::log(tau);
-      const double unoccupied = -0.5 * std::log(2.0 * M_PI)
-//       -0.9189385332046726695409688545623794198036
-      - std::log(tau0);
+      const LDOUBLE   occupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau);
+      const LDOUBLE unoccupied = -0.5 * std::log(2.0 * M_PI) - std::log(tau0);
 
-      LDOUBLE tmpUnoccupied = 0.0;
-      LDOUBLE tmpOccupied = 0.0;
+      // LDOUBLE tmpUnoccupied = 0.0;
+      // LDOUBLE tmpOccupied = 0.0;
       LDOUBLE tmp = 0.0;
-      int cntUnoccupied = 0;
-      int cntOccupied = 0;
+      // int cntUnoccupied = 0;
+      // int cntOccupied = 0;
       for (int i = 0; i < N; ++i) { // TODO Could use std::accumulate with zip(Agg, Sgg)
         if (*Sgg == 0) {
-          tmpUnoccupied += static_cast<LDOUBLE>(-0.5) * (*Xmtgg) * (*Xmtgg); // / (tau0 * tau0) + unoccupied;
+          // tmpUnoccupied += static_cast<LDOUBLE>(-0.5) * (*Xmtgg) * (*Xmtgg); // / (tau0 * tau0) + unoccupied;
           tmp += static_cast<LDOUBLE>(-0.5) * (*Xmtgg) * (*Xmtgg) / (tau0 * tau0) + unoccupied;
-          ++cntUnoccupied;
+          // ++cntUnoccupied;
         } else {
-          tmpOccupied += static_cast<LDOUBLE>(-0.5) * (*Xmtgg - *Agg) * (*Xmtgg - *Agg); // / (tau * tau) + occupied;
+          // tmpOccupied += static_cast<LDOUBLE>(-0.5) * (*Xmtgg - *Agg) * (*Xmtgg - *Agg); // / (tau * tau) + occupied;
           tmp += static_cast<LDOUBLE>(-0.5) * (*Xmtgg - *Agg) * (*Xmtgg - *Agg) / (tau * tau) + occupied;
-          ++cntOccupied;
+          // ++cntOccupied;
         }
         ++Xmtgg;
         ++Agg;
         ++Sgg;
       }
-      auto intermediate =
-
-      logLikelihood[gg] = (tmpUnoccupied / (tau0 * tau0) + tmpOccupied / (tau * tau)) + cntUnoccupied * unoccupied + cntOccupied * occupied;
-      // logLikelihood[gg] = tmp;
+      //logLikelihood[gg] = (tmpUnoccupied / (tau0 * tau0) + tmpOccupied / (tau * tau)) + cntUnoccupied * unoccupied + cntOccupied * occupied;
+      logLikelihood[gg] = static_cast<double>(tmp);
     };
 
     Tick iCPLWS;

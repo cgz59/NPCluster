@@ -140,7 +140,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // computeDPAcceptanceRatio
-Rcpp::List computeDPAcceptanceRatio(SEXP sexp, const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X, const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C, const Rcpp::NumericVector& phi, const Rcpp::IntegerVector& newS, const Rcpp::IntegerVector& oldS, const double tau, const double tau0, const int N);
+Rcpp::NumericVector computeDPAcceptanceRatio(SEXP sexp, const Rcpp::NumericVector& Y, const Rcpp::NumericVector& X, const Rcpp::IntegerVector& I, const Rcpp::IntegerVector& C, const Rcpp::NumericVector& phi, const Rcpp::IntegerVector& newS, const Rcpp::IntegerVector& oldS, const double tau, const double tau0, const int N);
 RcppExport SEXP NPCluster_computeDPAcceptanceRatio(SEXP sexpSEXP, SEXP YSEXP, SEXP XSEXP, SEXP ISEXP, SEXP CSEXP, SEXP phiSEXP, SEXP newSSEXP, SEXP oldSSEXP, SEXP tauSEXP, SEXP tau0SEXP, SEXP NSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;

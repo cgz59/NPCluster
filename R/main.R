@@ -115,6 +115,7 @@ createComputeMode <- function(language = "R",
                               extraSort = TRUE,
                               completeTest = FALSE,
                               tolerance = 1E-10,
+                              specialMode = NULL,
                               test1 = FALSE,
                               test2 = FALSE,
                               test3 = FALSE,
@@ -127,6 +128,14 @@ createComputeMode <- function(language = "R",
   device <- NULL
   if (!useR) {
     cMode <- 0
+    if (!is.null(specialMode)) {
+      if ("tbb" %in% tolower(specialMode)) {
+        cMode <- cMode + 2
+      }
+      if ("sse" %in% tolower(specialMode)) {
+        cMode <- cMode + 4
+      }
+    }
     if (lowLevelTiming) {
       cMode <- cMode + 1
     }
@@ -143,7 +152,17 @@ createComputeMode <- function(language = "R",
     tolerance = tolerance,
     test1 = test1,
     test2 = test2,
-    test3 = test3
+    test3 = test3,
+    useCPdp = !exactBitStream,
+    useCPmf = TRUE,
+    useCLogLike = !exactBitStream,
+    useCTab = TRUE,
+    useCRho = !exactBitStream,
+    useCAccept = !exactBitStream,
+    useCPdpLike1 = TRUE,
+    useCPdpLike2 = TRUE,
+    useCGibbs = TRUE,
+    useCMarg = TRUE
   )
   class(object) <- "computeMode"
   return(object)

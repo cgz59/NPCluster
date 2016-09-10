@@ -724,8 +724,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
   if (computeMode$computeR) {
 
     # intercept cluster or any existing cluster
-    tmp.L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
-    tmp.L.v <- round(tmp.L.v, digits = 6)
+    L.v <- sapply(0:parm$clust$G, PDP_fn.log.lik, x.mt, parm) # HOT
   }
 
   if (computeMode$computeC) {
@@ -734,27 +733,17 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
                                      parm$clust$G, parm$n2,
                                      parm$flip.sign,
                                      parm$tau, parm$tau_0, parm$tau_int, TRUE)
-    # test$logLikelihood <- round(test$logLikelihood, digits = 6)
-    test <- round(test, digits = 6)
 
     if (computeMode$computeR) { # debugging
-      # assertEqual(test$logLikelihood, tmp.L.v, 0)
-      assertEqual(test, tmp.L.v, 0)
-    }
-
-    # if (sum(abs(test$logLikelihood - tmp.L.v)) != 0) {
-    if (sum(abs(test - tmp.L.v)) != 0) {
-      stop("die")
+      assertEqual(test, L.v, computeMode$tolerance)
     }
 
     if (!computeMode$computeR || computeMode$useCPdpLike2) {
-      # tmp.L.v <- as.vector(test$logLikehood)
-      tmp.L.v <- test
+      L.v <- test
     }
   } # computeMode
   # NB: returned logLikelihood differ from those computed above by approx 1e-15.  I believe this is due to non-transitivity of FLOPs
 
-  L.v <- tmp.L.v
    emptied.indx <- which(parm$clust$C.m.vec.k.comp==0)
    new.G <- parm$clust$G - length(emptied.indx)
 

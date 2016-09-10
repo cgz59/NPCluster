@@ -736,7 +736,7 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 
 		# Create once
 		if (is.null(true_parm$clust$nbhd.matrix2)) {
-		  writeLines("CONSTRUCT")
+		  # writeLines("CONSTRUCT")
 		  true_parm$clust$nbhd.matrix2 <- .createGraph(parm$p)
 		  for (jj in 1:true_parm$clust$G) {
 		    indx.jj <- which(true_parm$clust$c.v == jj)
