@@ -865,7 +865,9 @@ element_fn.fast.DP <- function(parm, max.row.nbhd.size, row.frac.probes, compute
 
 	######################################
 
-	parm$clust$row.flip <- mean(flip.v)
+	parm$clust$row.flip <- ifelse(!is.null(flip.v),
+	                              mean(flip.v),
+	                              0)
 
 	##########################################
 	## Drop empty clusters:
