@@ -657,7 +657,7 @@ fn.iter <- function(data, parm, max.row.nbhd.size, max.col.nbhd.size, row.frac.p
 
 
 fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes, prob.compute.col.nbhd, true_parm, dahl.flag=FALSE,
-                    standardize.X=FALSE, flip.sign=FALSE, tBB_flag=FALSE, computeMode = "R")
+                    standardize.X=FALSE, flip.sign=FALSE, tBB_flag=FALSE, taxicab=T, computeMode = "R")
 	{
 
 	# initialize
@@ -694,7 +694,9 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 	# All.Stuff$pi.mt <- Matrix::Matrix(0, nrow = parm$p, ncol = parm$p, sparse = TRUE)
 	All.Stuff$pi.mt2 <- .createGraph(parm$p)
 
-	All.Stuff$mean.taxicab.v  <- array(0,n.reps)
+	if (taxicab) {
+	  All.Stuff$mean.taxicab.v  <- array(0,n.reps)
+	}
 
 	if (dahl.flag) {
 	  All.Stuff$c.matrix <- array(0,c(n.reps,parm$p))
@@ -747,16 +749,18 @@ fn.mcmc <- function(text, true, data, n.burn, n.reps, max.row.nbhd.size, max.col
 		# All.Stuff$mean.taxicab.v[cc] <- mean(true_parm$clust$nbhd.matrix != tmp.mat)
 
 		# Create once
-		if (is.null(true_parm$clust$nbhd.matrix2)) {
-		  # writeLines("CONSTRUCT")
-		  true_parm$clust$nbhd.matrix2 <- .createGraph(parm$p)
-		  for (jj in 1:true_parm$clust$G) {
-		    indx.jj <- which(true_parm$clust$c.v == jj)
-		    .incrementGraph(true_parm$clust$nbhd.matrix2$ptr, indx.jj)
-		  }
-		}
+	  if (taxicab) {
+	    	if (is.null(true_parm$clust$nbhd.matrix2)) {
+	    	  # writeLines("CONSTRUCT")
+	    	  true_parm$clust$nbhd.matrix2 <- .createGraph(parm$p)
+	    	  for (jj in 1:true_parm$clust$G) {
+	    	    indx.jj <- which(true_parm$clust$c.v == jj)
+	    	    .incrementGraph(true_parm$clust$nbhd.matrix2$ptr, indx.jj)
+	    	  }
+	    	}
 
-	  All.Stuff$mean.taxicab.v[cc] <- .getTaxiDistance(tmp.mat2$ptr, true_parm$clust$nbhd.matrix2$ptr)
+	      All.Stuff$mean.taxicab.v[cc] <- .getTaxiDistance(tmp.mat2$ptr, true_parm$clust$nbhd.matrix2$ptr)
+	  }
 # 		tmp <- .getGraph(All.Stuff$pi.mt2$ptr)
 # 		if (dd != All.Stuff$mean.taxicab.v[cc]) {
 # 		  browser()

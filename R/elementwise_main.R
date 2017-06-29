@@ -70,8 +70,10 @@ fn2.update.element.objects <- function(parm, computeMode)
 
 		sd.g.v <- rep(0, parm$n2)
 		 if (m.g > 1)
-			{sd.g.v <- sqrt((x2.g.v - x.g.v^2)*m.g/(m.g-1))
-			}
+		# 	{sd.g.v <- sqrt((x2.g.v - x.g.v^2)*m.g/(m.g-1))
+		#  }
+		{sd.g.v <- sqrt(rowMeans((x.tmp-x.g.v)^2)*m.g/(m.g-1))
+		}
 		parm$X.sd[,g] <- sd.g.v
 		}
 

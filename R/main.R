@@ -58,6 +58,7 @@ fitExample <- function(data,
 											 standardize.X=FALSE,
 											 flip.sign=FALSE,
 											 tBB_flag=FALSE,
+											 taxicab=TRUE,
 											 computeMode = createComputeMode()) {
 
 	if (!inherits(data, "NPClustSimulation")) {
@@ -80,7 +81,7 @@ fitExample <- function(data,
 	posterior <- fn.mcmc(text="CLUST ANALYZE...",
 											 data$X$true, data$X$data,
 											 n.burn, n.reps, max.row.nbhd.size, max.col.nbhd.size, row.frac.probes, col.frac.probes,
-											 prob.compute.col.nbhd, data$parm, dahl.flag=dahl.flag, standardize.X, flip.sign, tBB_flag, computeMode)
+											 prob.compute.col.nbhd, data$parm, dahl.flag=dahl.flag, standardize.X, flip.sign, tBB_flag, taxicab=taxicab, computeMode)
 	return (posterior)
 }
 
