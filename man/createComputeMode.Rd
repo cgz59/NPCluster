@@ -2,7 +2,7 @@
 % Please edit documentation in R/main.R
 \name{createComputeMode}
 \alias{createComputeMode}
-\title{createComputeMode}
+\title{Define Compute Mode}
 \usage{
 createComputeMode(language = "R", exactBitStream = FALSE,
   extraSort = TRUE, completeTest = FALSE, tolerance = 1e-10,
@@ -10,5 +10,5 @@ createComputeMode(language = "R", exactBitStream = FALSE,
   lowLevelTiming = FALSE)
 }
 \description{
-createComputeMode
+The function \code{createComputeMode creates a computeMode object controling the computation mode to be used including R and C++}
 }

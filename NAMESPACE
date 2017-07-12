@@ -2,8 +2,9 @@
 
 export(.ls.objects)
 export(createComputeMode)
-export(fitExample)
 export(lso)
+export(npclustData)
+export(npclustFit)
 export(profileExample)
 export(proftable)
 export(simulateExample)
