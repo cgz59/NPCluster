@@ -27,4 +27,3 @@ parent call consists of the parent call stack of all the call stacks in the\
 table. Note that this is the parent call stack of only the printed lines,
 not of all stacks recorded by \code{Rprof()}. This makes the table easier to.
 }
-

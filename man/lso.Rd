@@ -17,4 +17,3 @@ showing their memory usage and length/rows/columns as necessary.  This is
 the shorthand version. \code{.ls.objects} has more options.  This is taken
 from \url{http://stackoverflow.com/a/4951004/1757441}.
 }
-

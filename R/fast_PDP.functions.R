@@ -1052,12 +1052,14 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     tmp.new.parm$clust$G <- sum(indx.new)
     tmp.new.parm$clust$C.m.vec <- parm$clust$C.m.vec[indx.new]
     tmp.new.parm$clust$s.mt<-parm$clust$s.mt[,indx.new]
+    tmp.new.parm$clust$s.v<-c(tmp.new.parm$clust$s.mt)
     #
     tmp.old.parm <- init.cc.parm
     indx.old <- init.cc.parm$clust$C.m.vec > 0
     tmp.old.parm$clust$G <- sum(indx.old)
     tmp.old.parm$clust$C.m.vec <- init.cc.parm$clust$C.m.vec[indx.old]
     tmp.old.parm$clust$s.mt <- init.cc.parm$clust$s.mt[,indx.old]
+    tmp.old.parm$clust$s.v <- c(tmp.old.parm$clust$s.mt)
 
     rho.tru <- fn.d(d=parm$d, tmp.new.parm) - fn.d(d=parm$d, tmp.old.parm)
 
