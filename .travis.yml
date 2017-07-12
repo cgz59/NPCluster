@@ -1,8 +1,12 @@
 language: r
 sudo: false
 cache: packages
+
 r_packages:
   - covr
+
+r_github_packages:
+  - RcppCore/RcppNT2
 
 before_script:
   - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
