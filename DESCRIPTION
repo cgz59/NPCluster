@@ -11,7 +11,8 @@ Imports:
     Rcpp (>= 0.11.3),
     MASS,
     mvtnorm,
-    Matrix
+    Matrix,
+    RcppParallel
 LinkingTo: Rcpp, BH, RcppEigen, RcppParallel, RcppNT2
 Suggests:
     testthat
