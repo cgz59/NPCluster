@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <chrono>
 
 #include "Rmath.h"
 #include "Rcpp.h"
