@@ -9,4 +9,3 @@ assertEqual(x, y, tolerance = 0)
 \description{
 assertEqual
 }
-

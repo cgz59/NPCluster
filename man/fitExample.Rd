@@ -8,7 +8,8 @@ fitExample(data, n.burn = 10, n.reps = 20, max.row.nbhd.size = round(0.1 *
   25 * 125^0.5), max.col.nbhd.size = round(0.05 * 125),
   row.frac.probes = 0.05, col.frac.probes = 0.1,
   prob.compute.col.nbhd = 0.2, dahl.flag = FALSE, standardize.X = FALSE,
-  flip.sign = FALSE, tBB_flag = FALSE, computeMode = createComputeMode())
+  flip.sign = FALSE, tBB_flag = FALSE, taxicab = TRUE,
+  computeMode = createComputeMode())
 }
 \description{
 \code{fitExample} fits an example DPP model
@@ -28,4 +29,3 @@ se_mean.taxicab <- sd(posterior$mean.taxicab.v)/sqrt(length(posterior$mean.taxic
 }
 
 }
-

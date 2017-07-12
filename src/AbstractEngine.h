@@ -114,6 +114,8 @@ enum class SpecialComputeMode {
   UNROLL = 16,
 };
 
+//#define DEBUG
+
 class AbstractEngine {
 public:
 
@@ -125,7 +127,11 @@ public:
     specialMode(specialMode),
     useTBB(specialMode & static_cast<long>(SpecialComputeMode::TBB)),
     useSSE(specialMode & static_cast<long>(SpecialComputeMode::SSE)),
-    unroll(specialMode & static_cast<long>(SpecialComputeMode::UNROLL)) {
+    unroll(specialMode & static_cast<long>(SpecialComputeMode::UNROLL))
+#ifdef DEBUG
+    , debugCount(0)
+#endif
+    {
 
     Rcpp::Rcout << "AbstractEngine:\n";
     Rcpp::Rcout << "\tTBB: " << (useTBB ? "true" : "false") << "\n";
@@ -846,8 +852,6 @@ private:
     }
   }
 
-  int debugCount = 0;
-
   void drawNextNeighborhood(FastIterator& begin, const FastIterator& end,
                             StdIntVector& list, StdIntVector& offset, StdIntVector& index,
                             double cutOff,
@@ -862,8 +866,6 @@ private:
     } else {
       // 2 or more left
       auto k = sampleUniform(begin, end);
-
-//#define DEBUG
 
 #ifdef DEBUG
       const bool debug = (k.second == 78);// && (debugCount == 2);
@@ -1216,6 +1218,10 @@ protected:
   const bool useSSE;
   const bool unroll;
   std::map<std::string,long long> duration;
+
+#ifdef DEBUG
+  int debugCount;
+#endif
 };
 
 template <typename RealType>

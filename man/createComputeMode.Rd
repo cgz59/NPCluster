@@ -12,4 +12,3 @@ createComputeMode(language = "R", exactBitStream = FALSE,
 \description{
 createComputeMode
 }
-
