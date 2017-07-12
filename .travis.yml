@@ -1,21 +1,18 @@
-# Sample .travis.yml for R projects from https://github.com/craigcitro/r-travis
+language: r
+sudo: false
+cache: packages
+r_packages:
+  - covr
 
-language: c
+before_script:
+  - export PKG_NAME=$(Rscript -e 'cat(paste0(devtools::as.package(".")$package))')
+  - export PKG_TARBALL=$(Rscript -e 'pkg <- devtools::as.package("."); cat(paste0(pkg$package,"_",pkg$version,".tar.gz"))')
 
-before_install:
-  - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
-  - chmod 755 ./travis-tool.sh
-  - ./travis-tool.sh bootstrap
+ # Build and check package
+script:
+  - R CMD build .
+  - _R_CHECK_CRAN_INCOMING_=FALSE R CMD check "${PKG_TARBALL}" --as-cran
+  - cat ${PKG_NAME}.Rcheck/00install.out # Print out install / compile log
 
-install:
-  - ./travis-tool.sh install_deps
-
-script: ./travis-tool.sh run_tests
-
-on_failure:
-  - ./travis-tool.sh dump_logs
-
-notifications:
-  email:
-    on_success: change
-    on_failure: change
+after_success:
+  - Rscript -e 'covr::codecov()'
