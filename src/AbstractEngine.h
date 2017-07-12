@@ -40,6 +40,9 @@ static inline int sample(int length) {
   return static_cast<int>(length * unif_rand());
 }
 
+#if __cplusplus >= 201103L
+// C++11
+
 class Tick {
 public:
   Tick() : start(std::chrono::steady_clock::now()) { }
@@ -56,6 +59,20 @@ private:
   std::chrono::time_point<std::chrono::steady_clock> start;
 };
 
+#else
+
+class Tick {
+public:
+  Tick() { }
+
+  virtual ~Tick() { }
+
+  long operator()() {
+    return 0;
+  }
+};
+
+#endif
 
 static void ProbSampleReplace(int n, double *p, int *perm, int nans, int *ans)
 {
