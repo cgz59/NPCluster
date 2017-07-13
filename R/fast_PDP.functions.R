@@ -1061,7 +1061,7 @@ PDP_fn.fast_col <- function(cc, parm, data, computeMode)
     tmp.old.parm$clust$s.mt <- init.cc.parm$clust$s.mt[,indx.old]
     tmp.old.parm$clust$s.v <- c(tmp.old.parm$clust$s.mt)
 
-    rho.tru <- fn.d(d=parm$d, tmp.new.parm) - fn.d(d=parm$d, tmp.old.parm)
+    rho.tru <- fn2.d(d=parm$d, tmp.new.parm) - fn2.d(d=parm$d, tmp.old.parm)
 
     new.log.lik <- 0
 

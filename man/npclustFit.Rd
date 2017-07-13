@@ -91,8 +91,13 @@ real_data<-npclustData(raw_data)
 posterior <- npclustFit(real_data, n.burn = 10, n.reps = 20, computeMode = createComputeMode(language = "C"))
 
 # Analyze results
-d_credible.v <- quantile(posterior$d.v, prob=c(.025,.975)) # The posterior credible interval for PDP discount parameter
+quantile(posterior$d.v, prob=c(.025,.975)) # The posterior credible interval for PDP discount parameter
 hist(posterior$G.v) # Histogram of the posterior of number of detected clusters among variables
+posterior$parm$clust$c.v # The variable cluster allocations from the last MCMC sample
+posterior$parm$clust$C.m.vec # The variable cluster sizes, aligned in order of cluster number, from the last MCMC sample
 }
 
+}
+\references{
+Guha, S., & Baladandayuthapani, V. (2016). A nonparametric bayesian technique for high-dimensional regression. \emph{Electronic Journal of Statistics}, 10(2), 3374-3424. DOI: 10.1214/16-EJS1184
 }
