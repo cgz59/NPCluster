@@ -10,5 +10,5 @@ createComputeMode(language = "R", exactBitStream = FALSE,
   lowLevelTiming = FALSE)
 }
 \description{
-The function \code{createComputeMode creates a computeMode object controling the computation mode to be used including R and C++}
+The function \code{createComputeMode} creates a computeMode object controling the computation mode to be used including R and C++
 }

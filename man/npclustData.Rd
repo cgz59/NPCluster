@@ -19,5 +19,5 @@ npclustData(raw_data, M = 10, b0 = 2.2, b1 = 20)
 The function \code{npclustData} creates a NPClustData object from the dataset to be analyzed.
 }
 \details{
-The function \code{npclustData} integrates data and prefixed model constants to create a NPClustData object to be passed to \code{npclustFit} for cluster analysis.
+The function \code{npclustData} integrates data and prefixed model constants to create a NPClustData object to be passed to \code{\link{npclustFit}} for cluster analysis.
 }
