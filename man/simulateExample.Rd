@@ -2,7 +2,7 @@
 % Please edit documentation in R/main.R
 \name{simulateExample}
 \alias{simulateExample}
-\title{Generates a simulated dataset}
+\title{Generate simulation data}
 \usage{
 simulateExample(n = 25, p = 250, prop.X.miss = 0, tau = 0.5,
   tau_0 = 1.25)
