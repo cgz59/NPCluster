@@ -546,14 +546,15 @@ fn.funky <- function(s,t)
 	lgamma(s+t) - lgamma(s)
 	}
 
-fn2.d <- function(d, parm)
+fn2.d <- function(parm)
 	{
   tmp0<-c(parm$clust$n0,parm$clust$n.vec)
   tmp1<-matrix(log(tmp0[parm$clust$s.mt+1]),ncol=ncol(parm$clust$s.mt))
   tmpF<-exp(colSums(tmp1)-parm$n2*log(sum(tmp0)))
 	# formula in review paper by Lijoi and Prunster
-	log.lik <- sum(log(parm$b1 + (1:(parm$clust$G-1))*d)) - fn.funky((parm$b1+1), (parm$p-1)) + sum(fn.funky((1-d+tmpF*parm$b1), (parm$clust$C.m.vec-1)))
-	log.lik
+	# log.lik <- sum(log(parm$b1 + (1:(parm$clust$G-1))*d)) - fn.funky((parm$b1+1), (parm$p-1)) + sum(fn.funky((1-d+tmpF*parm$b1), (parm$clust$C.m.vec-1)))
+	# log.lik
+  tmpF
 #	return(list(log.lik,tmpF))
 	}
 
@@ -582,10 +583,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 	d.v <- d.v[-len]
 	len <- len-1
 
-	tmp0<-c(parm$clust$n0,parm$clust$n.vec)
-	tmp1<-matrix(log(tmp0[parm$clust$s.mt+1]),ncol=ncol(parm$clust$s.mt))
-	tmpF<-exp(colSums(tmp1)-parm$n2*log(sum(tmp0)))
-
+	tmpF<-fn2.d(parm)
 	log.lik.v <- sapply(d.v, fn1.d, parm, tmpF)
 	# putting 1/2 prior mass on 0 and remaining spread uniformly on positive points in d.v
 	log.p.v <- log(.5) + c(0,  rep(-log(len-1),(len-1)))
@@ -611,10 +609,7 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 		{
 		# MH ratio for independent proposals and
 		# prior same for all d (which is true if 0 wp .5 and \in (0,max.d) wp .5)
-	  tmp0<-c(parm$clust$n0,parm$clust$n.vec)
-	  tmp1<-matrix(log(tmp0[parm$clust$s.mt+1]),ncol=ncol(parm$clust$s.mt))
-	  tmpF<-exp(colSums(tmp1)-parm$n2*log(sum(tmp0)))
-
+	  tmpF<-fn2.d(parm)
 		log.ratio <- fn1.d(d=prop.d, parm, tmpF) - fn1.d(d=parm$d, parm, tmpF)
 		prob <- min(1, exp(log.ratio))
 		flip <- rbinom(n=1, size=1, prob=prob)
