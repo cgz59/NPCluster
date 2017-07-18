@@ -55,7 +55,7 @@ An object which is a list of MCMC samples for following:
 \item{col_exit.v}{The proportion for the fast PDP sampling algorithm to propose the exact same allocations as the previous MCMC sample for variables in a nighborhood}
 \item{col_new_clust.v}{Proportion of opening a new PDP cluster among all variables}
 \item{nbhd_max}{The maximum distance among the neighborhoods in the fast PDP sampling algorithm}
-\item{pi.mt}{???}
+\item{pi.mt}{The pairwise probability matrix of two variables being in the same cluster}
 \item{pi.mt2}{???}
 \item{parm}{All parameter values for the last MCMC sample}
 \item{init.parm}{All parameter values obtained from initialization}
