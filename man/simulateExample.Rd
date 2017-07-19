@@ -14,10 +14,10 @@ simulateExample(n = 25, p = 250, prop.X.miss = 0, tau = 0.5,
 
 \item{prop.X.miss}{Proportion of missing data}
 
-\item{tau}{The variance parameter for regular variables}
+\item{tau}{Standard deviation for (most) covariates}
 
-\item{tau_0}{The variance paramter for high variation vatiables}
+\item{tau_0}{Standard deviation for a few atypical subjects with high-variance covariates}
 }
 \description{
-The function \code{simulateExample} generates a NPClustData object from a simulates dataset of desired size
+The function \code{simulateExample} generates a NPClustData object from a simulated dataset of desired dimensions
 }

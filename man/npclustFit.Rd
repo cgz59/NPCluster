@@ -32,7 +32,7 @@ npclustFit(npclustDataObj, n.burn = 10, n.reps = 20,
 
 \item{standardize.X}{Whether or not to standardize the variables}
 
-\item{flip.sign}{???}
+\item{flip.sign}{A future extension. Currently set to FALSE.}
 
 \item{tBB_flag}{Whether or not to compute the \eqn{X^{T} X}{X^T X} for regression}
 
@@ -42,7 +42,6 @@ npclustFit(npclustDataObj, n.burn = 10, n.reps = 20,
 }
 \value{
 An object which is a list of MCMC samples for following:
-\item{rng}{???}
 \item{K.v}{Number of atoms in the PDP base measure from DP}
 \item{G.v}{Number of detected clusters among variables}
 \item{tau_int.v}{The standard deviation parameter associated with intercept cluster}
@@ -56,7 +55,6 @@ An object which is a list of MCMC samples for following:
 \item{col_new_clust.v}{Proportion of opening a new PDP cluster among all variables}
 \item{nbhd_max}{The maximum distance among the neighborhoods in the fast PDP sampling algorithm}
 \item{pi.mt}{The pairwise probability matrix of two variables being in the same cluster}
-\item{pi.mt2}{???}
 \item{parm}{All parameter values for the last MCMC sample}
 \item{init.parm}{All parameter values obtained from initialization}
 }

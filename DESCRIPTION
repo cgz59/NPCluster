@@ -1,11 +1,17 @@
 Package: NPCluster
 Type: Package
-Title: What the package does (short line)
+Title: Nonparametric Bayesian High-dimensional Clustering
 Version: 0.1
-Date: 2015-02-25
-Author: Subharup Guha, Veera Baladandayuthapani, Marc A. Suchard
-Maintainer: Subharup Guha <guhasu@missouri.edu>
-Description: More about what it does (maybe more than one line)
+Date: 2017-07-18
+Author: Subharup Guha, Veera Baladandayuthapani, Chiyu Gu, Marc A. Suchard
+Maintainer: Chiyu Gu <cgz59@mail.missouri.edu>
+Description:  Implements the clustering aspect of VariScan, a nonparametric Bayesian
+              technique for clustering, variable selection, and prediction in
+              high-throughput regression settings. Poisson-Dirichlet processes are
+              utilized to detect lower-dimensional latent clusters of covariates.
+              An adaptive nonlinear prediction model is constructed for the response,
+              achieving a balance between model parsimony and flexibility. The
+              methodology is described in Guha and Baladandayuthapani (EJS, 2016).
 License: GPL (>= 2)
 Imports:
     Rcpp (>= 0.11.3),
@@ -15,6 +21,5 @@ Imports:
     RcppParallel
 LinkingTo: Rcpp, BH, RcppEigen, RcppParallel, RcppNT2
 Suggests:
-    testthat
 LazyData: true
 RoxygenNote: 6.0.1
