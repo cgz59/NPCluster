@@ -20,6 +20,5 @@ Imports:
     Matrix,
     RcppParallel
 LinkingTo: Rcpp, BH, RcppEigen, RcppParallel, RcppNT2
-Suggests:
 LazyData: true
 RoxygenNote: 6.0.1

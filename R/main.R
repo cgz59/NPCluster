@@ -217,7 +217,7 @@ profileExample <- function(n = 25,
 #' Define Compute Mode
 #'
 #' The function \code{createComputeMode} creates a computeMode object controling the computation mode to be used including R and C++
-#'
+#'@export
 createComputeMode <- function(language = "R",
                               exactBitStream = FALSE,
                               extraSort = TRUE,
