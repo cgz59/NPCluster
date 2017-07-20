@@ -519,7 +519,7 @@ fn.gen.tau_0  <- function(data, parm)
 	# minimum possible value of parm$tau_0 = 1.5 * maximum possible value of parm$tau
 	# maximum possible value of parm$tau_0 = 3 * sd(as.vector(data$X))
 	u.min <- pgamma(1/9 / var(as.vector(data$X),na.rm=TRUE),shape=shape, rate=rate)
-	u.max <- pgamma(1/1.5^2/parm$prior$tau.sq$min,shape=shape, rate=rate)
+	u.max <- pgamma(1/1.5^2/parm$prior$tau.sq$max,shape=shape, rate=rate)
 	gen.u <- runif(n=1, min=u.min, max=u.max)
 
       parm$tau_0 <- 1/sqrt(qgamma(gen.u,shape=shape, rate=rate))
