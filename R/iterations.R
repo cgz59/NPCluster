@@ -196,7 +196,8 @@ fn.eda <- function(parm, data, computeMode)
 
 	###################################
 
-	parm$tau_0 <- sqrt(1+parm$tau^2)
+	# parm$tau_0 <- sqrt(1+parm$tau^2)
+	parm$tau_0 <- 1e-10
 
 	# 1-parm$tau^2/var(as.vector(parm$X))
 
@@ -534,7 +535,7 @@ fn.hyperparameters <- function(data, parm)
 	# also updates update tau_int
 	parm <- fn.gen.tau(data, parm)
 
-	parm <- fn.gen.tau_0(data, parm)
+#	parm <- fn.gen.tau_0(data, parm)
 
 	parm
 
