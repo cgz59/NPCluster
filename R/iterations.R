@@ -196,7 +196,8 @@ fn.eda <- function(parm, data, computeMode)
 
 	###################################
 
-	parm$tau_0 <- sqrt(1+parm$tau^2)
+	# parm$tau_0 <- sqrt(1+parm$tau^2)
+	parm$tau_0 <- 1e-10
 
 	# 1-parm$tau^2/var(as.vector(parm$X))
 
@@ -519,7 +520,7 @@ fn.gen.tau_0  <- function(data, parm)
 	# minimum possible value of parm$tau_0 = 1.5 * maximum possible value of parm$tau
 	# maximum possible value of parm$tau_0 = 3 * sd(as.vector(data$X))
 	u.min <- pgamma(1/9 / var(as.vector(data$X),na.rm=TRUE),shape=shape, rate=rate)
-	u.max <- pgamma(1/1.5^2/parm$prior$tau.sq$min,shape=shape, rate=rate)
+	u.max <- pgamma(1/1.5^2/parm$prior$tau.sq$max,shape=shape, rate=rate)
 	gen.u <- runif(n=1, min=u.min, max=u.max)
 
       parm$tau_0 <- 1/sqrt(qgamma(gen.u,shape=shape, rate=rate))
@@ -534,7 +535,7 @@ fn.hyperparameters <- function(data, parm)
 	# also updates update tau_int
 	parm <- fn.gen.tau(data, parm)
 
-	parm <- fn.gen.tau_0(data, parm)
+#	parm <- fn.gen.tau_0(data, parm)
 
 	parm
 
@@ -583,7 +584,8 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 	d.v <- d.v[-len]
 	len <- len-1
 
-	tmpF<-fn2.d(parm)
+#	tmpF<-fn2.d(parm) #disabled for now
+	tmpF<-0
 	log.lik.v <- sapply(d.v, fn1.d, parm, tmpF)
 	# putting 1/2 prior mass on 0 and remaining spread uniformly on positive points in d.v
 	log.p.v <- log(.5) + c(0,  rep(-log(len-1),(len-1)))
@@ -609,7 +611,8 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 		{
 		# MH ratio for independent proposals and
 		# prior same for all d (which is true if 0 wp .5 and \in (0,max.d) wp .5)
-	  tmpF<-fn2.d(parm)
+#	  tmpF<-fn2.d(parm) #disabled for now
+	  tmpF<-0
 		log.ratio <- fn1.d(d=prop.d, parm, tmpF) - fn1.d(d=parm$d, parm, tmpF)
 		prob <- min(1, exp(log.ratio))
 		flip <- rbinom(n=1, size=1, prob=prob)
