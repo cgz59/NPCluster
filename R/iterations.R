@@ -584,8 +584,10 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 	d.v <- d.v[-len]
 	len <- len-1
 
-#	tmpF<-fn2.d(parm) #disabled for now
 	tmpF<-0
+	if (parm$n2<10) {
+	tmpF<-fn2.d(parm)
+	}
 	log.lik.v <- sapply(d.v, fn1.d, parm, tmpF)
 	# putting 1/2 prior mass on 0 and remaining spread uniformly on positive points in d.v
 	log.p.v <- log(.5) + c(0,  rep(-log(len-1),(len-1)))
@@ -611,8 +613,10 @@ fn.poissonDP.hyperparm <- function(data, parm, w=.01, max.d)
 		{
 		# MH ratio for independent proposals and
 		# prior same for all d (which is true if 0 wp .5 and \in (0,max.d) wp .5)
-#	  tmpF<-fn2.d(parm) #disabled for now
 	  tmpF<-0
+	  if (parm$n2<10) {
+	    tmpF<-fn2.d(parm)
+	  }
 		log.ratio <- fn1.d(d=prop.d, parm, tmpF) - fn1.d(d=parm$d, parm, tmpF)
 		prob <- min(1, exp(log.ratio))
 		flip <- rbinom(n=1, size=1, prob=prob)
